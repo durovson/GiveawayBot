@@ -53,7 +53,7 @@ class Database:
             logger.error(f"Error getting tracked chats: {e}")
             return []
 
-    async def create_giveaway(self, creator_id: int, chat_id: int, title: str, mode: str, value: Any, winners_count: int, prizes: List[str], end_at: Optional[datetime] = None, mandatory_channels: List[str] = []) -> Dict:
+    async def create_giveaway(self, creator_id: int, chat_id: int, title: str, mode: str, value: Any, winners_count: int, prizes: List[str], end_at: Optional[datetime] = None, mandatory_channels: List[str] = [], allowed_users: Optional[List[str]] = None) -> Dict:
         if not self._check_client(): return {}
         try:
             data = {
@@ -66,7 +66,8 @@ class Database:
                 "prizes": prizes,
                 "status": "active",
                 "end_at": end_at.isoformat() if end_at else None,
-                "mandatory_channels": mandatory_channels
+                "mandatory_channels": mandatory_channels,
+                "allowed_users": allowed_users
             }
             response = await self.client.table("giveaways").insert(data).execute()
             return response.data[0]

@@ -86,6 +86,20 @@ async def join_giveaway(callback: types.CallbackQuery):
         await callback.answer("❌ Participation is prohibited, you are the leader.", show_alert=True)
         return
 
+    whitelist = giveaway.get('allowed_users')
+    if whitelist:
+        user_id_str = str(user_id)
+        current_username = f"@{callback.from_user.username}".lower() if callback.from_user.username else None
+
+        is_allowed = (user_id_str in whitelist) or (current_username and current_username in whitelist)
+
+        if not is_allowed:
+            await callback.answer(
+                "🔒 This giveaway is for specific participants only. You are not on the list.",
+                show_alert=True
+            )
+            return
+
     # Check mandatory channel subscriptions
     unsubscribed_from = []
     if giveaway.get('mandatory_channels'):
