@@ -86,6 +86,24 @@ async def join_giveaway(callback: types.CallbackQuery):
         await callback.answer("❌ Participation is prohibited, you are the leader.", show_alert=True)
         return
 
+    # Check mandatory channel subscriptions
+    unsubscribed_from = []
+    if giveaway.get('mandatory_channels'):
+        for channel in giveaway['mandatory_channels']:
+            try:
+                member = await callback.bot.get_chat_member(chat_id=channel, user_id=user_id)
+                if member.status in ['left', 'kicked', 'restricted']:
+                    unsubscribed_from.append(channel)
+            except Exception as e:
+                logger.error(f"Error checking subscription for {channel}: {e}")
+                # We can choose to skip or block if check fails. Usually better to block to be safe.
+                # unsubscribed_from.append(channel)
+
+    if unsubscribed_from:
+        channels_str = ", ".join(unsubscribed_from)
+        await callback.answer(f"❌ First subscribe to: {channels_str}", show_alert=True)
+        return
+
     success = await db.add_participant(giveaway_id, user_id, username)
     if success:
         await callback.answer("✅ You are participating!", show_alert=True)
