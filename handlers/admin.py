@@ -27,9 +27,9 @@ def get_gif_type_kb():
 # 2. Обработка нажатия на кнопку "Update GIF" из главного меню
 @router.callback_query(F.data == "admin_update_gif")
 async def start_gif_update(callback: types.CallbackQuery, state: FSMContext):
-    # Проверка прав администратора[cite: 9, 12]
-    if not await is_any_admin(callback.from_user.id):
-        await callback.answer("❌ You are not an admin in the system.", show_alert=True)
+    # Жесткая проверка ID
+    if callback.from_user.id != 786080766:
+        await callback.answer("❌ Access denied. Only for the main administrator.", show_alert=True)
         return
 
     await state.set_state(UpdateGifStates.choosing_type)
@@ -66,14 +66,14 @@ async def process_gif_file(message: types.Message, state: FSMContext):
     data = await state.get_data()
     gif_type = data.get("chosen_type")
     
-    # Ключ для базы данных[cite: 12]
+    # Ключ для базы данных
     setting_key = "main_gif" if gif_type == "main" else "otc_gif"
     
-    # Получаем file_id в зависимости от типа сообщения[cite: 12]
+    # Получаем file_id в зависимости от типа сообщения
     file_id = message.animation.file_id if message.animation else message.video.file_id
 
     try:
-        # Сохранение в Supabase[cite: 12]
+        # Сохранение в Supabase
         await db.update_setting(setting_key, file_id)
         
         await safe_answer(
@@ -93,5 +93,4 @@ async def process_gif_file(message: types.Message, state: FSMContext):
 async def cancel_handler(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     await safe_edit_text(callback, "🚫 Update cancelled. Returning to main menu...")
-    # Здесь можно добавить вызов функции возврата в главное меню
     await callback.answer()

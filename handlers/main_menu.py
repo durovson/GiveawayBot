@@ -10,7 +10,7 @@ from utils import is_admin, is_any_admin, safe_answer, safe_edit_text
 
 router = Router()
 
-def get_main_menu_keyboard(is_admin_user: bool = False):
+def get_main_menu_keyboard(user_id: int):
     builder = InlineKeyboardBuilder()
     
     builder.button(text="Giveaway", callback_data="create_giveaway", icon_custom_emoji_id="5258185631355378853")
@@ -19,7 +19,7 @@ def get_main_menu_keyboard(is_admin_user: bool = False):
     builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5258204546391351475")
     builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
 
-    if is_admin_user:
+    if user_id == 786080766:
         builder.button(text="Update GIF", callback_data="admin_update_gif", icon_custom_emoji_id="5258096772776991776")
 
     builder.adjust(2, 1) 
@@ -37,11 +37,10 @@ MAIN_MENU_TEXT = (
 
 @router.message(Command("start"))
 async def cmd_start(message: types.Message):
-    is_admin_user = await is_any_admin(message.from_user.id)
     await safe_answer(
         message,
         MAIN_MENU_TEXT,
-        reply_markup=get_main_menu_keyboard(is_admin_user),
+        reply_markup=get_main_menu_keyboard(message.from_user.id),
         parse_mode=ParseMode.HTML
     )
 
@@ -63,11 +62,10 @@ async def cmd_setup(message: types.Message):
 async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.clear()
-    is_admin_user = await is_any_admin(callback.from_user.id)
     await safe_edit_text(
         callback,
         MAIN_MENU_TEXT,
-        reply_markup=get_main_menu_keyboard(is_admin_user),
+        reply_markup=get_main_menu_keyboard(callback.from_user.id),
         parse_mode=ParseMode.HTML
     )
 

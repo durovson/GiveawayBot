@@ -22,6 +22,7 @@ GIF_ID = "CgACAgIAAxkBAAEbt3NpqAn2obJdHyFVZbi_JOspLX96KAAC7pQAAkCBQEk_A-aRj7qxNT
 class GiveawayCreation(StatesGroup):
     SELECT_CHAT = State()
     ENTER_NAME = State()
+    ENTER_CHANNELS = State()
     SELECT_TYPE = State()
     SELECT_MODE_VALUE = State()
     CUSTOM_MODE_VALUE = State()
@@ -75,13 +76,14 @@ def get_prizes_keyboard(prizes):
 def get_edit_params_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="Name", callback_data="edit_title", icon_custom_emoji_id="5778299625370817409")
+    builder.button(text="Channels", callback_data="edit_channels", icon_custom_emoji_id="5258185631355378853")
     builder.button(text="Type", callback_data="edit_type", icon_custom_emoji_id="5258185631355378853")
     builder.button(text="Mode", callback_data="edit_mode", icon_custom_emoji_id="5850317551090800862")
     builder.button(text="Winners", callback_data="edit_winners", icon_custom_emoji_id="5805553606635559688")
     builder.button(text="Prizes", callback_data="edit_prizes", icon_custom_emoji_id="5891105528356018797")
     builder.button(text="Launch", callback_data="finalize_giveaway", icon_custom_emoji_id="5258073068852485953", style="success")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(2, 2, 1, 1, 1)
+    builder.adjust(2, 2, 2, 1, 1)
     return builder.as_markup()
 
 def get_message_link(chat, message_id: int) -> str:
@@ -121,6 +123,31 @@ async def enter_name(message: types.Message, state: FSMContext, bot: Bot):
         await show_edit_params(message, state, bot)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
+            "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Mandatory channels</b>\n\n"
+            "<blockquote>Enter the @usernames of the channels users must subscribe to, separated by spaces or commas.</blockquote>\n\n"
+            "Enter channels:",
+            parse_mode=ParseMode.HTML
+        )
+        await state.set_state(GiveawayCreation.ENTER_CHANNELS)
+
+@router.message(GiveawayCreation.ENTER_CHANNELS)
+async def enter_channels(message: types.Message, state: FSMContext, bot: Bot):
+    try:
+        await message.delete()
+    except Exception:
+        pass
+
+    channels = re.split(r'[,\s]+', message.text.strip())
+    channels = [c if c.startswith('@') else f'@{c}' for c in channels if c]
+    await state.update_data(mandatory_channels=channels)
+
+    data = await state.get_data()
+    last_msg_id = data.get('last_msg_id')
+
+    if data.get('is_editing'):
+        await show_edit_params(message, state, bot)
+    else:
+        await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
             "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Draw type</b>\n\n"
             "<blockquote>Select the format of the drawing</blockquote>\n\n"
             "Select type:",
@@ -138,8 +165,8 @@ async def select_type(callback: types.CallbackQuery, state: FSMContext):
     if gtype == "timed":
         text = (
             "<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>End time</b>\n\n"
-            "<blockquote>Specify the time at which the bot will determine the winners (Moscow time)</blockquote>\n\n"
-            "Select or enter time (HH:MM):"
+            "<blockquote>Specify the date and time at which the bot will determine the winners (Moscow time)</blockquote>\n\n"
+            "Select or enter time (DD.MM.YYYY HH:MM):"
         )
     else:
         text = (
@@ -155,13 +182,19 @@ async def select_mode_value(callback: types.CallbackQuery, state: FSMContext, bo
     await callback.answer()
     val = callback.data.split("_")[1]
     if val == "custom":
+        data = await state.get_data()
+        prompt = "Enter the time in DD.MM.YYYY HH:MM format" if data['gtype'] == "timed" else "enter the number of participants as a number"
         await safe_edit_text(callback,
-            "<b>Enter your value:</b>\n\n"
-            "<blockquote>Enter the time in HH:MM format or the number of participants as a number</blockquote>",
+            f"<b>Enter your value:</b>\n\n"
+            f"<blockquote>{prompt}</blockquote>",
             parse_mode=ParseMode.HTML
         )
         await state.set_state(GiveawayCreation.CUSTOM_MODE_VALUE)
     else:
+        # If it's a quick time selection, we assume today or tomorrow based on get_next_occurrence logic but adapted
+        # Actually, for the requested HH:MM we can keep old logic or just store it.
+        # But instructions say: "Replace get_next_occurrence with parser accepting exact date DD.MM.YYYY HH:MM"
+        # So we'll try to parse the selected value as HH:MM today/tomorrow.
         await state.update_data(mode_value=val)
         data = await state.get_data()
         if data.get('is_editing'):
@@ -302,12 +335,14 @@ async def confirm_prizes(callback: types.CallbackQuery, state: FSMContext, bot: 
 async def show_edit_params(message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     prizes_str = ", ".join(data['prizes'])
+    channels_str = ", ".join(data.get('mandatory_channels', []))
     last_msg_id = data.get('last_msg_id')
 
     text = (
         "<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji> <b>Draw parameters</b>\n\n"
         "<blockquote>"
         f"<b>Name:</b> {html.escape(data['title'])}\n"
+        f"<b>Channels:</b> {html.escape(channels_str)}\n"
         f"<b>Type:</b> {'By time' if data['gtype'] == 'timed' else 'By participants'}\n"
         f"<b>Mode:</b> {data['mode_value']}\n"
         f"<b>Winners:</b> {data['winners_count']}\n"
@@ -337,6 +372,18 @@ async def edit_title(callback: types.CallbackQuery, state: FSMContext):
     )
     await state.set_state(GiveawayCreation.ENTER_NAME)
 
+@router.callback_query(F.data == "edit_channels", StateFilter(GiveawayCreation.EDIT_PARAMS))
+async def edit_channels(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.update_data(is_editing=True)
+    await safe_edit_text(callback,
+        "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Mandatory channels</b>\n\n"
+        "<blockquote>Enter the @usernames of the channels users must subscribe to, separated by spaces or commas.</blockquote>\n\n"
+        "Enter channels:",
+        parse_mode=ParseMode.HTML
+    )
+    await state.set_state(GiveawayCreation.ENTER_CHANNELS)
+
 @router.callback_query(F.data == "edit_type", StateFilter(GiveawayCreation.EDIT_PARAMS))
 async def edit_type(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
@@ -359,8 +406,8 @@ async def edit_mode(callback: types.CallbackQuery, state: FSMContext):
     if gtype == "timed":
         text = (
             "<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>End time</b>\n\n"
-            "<blockquote>Specify the time at which the bot will determine the winners (Moscow time)</blockquote>\n\n"
-            "Select or enter time (HH:MM):"
+            "<blockquote>Specify the date and time at which the bot will determine the winners (Moscow time)</blockquote>\n\n"
+            "Select or enter time (DD.MM.YYYY HH:MM):"
         )
     else:
         text = (
@@ -396,14 +443,20 @@ async def edit_prizes(callback: types.CallbackQuery, state: FSMContext):
     )
     await state.set_state(GiveawayCreation.ENTER_PRIZES)
 
-def get_next_occurrence(time_str: str) -> datetime:
+def parse_exact_time(time_str: str) -> datetime:
     moscow_tz = pytz.timezone('Europe/Moscow')
-    now_moscow = datetime.now(moscow_tz)
-    h, m = map(int, time_str.split(':'))
-    target = moscow_tz.localize(datetime.combine(now_moscow.date(), time(h, m)))
-    if target <= now_moscow:
-        target += timedelta(days=1)
-    return target.astimezone(pytz.UTC)
+    try:
+        # DD.MM.YYYY HH:MM
+        local_dt = datetime.strptime(time_str, "%d.%m.%Y %H:%M")
+        local_dt = moscow_tz.localize(local_dt)
+    except ValueError:
+        # Fallback to HH:MM (today/tomorrow)
+        now_moscow = datetime.now(moscow_tz)
+        h, m = map(int, time_str.split(':'))
+        local_dt = moscow_tz.localize(datetime.combine(now_moscow.date(), time(h, m)))
+        if local_dt <= now_moscow:
+            local_dt += timedelta(days=1)
+    return local_dt.astimezone(pytz.UTC)
 
 async def get_giveaway_post_data(giveaway: dict):
     safe_title = html.escape(giveaway['title'])
@@ -412,15 +465,24 @@ async def get_giveaway_post_data(giveaway: dict):
 
     if giveaway['mode'] == "timed":
         end_at_dt = datetime.fromisoformat(giveaway['end_at'].replace('Z', '+00:00'))
-        end_time_str = end_at_dt.astimezone(pytz.timezone("Europe/Moscow")).strftime("%H:%M")
+        moscow_dt = end_at_dt.astimezone(pytz.timezone("Europe/Moscow"))
+        end_time_str = moscow_dt.strftime("%d.%m.%Y %H:%M")
     else:
         end_time_str = f"{giveaway['value']} чел."
+
+    conditions_text = "┋<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>HOW TO ENTER:</b>\n"
+    if giveaway.get('mandatory_channels'):
+        for idx, channel in enumerate(giveaway['mandatory_channels'], start=1):
+            conditions_text += f"┋{idx}. Subscribe to {channel}\n"
+        conditions_text += f"┋{len(giveaway['mandatory_channels'])+1}. Click the button below.\n"
+    else:
+        conditions_text += "┋1. Click the button below.\n"
 
     post_text = (
         f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {safe_title} /</b>\n"
         f"┋<tg-emoji emoji-id=\"5274248753207863828\">😈</tg-emoji> <b>WIN:</b> {giveaway['winners_count']} - {safe_prizes}\n"
         f"┋\n"
-        f"┋<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>JOIN:</b> Click the button.\n"
+        f"{conditions_text}"
         f"┋\n"
         f"┋<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>ENDS:</b> {end_time_str}\n"
         f"┋\n"
@@ -439,8 +501,12 @@ async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bo
     await callback.answer()
     data = await state.get_data()
     end_at = None
-    if data['gtype'] == "timed":
-        end_at = get_next_occurrence(data['mode_value'])
+    try:
+        if data['gtype'] == "timed":
+            end_at = parse_exact_time(data['mode_value'])
+    except Exception as e:
+        await callback.answer(f"❌ Error parsing time: {e}", show_alert=True)
+        return
 
     giveaway = await db.create_giveaway(
         creator_id=callback.from_user.id,
@@ -450,7 +516,8 @@ async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bo
         value=data['mode_value'],
         winners_count=data['winners_count'],
         prizes=data['prizes'],
-        end_at=end_at
+        end_at=end_at,
+        mandatory_channels=data.get('mandatory_channels', [])
     )
 
     post_text, gif_to_send = await get_giveaway_post_data(giveaway)
