@@ -23,6 +23,8 @@ class GiveawayCreation(StatesGroup):
     SELECT_CHAT = State()
     ENTER_NAME = State()
     ENTER_CHANNELS = State()
+    WAITING_FOR_ACCESS_TYPE = State()
+    WAITING_FOR_WHITELIST = State()
     SELECT_TYPE = State()
     SELECT_MODE_VALUE = State()
     CUSTOM_MODE_VALUE = State()
@@ -71,6 +73,14 @@ def get_prizes_keyboard(prizes):
         builder.button(text="Confirm prizes", callback_data="confirm_prizes", icon_custom_emoji_id="5260726538302660868", style="success")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
+    return builder.as_markup()
+
+def get_access_type_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🌍 Public", callback_data="access_all")
+    builder.button(text="🔐 Whitelist (Users/IDs)", callback_data="access_whitelist")
+    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(2, 1)
     return builder.as_markup()
 
 def get_edit_params_keyboard():
@@ -147,7 +157,24 @@ async def enter_channels(message: types.Message, state: FSMContext, bot: Bot):
     if data.get('is_editing'):
         await show_edit_params(message, state, bot)
     else:
-        await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
+        await ask_access_type(message, state, bot)
+
+async def ask_access_type(message: types.Message, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    last_msg_id = data.get('last_msg_id')
+    await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
+        "<b>Who can participate in the giveaway?</b>",
+        reply_markup=get_access_type_keyboard(),
+        parse_mode=ParseMode.HTML
+    )
+    await state.set_state(GiveawayCreation.WAITING_FOR_ACCESS_TYPE)
+
+@router.callback_query(GiveawayCreation.WAITING_FOR_ACCESS_TYPE)
+async def process_access_choice(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    if callback.data == "access_all":
+        await state.update_data(allowed_users=None)
+        await callback.answer("✅ Giveaway is now Public.")
+        await safe_edit_text(callback,
             "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Draw type</b>\n\n"
             "<blockquote>Select the format of the drawing</blockquote>\n\n"
             "Select type:",
@@ -155,6 +182,39 @@ async def enter_channels(message: types.Message, state: FSMContext, bot: Bot):
             parse_mode=ParseMode.HTML
         )
         await state.set_state(GiveawayCreation.SELECT_TYPE)
+    elif callback.data == "access_whitelist":
+        await safe_edit_text(callback,
+            "<b>Send the list of @usernames or User IDs.</b>\n\n"
+            "Example: @user1, 12345678, @user2",
+            parse_mode=ParseMode.HTML
+        )
+        await state.set_state(GiveawayCreation.WAITING_FOR_WHITELIST)
+    await callback.answer()
+
+@router.message(GiveawayCreation.WAITING_FOR_WHITELIST)
+async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot):
+    try:
+        await message.delete()
+    except Exception:
+        pass
+
+    raw_list = re.split(r'[,\s]+', message.text.strip())
+    processed_list = [item.strip().lower() for item in raw_list if item.strip()]
+
+    await state.update_data(allowed_users=processed_list)
+
+    data = await state.get_data()
+    last_msg_id = data.get('last_msg_id')
+
+    await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
+        f"✅ Whitelist saved: {len(processed_list)} entries.\n\n"
+        "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Draw type</b>\n\n"
+        "<blockquote>Select the format of the drawing</blockquote>\n\n"
+        "Select type:",
+        reply_markup=get_type_keyboard(),
+        parse_mode=ParseMode.HTML
+    )
+    await state.set_state(GiveawayCreation.SELECT_TYPE)
 
 @router.callback_query(F.data.startswith("type_"), GiveawayCreation.SELECT_TYPE)
 async def select_type(callback: types.CallbackQuery, state: FSMContext):
@@ -517,7 +577,8 @@ async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bo
         winners_count=data['winners_count'],
         prizes=data['prizes'],
         end_at=end_at,
-        mandatory_channels=data.get('mandatory_channels', [])
+        mandatory_channels=data.get('mandatory_channels', []),
+        allowed_users=data.get('allowed_users')
     )
 
     post_text, gif_to_send = await get_giveaway_post_data(giveaway)
