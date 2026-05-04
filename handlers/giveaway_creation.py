@@ -442,8 +442,8 @@ async def show_edit_params(message, state: FSMContext, bot: Bot):
         f"<b>Name:</b> {html.escape(title)}\n"
         f"<b>Channels:</b> {html.escape(channels_str)}\n"
         f"<b>Type:</b> {'By time' if gtype == 'timed' else 'By participants'}\n"
-        f"<b>Mode:</b> {mode_val}\n"
-        f"<b>Winners:</b> {winners}\n"
+        f"<b>Mode:</b> {html.escape(str(mode_val))}\n"
+        f"<b>Winners:</b> {html.escape(str(winners))}\n"
         f"<b>Prizes:</b> {html.escape(prizes_str)}"
         "</blockquote>\n\n"
         "Check the data and click «START»."
@@ -573,7 +573,7 @@ async def get_giveaway_post_data(giveaway: dict):
     conditions_text = "┋<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>HOW TO ENTER:</b>\n"
     if giveaway.get('mandatory_channels'):
         for idx, channel in enumerate(giveaway['mandatory_channels'], start=1):
-            conditions_text += f"┋{idx}. Subscribe to {channel}\n"
+            conditions_text += f"┋{idx}. Subscribe to {html.escape(channel)}\n"
         conditions_text += f"┋{len(giveaway['mandatory_channels'])+1}. Click the button below.\n"
     else:
         conditions_text += "┋1. Click the button below.\n"

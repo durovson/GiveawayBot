@@ -34,7 +34,7 @@ async def safe_answer(message, text, **kwargs):
     try:
         return await message.answer(text, **kwargs)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e):
+        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
             raise e
         try:
             return await message.answer(strip_custom_emojis(text), **kwargs)
@@ -47,7 +47,7 @@ async def safe_edit_text(message, text, **kwargs):
     try:
         return await target.edit_text(text, **kwargs)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e):
+        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
             raise e
         try:
             return await target.edit_text(strip_custom_emojis(text), **kwargs)
@@ -58,7 +58,7 @@ async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
     try:
         return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, **kwargs)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e):
+        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
             raise e
         try:
             return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=strip_custom_emojis(text), **kwargs)
@@ -69,7 +69,7 @@ async def safe_bot_send_message(bot, chat_id, text, **kwargs):
     try:
         return await bot.send_message(chat_id=chat_id, text=text, **kwargs)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e):
+        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
             raise e
         try:
             return await bot.send_message(chat_id=chat_id, text=strip_custom_emojis(text), **kwargs)
