@@ -186,7 +186,7 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot):
     # Новый формат сообщения
     if is_offer:
         post_text = (
-            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {trade_type} /\n"
+            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
             f"┣ Item: {item_display}\n"
             "┋\n"
@@ -196,11 +196,11 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot):
         )
     else:
         post_text = (
-            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {trade_type} /\n"
+            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
             f"┣ Item: {item_display}\n"
             "┋\n"
-            f"┣ Price: {display_price}\n"
+            f"┣ Price: {html.escape(str(display_price))}\n"
             "┋\n"
             "┗┅ / #NOTAPES /"
         )
@@ -313,7 +313,7 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
 
     if is_offer:
         post_text = (
-            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {trade_type} /\n"
+            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
             f"┣ Item: {item_display}\n"
             "┋\n"
@@ -323,11 +323,11 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
         )
     else:
         post_text = (
-            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {trade_type} /\n"
+            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
             f"┣ Item: {item_display}\n"
             "┋\n"
-            f"┣ Price: {display_price}\n"
+            f"┣ Price: {html.escape(str(display_price))}\n"
             "┋\n"
             "┗┅ / #NOTAPES /"
         )
