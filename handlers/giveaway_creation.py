@@ -123,7 +123,12 @@ def get_message_link(chat, message_id: int) -> str:
 async def select_chat(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     chat_id = int(callback.data.split("_")[1])
-    await state.update_data(chat_id=chat_id)
+    await state.update_data(
+        chat_id=chat_id,
+        prizes=[],
+        mandatory_channels=[],
+        is_editing=False
+    )
     await safe_edit_text(callback,
         "<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>Event name</b>\n\n"
         "<blockquote>Come up with a name for your giveaway</blockquote>\n\n"
@@ -417,18 +422,28 @@ async def confirm_prizes(callback: types.CallbackQuery, state: FSMContext, bot: 
 
 async def show_edit_params(message, state: FSMContext, bot: Bot):
     data = await state.get_data()
-    prizes_str = ", ".join(data['prizes'])
-    channels_str = ", ".join(data.get('mandatory_channels', []))
+
+    # FIX: Use .get() with a default empty list to avoid KeyError
+    prizes = data.get('prizes', [])
+    prizes_str = ', '.join(prizes) if prizes else 'Not specified'
+
+    channels_str = ', '.join(data.get('mandatory_channels', []))
     last_msg_id = data.get('last_msg_id')
+
+    # Use .get() for other potential missing keys during early edits
+    gtype = data.get('gtype', 'timed')
+    mode_val = data.get('mode_value', 'Not set')
+    winners = data.get('winners_count', 0)
+    title = data.get('title', 'Untitled')
 
     text = (
         "<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji> <b>Draw parameters</b>\n\n"
         "<blockquote>"
-        f"<b>Name:</b> {html.escape(data['title'])}\n"
+        f"<b>Name:</b> {html.escape(title)}\n"
         f"<b>Channels:</b> {html.escape(channels_str)}\n"
-        f"<b>Type:</b> {'By time' if data['gtype'] == 'timed' else 'By participants'}\n"
-        f"<b>Mode:</b> {data['mode_value']}\n"
-        f"<b>Winners:</b> {data['winners_count']}\n"
+        f"<b>Type:</b> {'By time' if gtype == 'timed' else 'By participants'}\n"
+        f"<b>Mode:</b> {mode_val}\n"
+        f"<b>Winners:</b> {winners}\n"
         f"<b>Prizes:</b> {html.escape(prizes_str)}"
         "</blockquote>\n\n"
         "Check the data and click «START»."
