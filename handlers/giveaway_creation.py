@@ -436,15 +436,13 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
 
     text = (
         f"<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji> <b>Giveaway Parameters</b>\n\n"
-        f"</blockquote>\n\n"
-        f"<b>Name:</b> {title}\n"
+        f"<blockquote><b>Name:</b> {title}\n"
         f"<b>Kind:</b> {gkind}\n"
         f"<b>Channels:</b> {channels}\n"
         f"<b>Type:</b> {gtype}\n"
         f"<b>Mode:</b> {mode_val}\n"
         f"<b>Winners:</b> {winners}\n"
-        f"<b>Prizes:</b> {prizes}\n\n"
-        f"</blockquote>\n\n"
+        f"<b>Prizes:</b> {prizes}</blockquote>\n\n"
         f"<b>Select a parameter to edit or launch the giveaway:</b>"
     )
 
