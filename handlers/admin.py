@@ -18,8 +18,7 @@ class UpdateGifStates(StatesGroup):
 # Клавиатура выбора типа медиа
 def get_gif_type_kb():
     buttons = [
-        [InlineKeyboardButton(text="🎁 Giveaways (Main)", callback_data="set_type_main")],
-        [InlineKeyboardButton(text="🛒 OTC Market", callback_data="set_type_otc")],
+        [InlineKeyboardButton(text="🎁 Giveaways", callback_data="set_type_main")],
         [InlineKeyboardButton(text="❌ Cancel", callback_data="cancel_update")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -50,7 +49,7 @@ async def process_type_choice(callback: types.CallbackQuery, state: FSMContext):
     
     await state.set_state(UpdateGifStates.waiting_for_media)
     
-    label = "Giveaways" if gif_type == "main" else "OTC Market"
+    label = "Giveaways"
     await safe_edit_text(
         callback,
         f"🎬 <b>Upload Media</b>\n\nPlease send a <b>GIF</b> or <b>Video</b> for the <b>{label}</b> section.\n\n"
@@ -67,7 +66,7 @@ async def process_gif_file(message: types.Message, state: FSMContext):
     gif_type = data.get("chosen_type")
     
     # Ключ для базы данных
-    setting_key = "main_gif" if gif_type == "main" else "otc_gif"
+    setting_key = "main_gif"
     
     # Получаем file_id в зависимости от типа сообщения
     file_id = message.animation.file_id if message.animation else message.video.file_id
