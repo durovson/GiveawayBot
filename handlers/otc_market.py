@@ -24,7 +24,7 @@ class OTCMarket(StatesGroup):
 @router.callback_query(F.data == "otc_market")
 async def start_otc_market(callback: types.CallbackQuery, state: FSMContext):
     if not await is_holder(callback.from_user.id):
-        await callback.answer("❌ OTC недоступен", show_alert=True)
+        await callback.answer("❌ OTC not available", show_alert=True)
         return
     await callback.answer()
     await state.clear()
@@ -208,9 +208,9 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot):
         post_text = (
             f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
-            f"┣ Item: {item_display}\n"
+            f"┣ <b>Item:</b> {item_display}\n"
             "┋\n"
-            "┣ Offer\n"
+            "┣ <b>Offer</b>\n"
             "┋\n"
             "┗┅ / #NOTAPES /"
         )
@@ -218,9 +218,9 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot):
         post_text = (
             f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
-            f"┣ Item: {item_display}\n"
+            f"┣ <b>Item:</b> {item_display}\n"
             "┋\n"
-            f"┣ Price: {html.escape(str(display_price))}\n"
+            f"┣ <b>Price:</b> {html.escape(str(display_price))}\n"
             "┋\n"
             "┗┅ / #NOTAPES /"
         )
@@ -298,9 +298,9 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
         post_text = (
             f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
-            f"┣ Item: {item_display}\n"
+            f"┣ <b>Item:</b> {item_display}\n"
             "┋\n"
-            "┣ Offer\n"
+            "┣ <b>Offer</b>\n"
             "┋\n"
             "┗┅ / #NOTAPES /"
         )
@@ -308,9 +308,9 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
         post_text = (
             f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
-            f"┣ Item: {item_display}\n"
+            f"┣ <b>Item:</b> {item_display}\n"
             "┋\n"
-            f"┣ Price: {html.escape(str(display_price))}\n"
+            f"┣ <b>Price:</b> {html.escape(str(display_price))}\n"
             "┋\n"
             "┗┅ / #NOTAPES /"
         )
@@ -318,7 +318,7 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
     preview_text = (
         "<b><tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji> Preview</b>\n\n"
         f"<blockquote>{post_text}</blockquote>\n\n"
-        "Confirm or edit your post:"
+        "<b>Confirm or edit your post:</b>"
     )
 
     builder = InlineKeyboardBuilder()
