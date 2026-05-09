@@ -50,7 +50,20 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
             for p in participants:
                 if len(winners) >= winners_count_target:
                     break
-                if await is_user_active(bot, p['user_id']):
+                # Проверка подписок перед выдачей приза
+                is_subscribed = True
+                if giveaway.get('mandatory_channels'):
+                    for channel in giveaway['mandatory_channels']:
+                        try:
+                            member = await bot.get_chat_member(chat_id=channel, user_id=p['user_id'])
+                            if member.status in ['left', 'kicked', 'restricted']:
+                                is_subscribed = False
+                                break
+                        except Exception:
+                            is_subscribed = False
+                            break
+
+                if is_subscribed and await is_user_active(bot, p['user_id']):
                     winners.append(p)
 
             # If not enough active users, fill with the rest

@@ -22,6 +22,7 @@ GIF_ID = "CgACAgIAAxkBAAEbt3NpqAn2obJdHyFVZbi_JOspLX96KAAC7pQAAkCBQEk_A-aRj7qxNT
 class GiveawayCreation(StatesGroup):
     SELECT_CHAT = State()
     ENTER_NAME = State()
+    SELECT_GIVEAWAY_KIND = State()
     ENTER_CHANNELS = State()
     WAITING_FOR_ACCESS_TYPE = State()
     WAITING_FOR_WHITELIST = State()
@@ -33,6 +34,15 @@ class GiveawayCreation(StatesGroup):
     ENTER_PRIZES = State()
     CONFIRMATION = State()
     EDIT_PARAMS = State()
+
+def get_giveaway_kind_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="⚡️ Fast (No channels)", callback_data="kind_fast")
+    builder.button(text="🤝 Partner (Required channels)", callback_data="kind_partner")
+    builder.button(text="Back", callback_data="back", icon_custom_emoji_id="5260687119092817530")
+    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(1)
+    return builder.as_markup()
 
 def get_nav_keyboard():
     builder = InlineKeyboardBuilder()
@@ -91,7 +101,7 @@ def get_prizes_keyboard(prizes):
 def get_access_type_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="Public", callback_data="access_all", icon_custom_emoji_id="5258486128742244085")
-    builder.button(text="Whitelist (Users/IDs)", callback_data="access_whitelist", icon_custom_emoji_id="5357069174512303778")
+    builder.button(text="Whitelist (Users/IDs)", callback_data="access_whitelist", icon_custom_emoji_id="5258476306152038031")
     builder.button(text="Back", callback_data="back", icon_custom_emoji_id="5260687119092817530")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2, 2)
@@ -153,6 +163,22 @@ async def enter_name(message: types.Message, state: FSMContext, bot: Bot):
         await show_edit_params(message, state, bot)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
+            "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Giveaway Kind</b>\n\n"
+            "<blockquote>Select the kind of giveaway:</blockquote>",
+            reply_markup=get_giveaway_kind_keyboard(),
+            parse_mode=ParseMode.HTML
+        )
+        await state.set_state(GiveawayCreation.SELECT_GIVEAWAY_KIND)
+
+
+@router.callback_query(GiveawayCreation.SELECT_GIVEAWAY_KIND)
+async def process_giveaway_kind(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
+    if callback.data == "kind_fast":
+        await state.update_data(mandatory_channels=[])
+        await ask_access_type(callback.message, state, bot)
+    elif callback.data == "kind_partner":
+        await safe_edit_text(callback,
             "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Mandatory channels</b>\n\n"
             "<blockquote>Enter the @usernames of the channels users must subscribe to, separated by spaces or commas.</blockquote>\n\n"
             "Enter channels:",
@@ -184,7 +210,7 @@ async def ask_access_type(message: types.Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     last_msg_id = data.get('last_msg_id')
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-        "<tg-emoji emoji-id=\"5260334139940283084\">🔒</tg-emoji> <b>Access type</b>\n\n"
+        "<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji> <b>Access type</b>\n\n"
         "<blockquote>Who can participate in the giveaway?</blockquote>\n\n"
         "Action prompt:",
         reply_markup=get_access_type_keyboard(),
@@ -207,7 +233,7 @@ async def process_access_choice(callback: types.CallbackQuery, state: FSMContext
         await state.set_state(GiveawayCreation.SELECT_TYPE)
     elif callback.data == "access_whitelist":
         await safe_edit_text(callback,
-            "<tg-emoji emoji-id=\"5260334139940283084\">🔒</tg-emoji> <b>Whitelist</b>\n\n"
+            "<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji> <b>Whitelist</b>\n\n"
             "<blockquote>Send the list of @usernames or User IDs.\n\n"
             "Example: @user1, 12345678, @user2</blockquote>\n\n"
             "Action prompt:",
@@ -310,179 +336,12 @@ async def enter_custom_mode_value(message: types.Message, state: FSMContext, bot
         await show_edit_params(message, state, bot)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-            "<tg-emoji emoji-id=\"5274159185959872191\">👑</tg-emoji> <b>Winners</b>\n\n"
-            "<blockquote>Select the number of prize places</blockquote>\n\n"
-            "Select quantity:",
-            reply_markup=get_winners_keyboard(),
+            "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Giveaway Kind</b>\n\n"
+            "<blockquote>Select the kind of giveaway:</blockquote>",
+            reply_markup=get_giveaway_kind_keyboard(),
             parse_mode=ParseMode.HTML
         )
-        await state.set_state(GiveawayCreation.SELECT_WINNERS_COUNT)
-
-@router.callback_query(F.data.startswith("win_"), GiveawayCreation.SELECT_WINNERS_COUNT)
-async def select_winners_count(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
-    await callback.answer()
-    val = callback.data.split("_")[1]
-    if val == "custom":
-        await safe_edit_text(callback,
-            "<b>Enter the number of winners:</b>\n\n"
-            "<blockquote>Please indicate the desired number of prize places.</blockquote>",
-            reply_markup=get_nav_keyboard(),
-            parse_mode=ParseMode.HTML
-        )
-        await state.set_state(GiveawayCreation.CUSTOM_WINNERS_COUNT)
-    else:
-        await state.update_data(winners_count=int(val))
-        data = await state.get_data()
-        if data.get('is_editing'):
-            await show_edit_params(callback, state, bot)
-        else:
-            await safe_edit_text(callback,
-                "<tg-emoji emoji-id=\"5891105528356018797\">💎</tg-emoji> <b>Prizes</b>\n\n"
-                "<blockquote>Enter the names of the prizes for the participants. If desired, you can remove a prize from the list by entering it again.</blockquote>\n\n"
-                "<b>To add multiple prizes, send them to the bot one by one in separate messages:</b>",
-                reply_markup=get_prizes_keyboard([]),
-                parse_mode=ParseMode.HTML
-            )
-            await state.set_state(GiveawayCreation.ENTER_PRIZES)
-            await state.update_data(prizes=[])
-
-@router.message(GiveawayCreation.CUSTOM_WINNERS_COUNT)
-async def enter_custom_winners_count(message: types.Message, state: FSMContext, bot: Bot):
-    try:
-        await message.delete()
-    except Exception:
-        pass
-
-    data = await state.get_data()
-    last_msg_id = data.get('last_msg_id')
-
-    try:
-        count = int(message.text)
-        await state.update_data(winners_count=count)
-        data = await state.get_data()
-        if data.get('is_editing'):
-            await show_edit_params(message, state, bot)
-        else:
-            await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-                "<tg-emoji emoji-id=\"5891105528356018797\">💎</tg-emoji> <b>Prizes</b>\n\n"
-                "<blockquote>Enter the names of the prizes for the participants. If desired, you can remove a prize from the list by entering it again.</blockquote>\n\n"
-                "<b>To add multiple prizes, send them to the bot one by one in separate messages:</b>",
-                reply_markup=get_prizes_keyboard([]),
-                parse_mode=ParseMode.HTML
-            )
-            await state.set_state(GiveawayCreation.ENTER_PRIZES)
-            await state.update_data(prizes=[])
-    except ValueError:
-        await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-            "<b>Please enter a number.</b>\n\n"
-            "<blockquote>Please indicate the desired number of prize places:</blockquote>",
-            reply_markup=get_nav_keyboard(),
-            parse_mode=ParseMode.HTML
-        )
-
-@router.message(GiveawayCreation.ENTER_PRIZES)
-async def enter_prizes(message: types.Message, state: FSMContext, bot: Bot):
-    try:
-        await message.delete()
-    except Exception:
-        pass
-
-    data = await state.get_data()
-    prizes = data.get('prizes', [])
-    last_msg_id = data.get('last_msg_id')
-    new_prize = message.text
-
-    if new_prize in prizes:
-        prizes.remove(new_prize)
-        status_msg = f"Prize «{html.escape(new_prize)}» deleted."
-    else:
-        prizes.append(new_prize)
-        status_msg = f"Prize «{html.escape(new_prize)}» added."
-
-    await state.update_data(prizes=prizes)
-    prizes_list = "\n".join([f"• {html.escape(p)}" for p in prizes])
-
-    text = (
-        f"<tg-emoji emoji-id=\"5891105528356018797\">💎</tg-emoji> <b>Prizes</b>\n\n"
-        f"<b>{status_msg}</b>\n\n"
-        f"<blockquote><b>Current list:</b>\n"
-        f"{prizes_list if prizes else 'Empty'}</blockquote>\n\n"
-        f"Enter the next prize or click the button below:"
-    )
-
-    await safe_bot_edit_text(bot, message.chat.id, last_msg_id, text,
-        reply_markup=get_prizes_keyboard(prizes),
-        parse_mode=ParseMode.HTML
-    )
-
-@router.callback_query(F.data == "confirm_prizes", GiveawayCreation.ENTER_PRIZES)
-async def confirm_prizes(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
-    await callback.answer()
-    await show_edit_params(callback, state, bot)
-
-async def show_edit_params(message, state: FSMContext, bot: Bot):
-    data = await state.get_data()
-
-    # FIX: Use .get() with a default empty list to avoid KeyError
-    prizes = data.get('prizes', [])
-    prizes_str = ', '.join(prizes) if prizes else 'Not specified'
-
-    channels_str = ', '.join(data.get('mandatory_channels', []))
-    last_msg_id = data.get('last_msg_id')
-
-    # Use .get() for other potential missing keys during early edits
-    gtype = data.get('gtype', 'timed')
-    mode_val = data.get('mode_value', 'Not set')
-    winners = data.get('winners_count', 0)
-    title = data.get('title', 'Untitled')
-
-    text = (
-        "<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji> <b>Draw parameters</b>\n\n"
-        "<blockquote>"
-        f"<b>Name:</b> {html.escape(title)}\n"
-        f"<b>Channels:</b> {html.escape(channels_str)}\n"
-        f"<b>Type:</b> {'By time' if gtype == 'timed' else 'By participants'}\n"
-        f"<b>Mode:</b> {html.escape(str(mode_val))}\n"
-        f"<b>Winners:</b> {html.escape(str(winners))}\n"
-        f"<b>Prizes:</b> {html.escape(prizes_str)}"
-        "</blockquote>\n\n"
-        "Check the data and click «START»."
-    )
-
-    if isinstance(message, types.Message):
-        await safe_bot_edit_text(bot, message.chat.id, last_msg_id, text,
-            reply_markup=get_edit_params_keyboard(), parse_mode=ParseMode.HTML)
-    else:
-        await safe_edit_text(message, text,
-            reply_markup=get_edit_params_keyboard(), parse_mode=ParseMode.HTML)
-
-    await state.set_state(GiveawayCreation.EDIT_PARAMS)
-
-@router.callback_query(F.data == "edit_title", StateFilter(GiveawayCreation.EDIT_PARAMS))
-async def edit_title(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-    await state.update_data(is_editing=True)
-    await safe_edit_text(callback,
-        "<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>Event name</b>\n\n"
-        "<blockquote>Come up with a name for your giveaway</blockquote>\n\n"
-        "Enter a name:",
-        reply_markup=get_nav_keyboard(),
-        parse_mode=ParseMode.HTML
-    )
-    await state.set_state(GiveawayCreation.ENTER_NAME)
-
-@router.callback_query(F.data == "edit_channels", StateFilter(GiveawayCreation.EDIT_PARAMS))
-async def edit_channels(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-    await state.update_data(is_editing=True)
-    await safe_edit_text(callback,
-        "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Mandatory channels</b>\n\n"
-        "<blockquote>Enter the @usernames of the channels users must subscribe to, separated by spaces or commas.</blockquote>\n\n"
-        "Enter channels:",
-        reply_markup=get_nav_keyboard(),
-        parse_mode=ParseMode.HTML
-    )
-    await state.set_state(GiveawayCreation.ENTER_CHANNELS)
+        await state.set_state(GiveawayCreation.SELECT_GIVEAWAY_KIND)
 
 @router.callback_query(F.data == "edit_type", StateFilter(GiveawayCreation.EDIT_PARAMS))
 async def edit_type(callback: types.CallbackQuery, state: FSMContext):
@@ -762,13 +621,43 @@ async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bo
         from handlers.main_menu import create_giveaway_handler
         await create_giveaway_handler(callback, state)
 
-    elif current_state == GiveawayCreation.ENTER_CHANNELS:
+    elif current_state == GiveawayCreation.SELECT_GIVEAWAY_KIND:
         # Back to ENTER_NAME
         await edit_title(callback, state)
 
+    elif current_state == GiveawayCreation.ENTER_CHANNELS:
+        # Back to SELECT_GIVEAWAY_KIND
+        data = await state.get_data()
+        last_msg_id = data.get('last_msg_id')
+        await safe_bot_edit_text(bot, callback.message.chat.id, last_msg_id,
+            "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Giveaway Kind</b>\n\n"
+            "<blockquote>Select the kind of giveaway:</blockquote>",
+            reply_markup=get_giveaway_kind_keyboard(),
+            parse_mode=ParseMode.HTML
+        )
+        await state.set_state(GiveawayCreation.SELECT_GIVEAWAY_KIND)
+
     elif current_state == GiveawayCreation.WAITING_FOR_ACCESS_TYPE:
-        # Back to ENTER_CHANNELS
-        await edit_channels(callback, state)
+        # Back to ENTER_CHANNELS or SELECT_GIVEAWAY_KIND
+        mandatory_channels = data.get('mandatory_channels', [])
+        if not mandatory_channels:
+            # Back to SELECT_GIVEAWAY_KIND
+            await safe_bot_edit_text(bot, callback.message.chat.id, data.get('last_msg_id'),
+                "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Giveaway Kind</b>\n\n"
+                "<blockquote>Select the kind of giveaway:</blockquote>",
+                reply_markup=get_giveaway_kind_keyboard(),
+                parse_mode=ParseMode.HTML
+            )
+            await state.set_state(GiveawayCreation.SELECT_GIVEAWAY_KIND)
+        else:
+            await state.set_state(GiveawayCreation.ENTER_CHANNELS)
+            await safe_edit_text(callback,
+                "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Mandatory channels</b>\n\n"
+                "<blockquote>Enter the @usernames of the channels users must subscribe to, separated by spaces or commas.</blockquote>\n\n"
+                "Enter channels:",
+                reply_markup=get_nav_keyboard(),
+                parse_mode=ParseMode.HTML
+            )
 
     elif current_state in [GiveawayCreation.WAITING_FOR_WHITELIST, GiveawayCreation.SELECT_TYPE]:
         # Back to WAITING_FOR_ACCESS_TYPE
@@ -812,4 +701,5 @@ async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bo
     else:
         # Fallback to main menu
         from handlers.main_menu import back_to_main_menu
+        await back_to_main_menu(callback, state)
         await back_to_main_menu(callback, state)

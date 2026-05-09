@@ -30,6 +30,13 @@ async def is_any_admin(user_id: int) -> bool:
             return True
     return False
 
+async def is_holder(user_id: int) -> bool:
+    try:
+        member = await bot.get_chat_member(chat_id=-1001944951957, user_id=user_id)
+        return member.status in ["member", "administrator", "creator"]
+    except Exception:
+        return False
+
 async def safe_answer(message, text, **kwargs):
     try:
         return await message.answer(text, **kwargs)
