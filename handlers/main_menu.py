@@ -32,7 +32,7 @@ MAIN_MENU_TEXT = (
     "• Conduct quick giveaway\n"
     "• Track the history of completed raffle\n"
     "• Create OTC ads</blockquote>\n\n"
-    "Ready to get started? Select the desired section from the menu:"
+    "<b>Ready to get started? Select the desired section from the menu:</b>"
 )
 
 @router.message(Command("start"))
@@ -41,12 +41,12 @@ async def cmd_start(message: types.Message):
         text = (
             "┏┅⋐[ ◉ _◉ ]っ🍌\n"
             "┋\n"
-            "┣ Hmm... You still don't have an ape?\n"
+            "┣ <b>Hmm... You still don't have an ape?</b>\n"
             "┋\n"
-            "┣ You can buy it using the button below\n"
-            "┋ or contact the collection owner :)\n"
+            "┣ <b>You can buy it using the button below</b>\n"
+            "┋ <b>or contact the collection owner :)</b>\n"
             "┋\n"
-            "┗[ HUMANS.. NOT APES ]"
+            "┗[ <b>HUMANS.. NOT APES</b> ]"
         )
         builder = InlineKeyboardBuilder()
         builder.button(text="GetGems", url="https://getgems.io/notapes")
@@ -69,12 +69,12 @@ async def cmd_setup(message: types.Message):
         safe_title = html.escape(message.chat.title)
         await safe_answer(
             message,
-            f"<tg-emoji emoji-id=\"5258501105293205250\">👏</tg-emoji> Group <b>{safe_title}</b> successfully registered!\n"
-            "Now you can create giveaways in it via private messages with the bot.",
+            f"<tg-emoji emoji-id=\"5258501105293205250\">👏</tg-emoji> Group <b>{safe_title}</b> successfully registered!\n\n"
+            "<blockquote>Now you can create giveaways in it via private messages with the bot.</blockquote>",
             parse_mode=ParseMode.HTML
         )
     else:
-        await safe_answer(message, "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> This command can only be executed by a group administrator.")
+        await safe_answer(message, "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>This command can only be executed by a group administrator.</b>")
 
 @router.callback_query(F.data == "main_menu")
 async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext):
@@ -92,7 +92,7 @@ async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMConte
     await callback.answer()
     chats = await db.get_tracked_chats()
     if not chats:
-        await safe_edit_text(callback, "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> There are no available groups. Add the bot to the group and make it an administrator.")
+        await safe_edit_text(callback, "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>There are no available groups. Add the bot to the group and make it an administrator.</b>")
         return
 
     admin_chats = []
