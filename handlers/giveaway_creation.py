@@ -426,13 +426,19 @@ async def confirm_prizes(callback: types.CallbackQuery, state: FSMContext, bot: 
 
 async def show_edit_params(event, state: FSMContext, bot: Bot):
     data = await state.get_data()
-    title = html.escape(data.get("title", "Not specified"))
+    
+    title = html.escape(str(data.get("title", "Not specified")))
     gkind = "Partner" if data.get("mandatory_channels") else "Fast"
-    channels = ", ".join(data.get("mandatory_channels", [])) or "None"
+    
+    raw_channels = data.get("mandatory_channels", [])
+    channels = ", ".join([html.escape(str(c)) for c in raw_channels]) or "None"
+    
     gtype = "Certain time" if data.get("gtype") == "timed" else "By participants"
-    mode_val = data.get("mode_value", "Not specified")
-    winners = data.get("winners_count", "Not specified")
-    prizes = ", ".join(data.get("prizes", [])) or "None"
+    mode_val = html.escape(str(data.get("mode_value", "Not specified")))
+    winners = html.escape(str(data.get("winners_count", "Not specified")))
+    
+    raw_prizes = data.get("prizes", [])
+    prizes = ", ".join([html.escape(str(p)) for p in raw_prizes]) or "None"
 
     text = (
         f"<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji> <b>Giveaway Parameters</b>\n\n"
@@ -450,7 +456,6 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
         await safe_edit_text(event, text, reply_markup=get_edit_params_keyboard(), parse_mode=ParseMode.HTML)
     else:
         await safe_bot_edit_text(bot, event.chat.id, data.get("last_msg_id"), text, reply_markup=get_edit_params_keyboard(), parse_mode=ParseMode.HTML)
-    await state.set_state(GiveawayCreation.EDIT_PARAMS)
 
 @router.callback_query(F.data == "edit_title", StateFilter(GiveawayCreation.EDIT_PARAMS))
 async def edit_title(callback: types.CallbackQuery, state: FSMContext):
