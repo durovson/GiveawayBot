@@ -37,8 +37,8 @@ class GiveawayCreation(StatesGroup):
 
 def get_giveaway_kind_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.button(text="⚡️ Fast (No channels)", callback_data="kind_fast", icon_custom_emoji_id="5323761960829862762")
-    builder.button(text="🤝 Partner (Required channels)", callback_data="kind_partner", icon_custom_emoji_id="5258486128742244085")
+    builder.button(text="Fast (No channels)", callback_data="kind_fast", icon_custom_emoji_id="5323761960829862762")
+    builder.button(text="Partner (Required channels)", callback_data="kind_partner", icon_custom_emoji_id="5258486128742244085")
     builder.button(text="Back", callback_data="back", icon_custom_emoji_id="5260687119092817530")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
@@ -162,7 +162,7 @@ async def enter_name(message: types.Message, state: FSMContext, bot: Bot):
         await show_edit_params(message, state, bot)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-            "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Giveaway Kind</b>"
+            "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Giveaway Kind</b>\n\n"
             "<blockquote>Select the kind of giveaway:</blockquote>",
             reply_markup=get_giveaway_kind_keyboard(),
             parse_mode=ParseMode.HTML
@@ -222,8 +222,8 @@ async def process_access_choice(callback: types.CallbackQuery, state: FSMContext
         await state.update_data(allowed_users=None)
         await callback.answer("✅ Giveaway is now Public.")
         await safe_edit_text(callback,
-            "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Draw type</b>"
-            "<blockquote>Select the format of the drawing</blockquote>"
+            "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Draw type</b>\n\n"
+            "<blockquote>Select the format of the drawing</blockquote>\n\n"
             "Select type:",
             reply_markup=get_type_keyboard(),
             parse_mode=ParseMode.HTML
@@ -231,9 +231,9 @@ async def process_access_choice(callback: types.CallbackQuery, state: FSMContext
         await state.set_state(GiveawayCreation.SELECT_TYPE)
     elif callback.data == "access_whitelist":
         await safe_edit_text(callback,
-            "<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji> <b>Whitelist</b>"
-            "<blockquote>Send the list of @usernames or User IDs."
-            "Example: @user1, 12345678, @user2</blockquote>"
+            "<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji> <b>Whitelist</b>\n\n"
+            "<blockquote>Send the list of @usernames or User IDs.\n"
+            "Example: @user1, 12345678, @user2</blockquote>\n\n"
             "Action prompt:",
             reply_markup=get_nav_keyboard(),
             parse_mode=ParseMode.HTML
@@ -258,8 +258,8 @@ async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot)
 
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
         f"✅ Whitelist saved: {len(processed_list)} entries."
-        "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Draw type</b>"
-        "<blockquote>Select the format of the drawing</blockquote>"
+        "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Draw type</b>\n\n"
+        "<blockquote>Select the format of the drawing</blockquote>\n\n"
         "Select type:",
         reply_markup=get_type_keyboard(),
         parse_mode=ParseMode.HTML
@@ -436,14 +436,14 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
 
     text = (
         f"⚙️ <b>Giveaway Parameters</b>\n\n"
-        f"<b>Name:</b> {title}\n"
+        f"<blockquote><b>Name:</b> {title}\n"
         f"<b>Kind:</b> {gkind}\n"
         f"<b>Channels:</b> {channels}\n"
         f"<b>Type:</b> {gtype}\n"
         f"<b>Mode:</b> {mode_val}\n"
         f"<b>Winners:</b> {winners}\n"
-        f"<b>Prizes:</b> {prizes}\n\n"
-        f"<blockquote>Select a parameter to edit or launch the giveaway.</blockquote>"
+        f"<b>Prizes:</b> {prizes}<blockquote>\n\n"
+        f"Select a parameter to edit or launch the giveaway."
     )
 
     if isinstance(event, types.CallbackQuery):
