@@ -4,8 +4,7 @@ from loader import bot
 from aiogram.exceptions import TelegramBadRequest
 
 def strip_custom_emojis(text: str) -> str:
-    """Removes <tg-emoji> tags but keeps the standard emoji content."""
-    return re.sub(r'<tg-emoji emoji-id=".*?">(.*?)</tg-emoji>', r'\1', text)
+    return re.sub(r'<tg-emoji emoji-id=["\'].*?["\']>(.*?)</tg-emoji>', r'\1', text)
 
 def strip_all_tags(text: str) -> str:
     """Removes all HTML tags."""
