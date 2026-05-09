@@ -95,6 +95,10 @@ async def enter_name_only(message: types.Message, state: FSMContext, bot: Bot):
     item_name = message.text.strip()
     await state.update_data(item_name=item_name, url=None)
 
+    if data.get("price_text") or data.get("is_offer"):
+        await show_otc_preview(message, state, bot)
+        return
+
     builder = InlineKeyboardBuilder()
     builder.button(text="Skip (Offer)", callback_data="otc_price_skip", icon_custom_emoji_id="5260687681733533075")
     builder.button(text="Back", callback_data="otc_back_to_type", icon_custom_emoji_id="5260687119092817530")
@@ -144,6 +148,10 @@ async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot
         item_name = "Item"
 
     await state.update_data(item_name=item_name, url=url)
+
+    if data.get("price_text") or data.get("is_offer"):
+        await show_otc_preview(message, state, bot)
+        return
 
     builder = InlineKeyboardBuilder()
     builder.button(text="Skip (Offer)", callback_data="otc_price_skip", icon_custom_emoji_id="5260687681733533075")
