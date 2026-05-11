@@ -64,7 +64,7 @@ class Database:
                 "value": str(value),
                 "winners_count": winners_count,
                 "prizes": prizes,
-                "status": "active",
+                "status": "pending",
                 "end_at": end_at.isoformat() if end_at else None,
                 "mandatory_channels": mandatory_channels,
                 "allowed_users": allowed_users
@@ -101,6 +101,13 @@ class Database:
             await self.client.table("giveaways").update({"status": "finished"}).eq("id", giveaway_id).execute()
         except Exception as e:
             logger.error(f"Error finishing giveaway: {e}")
+
+    async def update_giveaway_status(self, giveaway_id: int, status: str):
+        if not self._check_client(): return
+        try:
+            await self.client.table("giveaways").update({"status": status}).eq("id", giveaway_id).execute()
+        except Exception as e:
+            logger.error(f"Error updating giveaway status: {e}")
 
     async def get_expired_giveaways(self, now: datetime) -> List[Dict]:
         if not self._check_client(): return []
@@ -140,6 +147,13 @@ class Database:
         except Exception as e:
             logger.error(f"Error adding participant: {e}")
             return False
+
+    async def remove_participant(self, giveaway_id: int, user_id: int):
+        if not self._check_client(): return
+        try:
+            await self.client.table("participants").delete().eq("giveaway_id", giveaway_id).eq("user_id", user_id).execute()
+        except Exception as e:
+            logger.error(f"Error removing participant: {e}")
 
     async def get_participants(self, giveaway_id: int) -> List[Dict]:
         if not self._check_client(): return []
