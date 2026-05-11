@@ -30,12 +30,40 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
         participants = await db.get_participants(giveaway_id)
         safe_title = html.escape(giveaway.get("title", "Без названия"))
 
+        # --- Strict Subscription Verification ---
+        verified_participants = []
+        mandatory_channels = giveaway.get('mandatory_channels', [])
+
+        for p in participants:
+            is_subscribed = True
+            for channel_id in mandatory_channels:
+                try:
+                    member = await bot.get_chat_member(chat_id=channel_id, user_id=p['user_id'])
+                    if member.status in ['left', 'kicked', 'restricted']:
+                        is_subscribed = False
+                        break
+                except Exception as e:
+                    # If bot is not admin or channel not found, we skip check for THIS specific channel
+                    # but technically we should still consider them subscribed to others.
+                    # Per instructions: "If a bot is not an admin in a channel, it logs the error instead of crashing."
+                    logger.warning(f"Could not verify subscription for user {p['user_id']} in channel {channel_id}: {e}")
+                    continue
+
+            if is_subscribed:
+                verified_participants.append(p)
+            else:
+                # Remove "cheaters" from DB to keep it clean
+                await db.remove_participant(giveaway_id, p['user_id'])
+
+        participants = verified_participants
+        # --- End Verification ---
+
         if not participants:
             results_text = (
                 f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {safe_title} /</b>\n"
                 f"┋<tg-emoji emoji-id=\"5422626434331990897\">🤩</tg-emoji> <b>GAME OVER!</b>\n"
                 f"┋\n"
-                f"┋ <b>Unfortunately, there were no apes...</b>\n"
+                f"┋ <b>Unfortunately, there were no humans...</b>\n"
                 f"┋\n"
                 f"┣<b>GIVEAWAY</b>\n"
                 f"┣[ HUMANS.. NOT APES ]\n"
@@ -46,27 +74,15 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
             winners = []
             winners_count_target = min(len(participants), giveaway['winners_count'])
 
-            # Try to find active users first
+            # Pick winners from verified participants who are also active
             for p in participants:
                 if len(winners) >= winners_count_target:
                     break
-                # Проверка подписок перед выдачей приза
-                is_subscribed = True
-                if giveaway.get('mandatory_channels'):
-                    for channel in giveaway['mandatory_channels']:
-                        try:
-                            member = await bot.get_chat_member(chat_id=channel, user_id=p['user_id'])
-                            if member.status in ['left', 'kicked', 'restricted']:
-                                is_subscribed = False
-                                break
-                        except Exception:
-                            is_subscribed = False
-                            break
 
-                if is_subscribed and await is_user_active(bot, p['user_id']):
+                if await is_user_active(bot, p['user_id']):
                     winners.append(p)
 
-            # If not enough active users, fill with the rest
+            # If not enough active users, fill with the rest of verified participants
             if len(winners) < winners_count_target:
                 current_winner_ids = [w['user_id'] for w in winners]
                 for p in participants:

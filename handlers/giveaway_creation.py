@@ -114,7 +114,7 @@ def get_edit_params_keyboard():
     builder.button(text="Mode", callback_data="edit_mode", icon_custom_emoji_id="5850317551090800862")
     builder.button(text="Winners", callback_data="edit_winners", icon_custom_emoji_id="5805553606635559688")
     builder.button(text="Prizes", callback_data="edit_prizes", icon_custom_emoji_id="5891105528356018797")
-    builder.button(text="Launch", callback_data="finalize_giveaway", icon_custom_emoji_id="5258073068852485953", style="success")
+    builder.button(text="Confirm", callback_data="confirm_giveaway", icon_custom_emoji_id="5258073068852485953", style="success")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2, 2, 2, 1, 1)
     return builder.as_markup()
@@ -422,6 +422,7 @@ async def enter_prizes(message: types.Message, state: FSMContext, bot: Bot):
 @router.callback_query(F.data == "confirm_prizes", GiveawayCreation.ENTER_PRIZES)
 async def confirm_prizes(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
     await callback.answer()
+    await state.set_state(GiveawayCreation.CONFIRMATION)
     await show_edit_params(callback, state, bot)
 
 async def show_edit_params(event, state: FSMContext, bot: Bot):
@@ -593,8 +594,8 @@ async def get_giveaway_post_data(giveaway: dict):
 
     return post_text, gif_to_send
 
-@router.callback_query(F.data == "finalize_giveaway", StateFilter(GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS))
-async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+@router.callback_query(F.data == "confirm_giveaway", StateFilter(GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS))
+async def process_confirm_giveaway(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
     await callback.answer()
     data = await state.get_data()
     end_at = None
@@ -605,6 +606,7 @@ async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bo
         await callback.answer(f"❌ Error parsing time: {e}", show_alert=True)
         return
 
+    # Update to active if already exists or will be created as active
     giveaway = await db.create_giveaway(
         creator_id=callback.from_user.id,
         chat_id=data['chat_id'],
@@ -617,6 +619,7 @@ async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bo
         mandatory_channels=data.get('mandatory_channels', []),
         allowed_users=data.get('allowed_users')
     )
+    await db.update_giveaway_status(giveaway["id"], "active")
 
     post_text, gif_to_send = await get_giveaway_post_data(giveaway)
 
