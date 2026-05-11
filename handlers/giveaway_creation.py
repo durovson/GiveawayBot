@@ -54,8 +54,8 @@ def get_nav_keyboard():
 
 def get_recheck_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.button(text="✅ I added!", callback_data="recheck_admin")
-    builder.button(text="❌ Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text="I added!", callback_data="recheck_admin", icon_custom_emoji_id="5260726538302660868")
+    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
     return builder.as_markup()
 
@@ -221,7 +221,7 @@ async def enter_channels(message: types.Message, state: FSMContext, bot: Bot):
         data = await state.get_data()
         last_msg_id = data.get('last_msg_id')
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-            f"The bot hasn't been added to @{failed_channel} yet. Please make sure it has administrator status.",
+            f"<b>The bot hasn't been added to @{failed_channel} yet. Please make sure it has administrator status.</b>",
             reply_markup=get_recheck_keyboard(),
             parse_mode=ParseMode.HTML
         )
@@ -245,7 +245,7 @@ async def recheck_admin(callback: types.CallbackQuery, state: FSMContext, bot: B
     if not success:
         await callback.answer(f"Verification failed for @{failed_channel}", show_alert=True)
         await safe_edit_text(callback,
-            f"The bot hasn't been added to @{failed_channel} yet. Please make sure it has administrator status.",
+            f"<b>The bot hasn't been added to @{failed_channel} yet. Please make sure it has administrator status.</b>",
             reply_markup=get_recheck_keyboard(),
             parse_mode=ParseMode.HTML
         )
