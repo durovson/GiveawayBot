@@ -777,7 +777,7 @@ async def execute_announcement(callback: types.CallbackQuery, bot: Bot):
 
         if orig_msg_id:
             link = get_message_link(orig_chat, orig_msg_id)
-            join_builder.button(text="Join the chat", url=link)
+            join_builder.button(text="JOIN", url=link)
         else:
             join_builder.button(text="START", callback_data=f"join_{giveaway_id}", icon_custom_emoji_id="5260726538302660868", style="success")
     else:
