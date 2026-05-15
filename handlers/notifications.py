@@ -87,9 +87,9 @@ async def show_notification_params(message_or_cb, state: FSMContext, bot: Bot):
     status_text = (
         f"<b>Notification Parameters:</b>\n\n"
         f"<blockquote>"
-        f"Interval: {int(interval)}m\n"
-        f"Chat: {chat_title}\n"
-        f"Status: {'Active' if is_active else 'Inactive'}"
+        f"<b>Interval:</b> {int(interval)}m\n"
+        f"<b>Chat:</b> {chat_title}\n"
+        f"<b>Status:</b> {'Active' if is_active else 'Inactive'}"
         f"</blockquote>\n\n"
         f"<b>Preview:</b>\n\n"
         f"{preview}"
