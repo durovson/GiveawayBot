@@ -116,7 +116,7 @@ async def start_notification_management(callback: types.CallbackQuery, state: FS
     for n in notifs:
         builder.button(text=n['title'], callback_data=f"notif_select_{n['id']}")
 
-    builder.button(text="+ Create New", callback_data="notif_create", icon_custom_emoji_id="5258185631355378853")
+    builder.button(text="Create New", callback_data="notif_create", icon_custom_emoji_id="5258185631355378853")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
