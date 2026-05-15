@@ -34,7 +34,7 @@ def get_notification_nav_keyboard():
 
 def get_interval_keyboard():
     builder = InlineKeyboardBuilder()
-    intervals = [1, 3, 6, 12, 24]
+    intervals = [1, 2, 4]
     for h in intervals:
         builder.button(text=f"{h}h", callback_data=f"notif_int_{h}")
     builder.button(text="Custom", callback_data="notif_int_custom", icon_custom_emoji_id="5274008024585871702")
@@ -87,7 +87,7 @@ async def show_notification_params(message_or_cb, state: FSMContext, bot: Bot):
     status_text = (
         f"<b>Notification Parameters:</b>\n\n"
         f"<blockquote>"
-        f"Interval: {interval}h\n"
+        f"Interval: {int(interval)}m\n"
         f"Chat: {chat_title}\n"
         f"Status: {'Active' if is_active else 'Inactive'}"
         f"</blockquote>\n\n"
@@ -144,13 +144,15 @@ async def select_notification(callback: types.CallbackQuery, state: FSMContext, 
     notif = next((n for n in notifs if n['id'] == notif_id), None)
 
     if notif:
+        interval = notif['interval_hours']
+        if interval < 15: interval *= 60
         await state.update_data(
             id=notif['id'],
             title=notif['title'],
             text=notif['text'],
             button_url=notif['button_url'],
             button_text=notif.get('button_text', 'OPEN'),
-            interval_hours=notif['interval_hours'],
+            interval_hours=interval,
             is_active=notif['is_active'],
             chat_id=notif['chat_id'],
             is_editing=True,
@@ -229,14 +231,13 @@ async def select_notif_interval(callback: types.CallbackQuery, state: FSMContext
 
     if val == "custom":
         await safe_edit_text(callback,
-            "<b>Enter custom interval:</b>\n\n"
-            "<blockquote>Specify the interval in hours as a number.</blockquote>",
+            "<b>Enter interval in minutes (min 15, max 60):</b>",
             reply_markup=get_notification_nav_keyboard(),
             parse_mode=ParseMode.HTML
         )
         await state.set_state(NotificationStates.CUSTOM_INTERVAL)
     else:
-        await state.update_data(interval_hours=float(val))
+        await state.update_data(interval_hours=float(val) * 60)
         data = await state.get_data()
 
         if data.get('is_editing'):
@@ -246,13 +247,17 @@ async def select_notif_interval(callback: types.CallbackQuery, state: FSMContext
             await show_chat_selection(callback, state, bot)
 
 @router.message(NotificationStates.CUSTOM_INTERVAL)
-async def enter_custom_interval(message: types.Message, state: FSMContext, bot: Bot):
+async def process_custom_interval(message: types.Message, state: FSMContext, bot: Bot):
     try: await message.delete()
     except: pass
 
+    data = await state.get_data()
     try:
-        val = float(message.text)
-        await state.update_data(interval_hours=val)
+        val = int(message.text)
+        if not (15 <= val <= 60):
+            raise ValueError("Out of range")
+
+        await state.update_data(interval_hours=float(val))
         data = await state.get_data()
 
         if data.get('is_editing'):
@@ -261,8 +266,11 @@ async def enter_custom_interval(message: types.Message, state: FSMContext, bot: 
         else:
             await show_chat_selection(message, state, bot)
     except ValueError:
-        data = await state.get_data()
-        await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'], "❌ Invalid number. Please enter hours as a number.")
+        await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
+            "❌ Invalid number. Please enter a number between 15 and 60.\n\n"
+            "<b>Enter interval in minutes (min 15, max 60):</b>",
+            reply_markup=get_notification_nav_keyboard(),
+            parse_mode=ParseMode.HTML)
 
 async def show_chat_selection(message_or_cb, state: FSMContext, bot: Bot):
     chats = await db.get_tracked_groups()

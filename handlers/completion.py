@@ -220,11 +220,12 @@ async def check_periodic_notifications(bot: Bot):
             for notif in active_notifications:
                 try:
                     last_sent = notif.get("last_sent")
-                    interval_hours = notif["interval_hours"]
+                    interval = notif["interval_hours"]
+                    if interval < 15: interval *= 60
 
                     if last_sent is None:
                         # For new notifications, send immediately
-                        last_sent_dt = now - timedelta(hours=interval_hours)
+                        last_sent_dt = now - timedelta(minutes=interval)
                     else:
                         if isinstance(last_sent, str):
                             last_sent_dt = datetime.fromisoformat(last_sent)
@@ -237,7 +238,7 @@ async def check_periodic_notifications(bot: Bot):
                         else:
                             last_sent_dt = last_sent_dt.astimezone(pytz.UTC)
 
-                    next_send_time = last_sent_dt + timedelta(hours=interval_hours)
+                    next_send_time = last_sent_dt + timedelta(minutes=interval)
                     delete_threshold = next_send_time - timedelta(minutes=2)
 
                     chat_id = notif["chat_id"]
