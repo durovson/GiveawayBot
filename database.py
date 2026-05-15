@@ -25,13 +25,16 @@ class Database:
     def _check_client(self) -> bool:
         return self.client is not None
 
-    async def track_chat(self, chat_id: int, title: str):
+    async def track_chat(self, chat_id: int, title: str, chat_type: Optional[str] = None):
         if not self._check_client(): return
         try:
-            await self.client.table("chats").upsert({
+            data = {
                 "chat_id": chat_id,
                 "title": title
-            }).execute()
+            }
+            if chat_type:
+                data["chat_type"] = chat_type
+            await self.client.table("chats").upsert(data).execute()
         except Exception as e:
             logger.error(f"Error tracking chat: {e}")
 
@@ -51,6 +54,15 @@ class Database:
             return response.data
         except Exception as e:
             logger.error(f"Error getting tracked chats: {e}")
+            return []
+
+    async def get_tracked_groups(self) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("chats").select("*").in_("chat_type", ["group", "supergroup"]).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting tracked groups: {e}")
             return []
 
     async def create_giveaway(self, creator_id: int, chat_id: int, title: str, mode: str, value: Any, winners_count: int, prizes: List[str], end_at: Optional[datetime] = None, mandatory_channels: List[str] = [], allowed_users: Optional[List[str]] = None) -> Dict:
@@ -112,12 +124,7 @@ class Database:
     async def get_expired_giveaways(self, now: datetime) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("giveaways") \
-                .select("*") \
-                .eq("status", "active") \
-                .eq("mode", "timed") \
-                .lte("end_at", now.isoformat()) \
-                .execute()
+            response = await self.client.table("giveaways")                 .select("*")                 .eq("status", "active")                 .eq("mode", "timed")                 .lte("end_at", now.isoformat())                 .execute()
             return response.data
         except Exception as e:
             logger.error(f"Error fetching expired giveaways: {e}")
@@ -213,5 +220,47 @@ class Database:
             await self.client.table("settings").upsert({"key": key, "value": value}).execute()
         except Exception as e:
             logger.error(f"Error updating setting {key}: {e}")
+
+    async def upsert_notification(self, data: dict):
+        if not self._check_client(): return
+        try:
+            await self.client.table("notifications").upsert(data).execute()
+        except Exception as e:
+            logger.error(f"Error upserting notification: {e}")
+
+    async def get_notifications(self) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("notifications").select("*").execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting notifications: {e}")
+            return []
+
+    async def get_active_notifications(self) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("notifications").select("*").eq("is_active", True).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting active notifications: {e}")
+            return []
+
+    async def update_notification_last_msg(self, notification_id: int, last_message_id: Optional[int]):
+        if not self._check_client(): return
+        try:
+            await self.client.table("notifications").update({"last_message_id": last_message_id}).eq("id", notification_id).execute()
+        except Exception as e:
+            logger.error(f"Error updating notification last message id: {e}")
+
+    async def update_notification_stats(self, notification_id: int, last_sent: datetime, last_message_id: int):
+        if not self._check_client(): return
+        try:
+            await self.client.table("notifications").update({
+                "last_sent": last_sent.isoformat(),
+                "last_message_id": last_message_id
+            }).eq("id", notification_id).execute()
+        except Exception as e:
+            logger.error(f"Error updating notification stats: {e}")
 
 db = Database()

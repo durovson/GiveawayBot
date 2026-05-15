@@ -10,7 +10,7 @@ from utils import is_admin, is_any_admin, safe_answer, safe_edit_text, is_holder
 
 router = Router()
 
-def get_main_menu_keyboard(user_id: int):
+async def get_main_menu_keyboard(user_id: int):
     builder = InlineKeyboardBuilder()
     
     builder.button(text="Giveaway", callback_data="create_giveaway", icon_custom_emoji_id="5258185631355378853")
@@ -19,10 +19,12 @@ def get_main_menu_keyboard(user_id: int):
     builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5258204546391351475")
     builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
 
+    if await is_any_admin(user_id):
+        builder.button(text="Notifications", callback_data="manage_notifications", icon_custom_emoji_id="5258096772776991776")
     if user_id == 786080766:
         builder.button(text="Update GIF", callback_data="admin_update_gif", icon_custom_emoji_id="5258096772776991776")
 
-    builder.adjust(2, 1) 
+    builder.adjust(2, 1, 1)
     
     return builder.as_markup()
 
@@ -58,14 +60,14 @@ async def cmd_start(message: types.Message):
     await safe_answer(
         message,
         MAIN_MENU_TEXT,
-        reply_markup=get_main_menu_keyboard(message.from_user.id),
+        reply_markup=await get_main_menu_keyboard(message.from_user.id),
         parse_mode=ParseMode.HTML
     )
 
 @router.message(Command("setup"), F.chat.type.in_({"group", "supergroup"}))
 async def cmd_setup(message: types.Message):
     if await is_admin(message.chat.id, message.from_user.id):
-        await db.track_chat(message.chat.id, message.chat.title)
+        await db.track_chat(message.chat.id, message.chat.title, message.chat.type)
         safe_title = html.escape(message.chat.title)
         await safe_answer(
             message,
@@ -83,14 +85,14 @@ async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext):
     await safe_edit_text(
         callback,
         MAIN_MENU_TEXT,
-        reply_markup=get_main_menu_keyboard(callback.from_user.id),
+        reply_markup=await get_main_menu_keyboard(callback.from_user.id),
         parse_mode=ParseMode.HTML
     )
 
 @router.callback_query(F.data == "create_giveaway")
 async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    chats = await db.get_tracked_chats()
+    chats = await db.get_tracked_groups()
     if not chats:
         await safe_edit_text(callback, "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>There are no available groups. Add the bot to the group and make it an administrator.</b>")
         return

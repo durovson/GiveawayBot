@@ -214,3 +214,85 @@ async def check_timed_giveaways(bot: Bot):
         except Exception as e:
             logger.error(f"Error in check_timed_giveaways: {e}")
         await asyncio.sleep(30)
+
+async def check_periodic_notifications(bot: Bot):
+    from datetime import timedelta
+    from aiogram.exceptions import TelegramBadRequest
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    while True:
+        try:
+            now = datetime.now(pytz.UTC)
+            active_notifications = await db.get_active_notifications()
+
+            for notif in active_notifications:
+                try:
+                    last_sent = notif.get('last_sent')
+                    interval_hours = notif['interval_hours']
+
+                    if last_sent is None:
+                        # For new notifications, send immediately
+                        last_sent_dt = now - timedelta(hours=interval_hours)
+                    else:
+                        if isinstance(last_sent, str):
+                            last_sent_dt = datetime.fromisoformat(last_sent)
+                        else:
+                            last_sent_dt = last_sent
+
+                        # Convert to UTC if it's naive or in another timezone
+                        if last_sent_dt.tzinfo is None:
+                            last_sent_dt = pytz.UTC.localize(last_sent_dt)
+                        else:
+                            last_sent_dt = last_sent_dt.astimezone(pytz.UTC)
+
+                    next_send_time = last_sent_dt + timedelta(hours=interval_hours)
+                    delete_threshold = next_send_time - timedelta(minutes=2)
+
+                    chat_id = notif['chat_id']
+                    last_message_id = notif.get('last_message_id')
+
+                    # 1. Delete step 2 minutes before start
+                    if now >= delete_threshold and now < next_send_time and last_message_id is not None:
+                        try:
+                            await bot.delete_message(chat_id=chat_id, message_id=last_message_id)
+                        except TelegramBadRequest as e:
+                            logger.error(f"Failed to delete old ad message: {e}")
+                        finally:
+                            await db.update_notification_last_msg(notif['id'], None)
+
+                    # 2. New message sending stage
+                    if now >= next_send_time:
+                        title = notif['title']
+                        text = notif['text']
+
+                        ad_text = (
+                            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ / {html.escape(title)} /\n"
+                            f"┋\n"
+                            f"┣{html.escape(text)}\n"
+                            f"┋\n"
+                            f"┗┅┅┅/ #NOTAPES /"
+                        )
+
+                        builder = InlineKeyboardBuilder()
+                        if notif.get('button_url'):
+                            builder.button(text=notif.get('button_text', 'OPEN'), url=notif['button_url'])
+
+                        new_msg = await bot.send_message(
+                            chat_id=chat_id,
+                            text=ad_text,
+                            reply_markup=builder.as_markup() if notif.get('button_url') else None,
+                            parse_mode=ParseMode.HTML
+                        )
+
+                        await db.update_notification_stats(
+                            notif['id'],
+                            last_sent=now,
+                            last_message_id=new_msg.message_id
+                        )
+                except Exception as e:
+                    logger.error(f"Error processing notification {notif.get('id')}: {e}")
+
+        except Exception as e:
+            logger.error(f"Error in check_periodic_notifications: {e}")
+
+        await asyncio.sleep(60) # Check every minute
