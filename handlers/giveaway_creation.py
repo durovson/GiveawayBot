@@ -676,6 +676,10 @@ async def process_confirm_giveaway(callback: types.CallbackQuery, state: FSMCont
 
     post_text, gif_to_send = await get_giveaway_post_data(giveaway)
 
+    target_chat = await bot.get_chat(data['chat_id'])
+    if target_chat.type == ChatType.CHANNEL:
+        post_text = strip_custom_emojis(post_text)
+
     builder = InlineKeyboardBuilder()
     builder.button(text="START", callback_data=f"join_{giveaway['id']}", icon_custom_emoji_id="5260726538302660868", style="success")
 
