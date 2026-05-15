@@ -728,7 +728,7 @@ async def make_announcement_select_chat(callback: types.CallbackQuery, bot: Bot)
     await callback.answer()
     giveaway_id = int(callback.data.split("_")[-1])
 
-    chats = await db.get_tracked_chats()
+    chats = await db.get_tracked_groups()
     builder = InlineKeyboardBuilder()
 
     count = 0

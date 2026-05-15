@@ -14,6 +14,7 @@ from handlers.giveaway_creation import router as creation_router
 from handlers.participants import router as participants_router
 from handlers.otc_market import router as otc_market_router
 from handlers.admin import router as admin_router
+from handlers.notifications import router as notifications_router
 
 @dp.my_chat_member()
 async def on_my_chat_member_update(update: ChatMemberUpdated):
@@ -23,7 +24,7 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
         # Check if chat is already tracked
         is_tracked = await db.is_chat_tracked(chat_id)
 
-        await db.track_chat(chat_id, update.chat.title)
+        await db.track_chat(chat_id, update.chat.title, update.chat.type)
 
         # Notify admin in PM if group is new and bot is admin
         if not is_tracked and update.new_chat_member.status == "administrator":
@@ -42,6 +43,7 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
 
 # Registration
 dp.include_router(admin_router)
+dp.include_router(notifications_router)
 dp.include_router(main_menu_router)
 dp.include_router(creation_router)
 dp.include_router(participants_router)
@@ -56,6 +58,8 @@ async def main():
     # Start checking timed giveaways
     from handlers.completion import check_timed_giveaways
     asyncio.create_task(check_timed_giveaways(bot))
+    from handlers.completion import check_periodic_notifications
+    asyncio.create_task(check_periodic_notifications(bot))
 
     await dp.start_polling(bot, drop_pending_updates=True)
 
