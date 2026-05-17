@@ -34,7 +34,7 @@ def get_notification_nav_keyboard():
 
 def get_interval_keyboard():
     builder = InlineKeyboardBuilder()
-    intervals = [1, 2, 4]
+    intervals = [1, 2, 3]
     for h in intervals:
         builder.button(text=f"{h}h", callback_data=f"notif_int_{h}")
     builder.button(text="Custom", callback_data="notif_int_custom", icon_custom_emoji_id="5274008024585871702")

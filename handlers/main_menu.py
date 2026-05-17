@@ -13,19 +13,24 @@ router = Router()
 async def get_main_menu_keyboard(user_id: int):
     builder = InlineKeyboardBuilder()
     
+    # Ряд 1
     builder.button(text="Giveaway", callback_data="create_giveaway", icon_custom_emoji_id="5258185631355378853")
     builder.button(text="History", callback_data="history_created", icon_custom_emoji_id="5257969839313526622")
     
+    # Ряд 2
     builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5258204546391351475")
+    builder.button(text="Notifications", callback_data="manage_notifications", icon_custom_emoji_id="5260325873688518261")
+
+    # Ряд 3
     builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
 
-    if await is_any_admin(user_id):
-        builder.button(text="Notifications", callback_data="manage_notifications", icon_custom_emoji_id="5260325873688518261")
+    # Условие для Ряда 4 и динамической сетки
     if user_id == 786080766:
-        builder.button(text="Update GIF", callback_data="admin_update_gif", icon_custom_emoji_id="5258096772776991776")
+        builder.button(text="Update GIF", callback_data="admin_update_gif")
+        builder.adjust(2, 2, 1, 1)  # Сетка для главного админа
+    else:
+        builder.adjust(2, 2, 1)     # Сетка для всех остальных
 
-    builder.adjust(2, 1, 1)
-    
     return builder.as_markup()
 
 MAIN_MENU_TEXT = (
