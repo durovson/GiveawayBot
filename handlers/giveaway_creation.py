@@ -176,6 +176,11 @@ async def enter_name(message: types.Message, state: FSMContext, bot: Bot):
     await state.update_data(title=message.text)
     data = await state.get_data()
     last_msg_id = data.get('last_msg_id')
+    if data.get("return_to_confirm"):
+        await state.update_data(return_to_confirm=False)
+        await state.set_state(GiveawayCreation.CONFIRMATION)
+        await show_edit_params(message, state, bot)
+        return
 
     if data.get('is_editing'):
         await show_edit_params(message, state, bot)
@@ -229,7 +234,11 @@ async def enter_channels(message: types.Message, state: FSMContext, bot: Bot):
         return
 
     data = await state.get_data()
-    last_msg_id = data.get('last_msg_id')
+    if data.get("return_to_confirm"):
+        await state.update_data(return_to_confirm=False)
+        await state.set_state(GiveawayCreation.CONFIRMATION)
+        await show_edit_params(message, state, bot)
+        return
 
     if data.get('is_editing'):
         await show_edit_params(message, state, bot)
@@ -252,6 +261,13 @@ async def recheck_admin(callback: types.CallbackQuery, state: FSMContext, bot: B
         return
 
     await callback.answer("✅ All channels verified!")
+    data = await state.get_data()
+    if data.get("return_to_confirm"):
+        await state.update_data(return_to_confirm=False)
+        await state.set_state(GiveawayCreation.CONFIRMATION)
+        await show_edit_params(callback, state, bot)
+        return
+
     if data.get('is_editing'):
         await show_edit_params(callback.message, state, bot)
     else:
@@ -274,6 +290,12 @@ async def process_access_choice(callback: types.CallbackQuery, state: FSMContext
     if callback.data == "access_all":
         await state.update_data(allowed_users=None)
         await callback.answer("✅ Giveaway is now Public.")
+        data = await state.get_data()
+        if data.get("return_to_confirm"):
+            await state.update_data(return_to_confirm=False)
+            await state.set_state(GiveawayCreation.CONFIRMATION)
+            await show_edit_params(callback, state, bot)
+            return
         await safe_edit_text(callback,
             "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Draw type</b>\n\n"
             "<blockquote>Select the format of the drawing</blockquote>\n\n"
@@ -308,7 +330,6 @@ async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot)
 
     data = await state.get_data()
     last_msg_id = data.get('last_msg_id')
-
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
         f"✅ Whitelist saved: {len(processed_list)} entries."
         "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Draw type</b>\n\n"
@@ -320,10 +341,18 @@ async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot)
     await state.set_state(GiveawayCreation.SELECT_TYPE)
 
 @router.callback_query(F.data.startswith("type_"))
-async def select_type(callback: types.CallbackQuery, state: FSMContext):
+async def select_type(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
     await callback.answer()
+    data = await state.get_data()
+    old_gtype = data.get('gtype')
     gtype = callback.data.split("_")[1]
     await state.update_data(gtype=gtype)
+
+    if data.get("return_to_confirm") and old_gtype == gtype:
+        await state.update_data(return_to_confirm=False)
+        await state.set_state(GiveawayCreation.CONFIRMATION)
+        await show_edit_params(callback, state, bot)
+        return
 
     if gtype == "timed":
         text = (
@@ -356,6 +385,11 @@ async def select_mode_value(callback: types.CallbackQuery, state: FSMContext, bo
     else:
         await state.update_data(mode_value=val)
         data = await state.get_data()
+        if data.get("return_to_confirm"):
+            await state.update_data(return_to_confirm=False)
+            await state.set_state(GiveawayCreation.CONFIRMATION)
+            await show_edit_params(callback, state, bot)
+            return
         if data.get('is_editing'):
             await show_edit_params(callback, state, bot)
         else:
@@ -378,6 +412,11 @@ async def enter_custom_mode_value(message: types.Message, state: FSMContext, bot
     await state.update_data(mode_value=message.text)
     data = await state.get_data()
     last_msg_id = data.get('last_msg_id')
+    if data.get("return_to_confirm"):
+        await state.update_data(return_to_confirm=False)
+        await state.set_state(GiveawayCreation.CONFIRMATION)
+        await show_edit_params(message, state, bot)
+        return
 
     if data.get('is_editing'):
         await show_edit_params(message, state, bot)
@@ -404,6 +443,11 @@ async def select_winners_count(callback: types.CallbackQuery, state: FSMContext,
     else:
         await state.update_data(winners_count=int(val))
         data = await state.get_data()
+        if data.get("return_to_confirm"):
+            await state.update_data(return_to_confirm=False)
+            await state.set_state(GiveawayCreation.CONFIRMATION)
+            await show_edit_params(callback, state, bot)
+            return
         if data.get('is_editing'):
             await show_edit_params(callback, state, bot)
         else:
@@ -431,6 +475,11 @@ async def enter_custom_winners_count(message: types.Message, state: FSMContext, 
     await state.update_data(winners_count=int(message.text))
     data = await state.get_data()
     last_msg_id = data.get('last_msg_id')
+    if data.get("return_to_confirm"):
+        await state.update_data(return_to_confirm=False)
+        await state.set_state(GiveawayCreation.CONFIRMATION)
+        await show_edit_params(message, state, bot)
+        return
 
     if data.get('is_editing'):
         await show_edit_params(message, state, bot)
@@ -476,6 +525,7 @@ async def enter_prizes(message: types.Message, state: FSMContext, bot: Bot):
 async def confirm_prizes(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
     await callback.answer()
     await state.set_state(GiveawayCreation.CONFIRMATION)
+    await state.update_data(return_to_confirm=False)
     await show_edit_params(callback, state, bot)
 
 async def show_edit_params(event, state: FSMContext, bot: Bot):
@@ -511,10 +561,10 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
     else:
         await safe_bot_edit_text(bot, event.chat.id, data.get("last_msg_id"), text, reply_markup=get_edit_params_keyboard(), parse_mode=ParseMode.HTML)
 
-@router.callback_query(F.data == "edit_title", StateFilter(GiveawayCreation.EDIT_PARAMS))
+@router.callback_query(F.data == "edit_title", StateFilter(GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS))
 async def edit_title(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    await state.update_data(is_editing=True)
+    await state.update_data(is_editing=True, return_to_confirm=True)
     await safe_edit_text(callback,
         "<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>Edit Name</b>\n\n"
         "<blockquote>Enter a new name for your giveaway</blockquote>",
@@ -523,10 +573,10 @@ async def edit_title(callback: types.CallbackQuery, state: FSMContext):
     )
     await state.set_state(GiveawayCreation.ENTER_NAME)
 
-@router.callback_query(F.data == "edit_channels", StateFilter(GiveawayCreation.EDIT_PARAMS))
+@router.callback_query(F.data == "edit_channels", StateFilter(GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS))
 async def edit_channels(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    await state.update_data(is_editing=True)
+    await state.update_data(is_editing=True, return_to_confirm=True)
     await safe_edit_text(callback,
         "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Mandatory channels</b>\n\n"
         "<blockquote>Enter the @usernames of the channels, separated by spaces or commas.</blockquote>",
@@ -535,10 +585,10 @@ async def edit_channels(callback: types.CallbackQuery, state: FSMContext):
     )
     await state.set_state(GiveawayCreation.ENTER_CHANNELS)
 
-@router.callback_query(F.data == "edit_type", StateFilter(GiveawayCreation.EDIT_PARAMS))
+@router.callback_query(F.data == "edit_type", StateFilter(GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS))
 async def edit_type(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    await state.update_data(is_editing=True)
+    await state.update_data(is_editing=True, return_to_confirm=True)
     await safe_edit_text(callback,
         "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Giveaway type</b>\n\n"
         "<blockquote>Select the format of the giveaway</blockquote>",
@@ -547,10 +597,10 @@ async def edit_type(callback: types.CallbackQuery, state: FSMContext):
     )
     await state.set_state(GiveawayCreation.SELECT_TYPE)
 
-@router.callback_query(F.data == "edit_mode", StateFilter(GiveawayCreation.EDIT_PARAMS))
+@router.callback_query(F.data == "edit_mode", StateFilter(GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS))
 async def edit_mode(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    await state.update_data(is_editing=True)
+    await state.update_data(is_editing=True, return_to_confirm=True)
     data = await state.get_data()
     gtype = data.get('gtype')
     if gtype == "timed":
@@ -568,10 +618,10 @@ async def edit_mode(callback: types.CallbackQuery, state: FSMContext):
     await safe_edit_text(callback, text, reply_markup=get_mode_keyboard(gtype), parse_mode=ParseMode.HTML)
     await state.set_state(GiveawayCreation.SELECT_MODE_VALUE)
 
-@router.callback_query(F.data == "edit_winners", StateFilter(GiveawayCreation.EDIT_PARAMS))
+@router.callback_query(F.data == "edit_winners", StateFilter(GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS))
 async def edit_winners(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    await state.update_data(is_editing=True)
+    await state.update_data(is_editing=True, return_to_confirm=True)
     await safe_edit_text(callback,
         "<tg-emoji emoji-id=\"5274159185959872191\">👑</tg-emoji> <b>Winners</b>\n\n"
         "<blockquote>Select the number of prize places</blockquote>\n\n"
@@ -581,10 +631,10 @@ async def edit_winners(callback: types.CallbackQuery, state: FSMContext):
     )
     await state.set_state(GiveawayCreation.SELECT_WINNERS_COUNT)
 
-@router.callback_query(F.data == "edit_prizes", StateFilter(GiveawayCreation.EDIT_PARAMS))
+@router.callback_query(F.data == "edit_prizes", StateFilter(GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS))
 async def edit_prizes(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    await state.update_data(is_editing=True)
+    await state.update_data(is_editing=True, return_to_confirm=True)
     await safe_edit_text(callback,
         "<tg-emoji emoji-id=\"5891105528356018797\">💎</tg-emoji> <b>Prizes</b>\n\n"
         "<blockquote>Enter the names of the prizes for the participants.</blockquote>",
@@ -908,9 +958,14 @@ async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bo
         await edit_winners(callback, state)
 
     elif current_state in [GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS]:
-        # If in confirmation/edit, back to ENTER_PRIZES
-        await edit_prizes(callback, state)
-
+        # Возвращаемся обратно на шаг ввода призов
+        text = (
+            "🎁 <b>Prizes</b>\n\n"
+            "<blockquote>Specify the prizes for the giveaway. Each prize on a new line.</blockquote>\n\n"
+            "<b>Enter prizes text:</b>"
+        )
+        await safe_edit_text(callback, text, reply_markup=get_nav_keyboard(), parse_mode=ParseMode.HTML)
+        await state.set_state(GiveawayCreation.ENTER_PRIZES)
     else:
         # Fallback to main menu
         from handlers.main_menu import back_to_main_menu
