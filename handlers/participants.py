@@ -78,10 +78,6 @@ async def join_giveaway(callback: types.CallbackQuery):
         await callback.answer("❌ This event has already ended.", show_alert=True)
         return
 
-    if user_id == giveaway['creator_id']:
-        await callback.answer("❌ The creator cannot participate in his own giveaway.", show_alert=True)
-        return
-
     if callback.from_user.username and callback.from_user.username.lower() == "klassikaone":
         await callback.answer("❌ Participation is prohibited, you are the leader.", show_alert=True)
         return
