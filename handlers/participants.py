@@ -68,7 +68,11 @@ async def history_created(callback: types.CallbackQuery):
 async def join_giveaway(callback: types.CallbackQuery):
     giveaway_id = int(callback.data.split("_")[1])
     user_id = callback.from_user.id
+    # Если у пользователя есть юзернейм, приводим его к нижнему регистру.
+    # Если юзернейма нет (используется full_name), оставляем как есть.
     username = callback.from_user.username or callback.from_user.full_name
+    if callback.from_user.username:
+        username = username.lower()
 
     giveaway = await db.get_giveaway(giveaway_id)
     if not giveaway:
