@@ -671,7 +671,7 @@ async def get_giveaway_post_data(giveaway: dict):
     else:
         end_time_str = f"{giveaway['value']} чел."
 
-    conditions_text = "┋<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>HOW TO ENTER:</b>\n"
+    conditions_text = "┋<tg-emoji emoji-id=\"5208437102475254367\">🤤</tg-emoji> <b>HOW TO ENTER:</b>\n"
     if giveaway.get('mandatory_channels'):
         for idx, channel in enumerate(giveaway['mandatory_channels'], start=1):
             conditions_text += f"┋{idx}. Subscribe to {html.escape(channel)}\n"
@@ -681,11 +681,13 @@ async def get_giveaway_post_data(giveaway: dict):
 
     post_text = (
         f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {safe_title} /</b>\n"
-        f"┣<tg-emoji emoji-id=\"5274248753207863828\">😈</tg-emoji> <b>WINNERS:</b> {giveaway['winners_count']}\n"
-        f"┣<b>PRIZES:</b> - {safe_prizes}\n"
+        f"┋\n"
+        f"┣<tg-emoji emoji-id=\"5206654746881993704\">☄️</tg-emoji> <b>WINNERS:</b> {giveaway['winners_count']}\n"
+        f"┣<tg-emoji emoji-id=\"5208694602944521590\">☠️</tg-emoji> <b>PRIZES:</b> - {safe_prizes}\n"
+        f"┋\n"
         f"{conditions_text}"
         f"┋\n"
-        f"┋<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>ENDS:</b> {end_time_str}\n"
+        f"┣<tg-emoji emoji-id=\"5208616782432084452\">🔥</tg-emoji> <b>ENDS:</b> {end_time_str}\n"
         f"┋\n"
         f"┣<b>GIVEAWAY</b>\n"
         f"┣<b>[ HUMANS.. NOT APES ]</b>\n"
