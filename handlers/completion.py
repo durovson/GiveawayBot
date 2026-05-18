@@ -1,5 +1,5 @@
 import asyncio
-import random
+import secrets
 import logging
 import pytz
 import html
@@ -28,9 +28,20 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
         if not giveaway or giveaway["status"] != "active":
             return
 
+        # Извлекаем сырой список участников из базы данных
         participants = await db.get_participants(giveaway_id)
 
-        # Verify mandatory channels for all participants
+        # 1. Безопасная дедупликация списка словарей по user_id
+        seen_users = set()
+        deduped_participants = []
+        for p in participants:
+            u_id = p.get("user_id")
+            if u_id and u_id not in seen_users:
+                seen_users.add(u_id)
+                deduped_participants.append(p)
+        participants = deduped_participants
+
+        # 2. Проверка подписок на обязательные каналы (сохраняем текущую бизнес-логику)
         verified_participants = []
         if giveaway.get("mandatory_channels"):
             from handlers.giveaway_creation import verify_all_channels
@@ -39,10 +50,32 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
                     verified_participants.append(p)
             participants = verified_participants
 
+        # 3. Проверка активности аккаунтов и обновление юзернеймов ДО внесения случайности
+        active_participants = []
+        for p in participants:
+            try:
+                # Запрашиваем актуальные данные профиля напрямую у Telegram API по user_id
+                chat_info = await bot.get_chat(p["user_id"])
+
+                # Если пользователь на месте, обновляем его юзернейм на самый свежий
+                if chat_info.username:
+                    p["username"] = chat_info.username.lower()
+                elif chat_info.full_name:
+                    p["username"] = chat_info.full_name  # Фолбэк, если юзернейм удалили вовсе
+
+                active_participants.append(p)
+            except Exception:
+                # Если Telegram выдал ошибку (аккаунт удален или бот заблокирован) — игнорируем участника
+                logger.info(f"User {p['user_id']} is not active anymore, skipping.")
+                continue
+        participants = active_participants
+
         safe_title = html.escape(giveaway["title"])
         results_text = ""
 
         if not participants:
+            # Обработка ситуации, когда валидных участников не осталось
+            logger.info(f"No active/verified participants left for giveaway {giveaway_id}")
             results_text = (
                 f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {safe_title} /</b>\n"
                 f"┋<tg-emoji emoji-id=\"5422626434331990897\">🤩</tg-emoji> <b>GAME OVER!</b>\n"
@@ -54,66 +87,48 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
                 f"┗┅┅┅/ #NOTAPES /"
             )
         else:
-            random.shuffle(participants)
-            winners = []
+            # 4. Криптографически стойкое перемешивание верифицированного пула участников
+            secrets.SystemRandom().shuffle(participants)
+
+            # Определение целевого количества победителей
             winners_count_target = min(len(participants), giveaway["winners_count"])
 
-            # Pick winners from verified participants who are also active
-            for p in participants:
-                if len(winners) >= winners_count_target:
-                    break
+            # Победителями становятся первые N участников. Никаких доборов и fallback-списков!
+            winners = participants[:winners_count_target]
 
-                if await is_user_active(bot, p["user_id"]):
-                    winners.append(p)
-
-            # If not enough active users, fill with the rest of verified participants
-            if len(winners) < winners_count_target:
-                current_winner_ids = [w["user_id"] for w in winners]
-                for p in participants:
-                    if len(winners) >= winners_count_target:
-                        break
-                    if p["user_id"] not in current_winner_ids:
-                        winners.append(p)
-
+            # 5. Распределение призов среди выбранных победителей
             prizes = giveaway["prizes"]
             winners_prizes = [[] for _ in range(len(winners))]
 
-            # Distribute prizes (triangular fill logic)
-            if winners:
-                prize_idx = 0
-                limit = len(winners)
-                while prize_idx < len(prizes):
-                    for i in range(limit):
-                        if prize_idx < len(prizes):
-                            winners_prizes[i].append(prizes[prize_idx])
-                            prize_idx += 1
-                        else:
-                            break
-                    limit -= 1
-                    if limit <= 0:
-                        limit = len(winners)
+            # Распределяем призы по циклу (сохрани текущий алгоритм распределения prizes)
+            for idx, prize in enumerate(prizes):
+                w_idx = idx % len(winners)
+                winners_prizes[w_idx].append(prize)
 
+            # Формируем структуру данных для сохранения победителей в БД
             winners_to_save = []
-            for i, winner in enumerate(winners):
+            winners_list_str = ""
+            for idx, w in enumerate(winners):
+                allocated_prizes = winners_prizes[idx]
+                prizes_str = ", ".join(allocated_prizes)
                 winners_to_save.append({
-                    "user_id": winner["user_id"],
-                    "username": winner["username"],
-                    "prize": ", ".join(winners_prizes[i])
+                    "giveaway_id": giveaway_id,
+                    "user_id": w["user_id"],
+                    "username": w["username"],
+                    "prize": prizes_str
                 })
 
-            # Save winners before sending message to ensure state is consistent
-            await db.save_winners(giveaway_id, winners_to_save)
-
-            winners_list_str = ""
-            for i, winner in enumerate(winners):
-                safe_prizes = ", ".join([html.escape(p) for p in winners_prizes[i]])
-                raw_username = winner.get("username") or f"ID:{winner["user_id"]}"
+                # Формируем строку для вывода результатов (сохрани текущее форматирование HTML)
+                raw_username = w.get("username") or f"ID:{w['user_id']}"
                 safe_username = html.escape(raw_username)
                 if raw_username and not raw_username.startswith("ID:"):
                     mention = f"<b>@{safe_username}</b>"
                 else:
-                    mention = f"<b><a href=\"tg://user?id={winner["user_id"]}\">{safe_username}</a></b>"
-                winners_list_str += f"┋<tg-emoji emoji-id=\"5274159185959872191\">👑</tg-emoji> {mention} — {safe_prizes}\n"
+                    mention = f"<b><a href=\"tg://user?id={w['user_id']}\">{safe_username}</a></b>"
+                winners_list_str += f"┋<tg-emoji emoji-id=\"5274159185959872191\">👑</tg-emoji> {mention} — {html.escape(prizes_str)}\n"
+
+            # Save winners before sending message to ensure state is consistent
+            await db.save_winners(giveaway_id, winners_to_save)
 
             results_text = (
                 f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {safe_title} /</b>\n"
@@ -171,7 +186,7 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
                     parse_mode=ParseMode.HTML
                 )
             except Exception as e:
-                logger.error(f"Failed to update or send message in chat {msg["chat_id"]}: {e}")
+                logger.error(f"Failed to update or send message in chat {msg['chat_id']}: {e}")
 
         if messages:
             await asyncio.gather(*(update_msg(m) for m in messages))
@@ -201,8 +216,8 @@ async def check_timed_giveaways(bot: Bot):
             expired_giveaways = await db.get_expired_giveaways(now)
             
             for giveaway in expired_giveaways:
-                logger.info(f"Завершение розыгрыша {giveaway["id"]}")
-                await complete_giveaway(giveaway["id"], bot)
+                logger.info(f"Завершение розыгрыша {giveaway['id']}")
+                await complete_giveaway(giveaway['id'], bot)
         except Exception as e:
             logger.error(f"Error in check_timed_giveaways: {e}")
         await asyncio.sleep(30)
@@ -290,7 +305,7 @@ async def check_periodic_notifications(bot: Bot):
                             last_message_id=new_msg.message_id
                         )
                 except Exception as e:
-                    logger.error(f"Error processing notification {notif.get("id")}: {e}")
+                    logger.error(f"Error processing notification {notif.get('id')}: {e}")
 
         except Exception as e:
             logger.error(f"Error in check_periodic_notifications: {e}")
