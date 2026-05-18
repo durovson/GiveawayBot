@@ -681,8 +681,8 @@ async def get_giveaway_post_data(giveaway: dict):
 
     post_text = (
         f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {safe_title} /</b>\n"
-        f"┋<tg-emoji emoji-id=\"5274248753207863828\">😈</tg-emoji> <b>WIN:</b> {giveaway['winners_count']} - {safe_prizes}\n"
-        f"┋\n"
+        f"┣<tg-emoji emoji-id=\"5274248753207863828\">😈</tg-emoji> <b>WINNERS:</b> {giveaway['winners_count']}\n"
+        f"┣<b>PRIZES:</b> - {safe_prizes}\n"
         f"{conditions_text}"
         f"┋\n"
         f"┋<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>ENDS:</b> {end_time_str}\n"
