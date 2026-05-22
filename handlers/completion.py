@@ -1,26 +1,24 @@
 import asyncio
-import secrets
 import logging
-import pytz
 import html
-from datetime import datetime
-from aiogram import Bot
+import os
+import secrets
+import pytz
+from datetime import datetime, timedelta
+from typing import List, Dict, Any
+
+from aiogram import Bot, types
 from aiogram.enums import ParseMode, ChatType
-from utils import strip_custom_emojis
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.exceptions import TelegramBadRequest
 
 from database import db
+from utils import strip_custom_emojis
 
 logger = logging.getLogger(__name__)
 
-ADMIN_ID = 734720997
-GIF_ID = "CgACAgIAAxkBAAEbt3NpqAn2obJdHyFVZbi_JOspLX96KAAC7pQAAkCBQEk_A-aRj7qxNToE"
-
-async def is_user_active(bot: Bot, user_id: int) -> bool:
-    try:
-        await bot.get_chat(user_id)
-        return True
-    except Exception:
-        return False
+# Constants
+ADMIN_ID = 786080766
 
 async def complete_giveaway(giveaway_id: int, bot: Bot):
     try:
@@ -28,57 +26,12 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
         if not giveaway or giveaway["status"] != "active":
             return
 
-        # Извлекаем сырой список участников из базы данных
         participants = await db.get_participants(giveaway_id)
-
-        # 1. Безопасная дедупликация списка словарей по user_id
-        seen_users = set()
-        deduped_participants = []
-        for p in participants:
-            u_id = p.get("user_id")
-            if u_id and u_id not in seen_users:
-                seen_users.add(u_id)
-                deduped_participants.append(p)
-        participants = deduped_participants
-
-        # 2. Проверка подписок на обязательные каналы (сохраняем текущую бизнес-логику)
-        verified_participants = []
-        if giveaway.get("mandatory_channels"):
-            from handlers.giveaway_creation import verify_all_channels
-            for p in participants:
-                if await verify_all_channels(bot, [p["user_id"]] + giveaway["mandatory_channels"]):
-                    verified_participants.append(p)
-            participants = verified_participants
-
-        # 3. Проверка активности аккаунтов и обновление юзернеймов ДО внесения случайности
-        active_participants = []
-        for p in participants:
-            try:
-                # Запрашиваем актуальные данные профиля напрямую у Telegram API по user_id
-                chat_info = await bot.get_chat(p["user_id"])
-
-                # Если пользователь на месте, обновляем его юзернейм на самый свежий
-                if chat_info.username:
-                    p["username"] = chat_info.username.lower()
-                elif chat_info.full_name:
-                    p["username"] = chat_info.full_name  # Фолбэк, если юзернейм удалили вовсе
-
-                active_participants.append(p)
-            except Exception:
-                # Если Telegram выдал ошибку (аккаунт удален или бот заблокирован) — игнорируем участника
-                logger.info(f"User {p['user_id']} is not active anymore, skipping.")
-                continue
-        participants = active_participants
-
         safe_title = html.escape(giveaway["title"])
-        results_text = ""
 
         if not participants:
-            # Обработка ситуации, когда валидных участников не осталось
-            logger.info(f"No active/verified participants left for giveaway {giveaway_id}")
             results_text = (
                 f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {safe_title} /</b>\n"
-                f"┋<tg-emoji emoji-id=\"5422626434331990897\">🤩</tg-emoji> <b>GAME OVER!</b>\n"
                 f"┋\n"
                 f"┋ <b>Unfortunately, there were no humans...</b>\n"
                 f"┋\n"
@@ -223,10 +176,6 @@ async def check_timed_giveaways(bot: Bot):
         await asyncio.sleep(30)
 
 async def check_periodic_notifications(bot: Bot):
-    from datetime import timedelta
-    from aiogram.exceptions import TelegramBadRequest
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-
     while True:
         try:
             now = datetime.now(pytz.UTC)
@@ -289,13 +238,18 @@ async def check_periodic_notifications(bot: Bot):
                             pass
 
                         builder = InlineKeyboardBuilder()
-                        if notif.get("button_url"):
+                        custom_buttons = notif.get("custom_buttons")
+                        if custom_buttons:
+                            for btn in custom_buttons:
+                                builder.button(text=btn["text"], url=btn["url"])
+                            builder.adjust(1)
+                        elif notif.get("button_url"):
                             builder.button(text=notif.get("button_text", "OPEN"), url=notif["button_url"])
 
                         new_msg = await bot.send_message(
                             chat_id=chat_id,
                             text=ad_text,
-                            reply_markup=builder.as_markup() if notif.get("button_url") else None,
+                            reply_markup=builder.as_markup() if (custom_buttons or notif.get("button_url")) else None,
                             parse_mode=ParseMode.HTML
                         )
 
