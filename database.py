@@ -18,9 +18,9 @@ class Database:
             return
         try:
             self.client = await create_async_client(self.url, self.key)
-            logger.info("✅ Supabase client initialized")
+            logger.info("✅ Connected to Supabase!")
         except Exception as e:
-            logger.error(f"❌ Failed to initialize Supabase client: {e}")
+            logger.error(f"❌ Connection error: {e}")
 
     def _check_client(self) -> bool:
         return self.client is not None
@@ -28,13 +28,11 @@ class Database:
     async def track_chat(self, chat_id: int, title: str, chat_type: Optional[str] = None):
         if not self._check_client(): return
         try:
-            data = {
+            await self.client.table("chats").upsert({
                 "chat_id": chat_id,
-                "title": title
-            }
-            if chat_type:
-                data["chat_type"] = chat_type
-            await self.client.table("chats").upsert(data).execute()
+                "title": title,
+                "chat_type": chat_type
+            }).execute()
         except Exception as e:
             logger.error(f"Error tracking chat: {e}")
 
@@ -82,7 +80,7 @@ class Database:
                 "allowed_users": allowed_users
             }
             response = await self.client.table("giveaways").insert(data).execute()
-            return response.data[0]
+            return response.data[0] if response.data else {}
         except Exception as e:
             logger.error(f"Error creating giveaway: {e}")
             return {}
@@ -124,7 +122,12 @@ class Database:
     async def get_expired_giveaways(self, now: datetime) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("giveaways")                 .select("*")                 .eq("status", "active")                 .eq("mode", "timed")                 .lte("end_at", now.isoformat())                 .execute()
+            response = await (self.client.table("giveaways")
+                .select("*")
+                .eq("status", "active")
+                .eq("mode", "timed")
+                .lte("end_at", now.isoformat())
+                .execute())
             return response.data
         except Exception as e:
             logger.error(f"Error fetching expired giveaways: {e}")
@@ -140,11 +143,9 @@ class Database:
             return None
 
     async def add_participant(self, giveaway_id: int, user_id: int, username: Optional[str]) -> bool:
+        """Attempts to add participant. Uses UNIQUE(giveaway_id, user_id) constraint to prevent race conditions."""
         if not self._check_client(): return False
         try:
-            existing = await self.client.table("participants").select("*").eq("giveaway_id", giveaway_id).eq("user_id", user_id).execute()
-            if existing.data:
-                return False
             await self.client.table("participants").insert({
                 "giveaway_id": giveaway_id,
                 "user_id": user_id,
@@ -152,6 +153,9 @@ class Database:
             }).execute()
             return True
         except Exception as e:
+            # Check for duplicate key violation
+            if "duplicate key value violates unique constraint" in str(e) or "409" in str(e):
+                return False
             logger.error(f"Error adding participant: {e}")
             return False
 
@@ -262,5 +266,69 @@ class Database:
             }).eq("id", notification_id).execute()
         except Exception as e:
             logger.error(f"Error updating notification stats: {e}")
+
+    async def create_initial_profile(self, user_id: int):
+        if not self._check_client(): return
+        await self.client.table("users_game_profile").upsert({
+            "id": user_id, "points_balance": 0.0, "packs_count": 0
+        }).execute()
+
+    async def get_game_profile(self, user_id: int) -> Optional[Dict]:
+        if not self._check_client(): return None
+        res = await self.client.table("users_game_profile").select("*").eq("id", user_id).execute()
+        return res.data[0] if res.data else None
+
+    async def get_shop_items(self) -> List[Dict]:
+        if not self._check_client(): return []
+        res = await self.client.table("shop_items").select("*").order("id").execute()
+        return res.data
+
+    async def get_shop_item_by_id(self, item_id: int) -> Optional[Dict]:
+        if not self._check_client(): return None
+        res = await self.client.table("shop_items").select("*").eq("id", item_id).execute()
+        return res.data[0] if res.data else None
+
+    async def process_purchase(self, user_id: int, item_id: int, quantity: int, total_cost: float) -> Optional[int]:
+        """Executes purchase transaction atomically on database side using RPC."""
+        if not self._check_client(): return None
+        try:
+            # Call the PostgreSQL function via RPC
+            params = {
+                "p_user_id": user_id,
+                "p_item_id": item_id,
+                "p_quantity": quantity,
+                "p_total_cost": total_cost
+            }
+            res = await self.client.rpc("process_purchase_v2", params).execute()
+
+            if res.data:
+                return int(res.data)
+            return None
+        except Exception as e:
+            logger.error(f"Atomic transaction failure: {e}")
+            return None
+
+    async def link_wallet(self, user_id: int, wallet_address: str):
+        """Saves verified TON wallet user address to game profile."""
+        if not self._check_client(): return
+        try:
+            await self.client.table("users_game_profile").update({
+                "wallet_address": wallet_address
+            }).eq("id", user_id).execute()
+            logger.info(f"✅ Wallet {wallet_address} linked to user {user_id}")
+        except Exception as e:
+            logger.error(f"Error linking wallet for {user_id}: {e}")
+
+    async def unlink_wallet(self, user_id: int):
+        """Wipes cryptographic connection assets and resets state variables."""
+        if not self._check_client(): return
+        try:
+            await self.client.table("users_game_profile").update({
+                "wallet_address": None,
+                "tonconnect_session": None
+            }).eq("id", user_id).execute()
+            logger.info(f"🔄 Wallet unlinked for user {user_id}")
+        except Exception as e:
+            logger.error(f"Error unlinking wallet for {user_id}: {e}")
 
 db = Database()
