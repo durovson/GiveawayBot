@@ -3,8 +3,6 @@ import json
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.enums import ParseMode
-from aiogram_tonconnect.storage.base import BaseStorage
-from aiogram_tonconnect.tonconnect import TonConnectManager
 from dotenv import load_dotenv
 from database import db
 
