@@ -19,13 +19,15 @@ MAIN_MENU_TEXT = (
 
 async def get_main_menu_keyboard(user_id: int) -> types.InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='<tg-emoji emoji-id="5258508428212445001">🎮</tg-emoji> GAME ZONE', callback_data="game_main")
+
+    # Задача 1: Нативный вызов кастомных премиум эмодзи
+    builder.button(text='GAME ZONE', callback_data="game_main", icon_custom_emoji_id="5258508428212445001")
     
     is_user_holder = await is_holder(user_id)
     if is_user_holder:
-        builder.button(text='<tg-emoji emoji-id="5258096772776991776">⚙️</tg-emoji> SYSTEM', callback_data="system_submenu")
+        builder.button(text='SYSTEM', callback_data="system_submenu", icon_custom_emoji_id="5258096772776991776")
     
-    builder.button(text='<tg-emoji emoji-id="5258020476977946656">📞</tg-emoji> SUPPORT', url="https://t.me/ton_geist")
+    builder.button(text='SUPPORT', url="https://t.me/ton_geist", icon_custom_emoji_id="5258020476977946656")
 
     if is_user_holder:
         builder.adjust(1, 1, 1)
@@ -69,7 +71,7 @@ async def open_system_submenu(callback: types.CallbackQuery, state: FSMContext):
         if user_id == 786080766:
             builder.button(text="Update GIF", callback_data="admin_update_gif")
 
-    builder.button(text='<tg-emoji emoji-id="5257963315258204021">🏘</tg-emoji> Back to Main Menu', callback_data="main_menu")
+    builder.button(text='Back to Main Menu', callback_data="main_menu", icon_custom_emoji_id="5257963315258204021")
     builder.adjust(2 if is_user_admin else 1)
 
     system_text = (

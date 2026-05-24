@@ -6,9 +6,9 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.enums import ParseMode
-from database import db
+from database import db  # Импортируем синглтон базы данных напрямую
 from utils import safe_edit_text
-from loader import bot, supabase
+from loader import bot
 from storage import SupabaseStorage
 from pytonconnect import TonConnect
 
@@ -71,10 +71,12 @@ async def open_game_menu(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.clear()
     builder = InlineKeyboardBuilder()
-    builder.button(text='<tg-emoji emoji-id="5260399854500191689">👤</tg-emoji> Profile & Wallet', callback_data="game_profile")
-    builder.button(text='<tg-emoji emoji-id="5920332557466997677">🏪</tg-emoji> Limited Shop', callback_data="game_shop")
-    builder.button(text='<tg-emoji emoji-id="5258330865674494479">🍑</tg-emoji> Leaderboard', callback_data="game_leaderboard")
-    builder.button(text='<tg-emoji emoji-id="5257963315258204021">🏘</tg-emoji> Main Menu', callback_data="main_menu")
+
+    # Задача 1: Кастомные эмодзи вынесены в icon_custom_emoji_id
+    builder.button(text='Profile & Wallet', callback_data="game_profile", icon_custom_emoji_id="5260399854500191689")
+    builder.button(text='Limited Shop', callback_data="game_shop", icon_custom_emoji_id="5920332557466997677")
+    builder.button(text='Leaderboard', callback_data="game_leaderboard", icon_custom_emoji_id="5258330865674494479")
+    builder.button(text='Главное меню', callback_data="main_menu", icon_custom_emoji_id="5257963315258204021")
     builder.adjust(1)
 
     game_text = (
@@ -100,10 +102,13 @@ async def open_profile(callback: types.CallbackQuery):
 
     builder = InlineKeyboardBuilder()
     if not wallet:
-        builder.button(text='<tg-emoji emoji-id="5316612764427367709">🔗</tg-emoji> Connect TON Wallet', callback_data="connect_ton_wallet")
+        builder.button(text='Connect TON Wallet', callback_data="connect_ton_wallet", icon_custom_emoji_id="5316612764427367709")
     else:
-        builder.button(text='<tg-emoji emoji-id="5258420634785947640">🔄</tg-emoji> Disconnect Wallet', callback_data="disconnect_ton_wallet")
-    builder.button(text='<tg-emoji emoji-id="5257963315258204021">🏘</tg-emoji> Back to Arcade', callback_data="game_main")
+        builder.button(text='Disconnect Wallet', callback_data="disconnect_ton_wallet", icon_custom_emoji_id="5258420634785947640")
+
+    # Задача 3: Раздельные кнопки Назад и В главное меню
+    builder.button(text='◀️ Назад', callback_data="game_main")
+    builder.button(text='В главное меню', callback_data="main_menu", icon_custom_emoji_id="5257963315258204021")
     builder.adjust(1)
 
     profile_text = (
@@ -130,7 +135,10 @@ async def open_shop(callback: types.CallbackQuery, state: FSMContext = None):
     for item in items:
         if item['stock_limit'] > 0:
             builder.button(text=f"{item['title']} — {item['price']} PTS ({item['stock_limit']} left)", callback_data=f"buy_item_{item['id']}")
-    builder.button(text='<tg-emoji emoji-id="5257963315258204021">🏘</tg-emoji> Back to Arcade', callback_data="game_main")
+
+    # Задача 3: Раздельные кнопки Назад и В главное меню
+    builder.button(text='◀️ Назад', callback_data="game_main")
+    builder.button(text='В главное меню', callback_data="main_menu", icon_custom_emoji_id="5257963315258204021")
     builder.adjust(1)
 
     shop_text = (
@@ -158,11 +166,14 @@ async def setup_quantity_selector(callback: types.CallbackQuery, state: FSMConte
 async def render_quantity_menu(callback: types.CallbackQuery, title: str, qty: int, price: float):
     builder = InlineKeyboardBuilder()
     builder.button(text="–1", callback_data="qty_minus")
-    builder.button(text='<tg-emoji emoji-id="5258134813302332906">📦</tg-emoji> Qty: ' + str(qty), callback_data="qty_ignore")
+    builder.button(text='Qty: ' + str(qty), callback_data="qty_ignore", icon_custom_emoji_id="5258134813302332906")
     builder.button(text="+1", callback_data="qty_plus")
-    builder.button(text='<tg-emoji emoji-id="5260726538302660868">✅</tg-emoji> Buy for ' + str(qty * price) + ' PTS', callback_data="qty_confirm")
-    builder.button(text='<tg-emoji emoji-id="5257963315258204021">🏘</tg-emoji> Cancel', callback_data="game_shop")
-    builder.adjust(3, 1, 1)
+    builder.button(text='Buy for ' + str(qty * price) + ' PTS', callback_data="qty_confirm", icon_custom_emoji_id="5260726538302660868")
+
+    # Задача 3: Назад ведет в магазин Drop Shop, В главное меню возвращает в корень бота
+    builder.button(text='◀️ Назад', callback_data="game_shop")
+    builder.button(text='В главное меню', callback_data="main_menu", icon_custom_emoji_id="5257963315258204021")
+    builder.adjust(3, 1, 2)  # Красиво группируем нижние навигационные кнопки в один ряд
 
     menu_text = (
         f"┏┅<tg-emoji emoji-id=\"5257963315258204021\">🏘</tg-emoji>┅ <b>/ PURCHASE SETUP /</b>\n"
@@ -198,7 +209,6 @@ async def process_quantity_change(callback: types.CallbackQuery, state: FSMConte
 
     if callback.data == "qty_minus" and current_qty > 1:
         current_qty -= 1
-        # Check if current_qty is now within live stock just in case
         current_qty = min(current_qty, live_stock)
         await state.update_data(current_qty=current_qty)
         await render_quantity_menu(callback, title, current_qty, price)
@@ -207,7 +217,6 @@ async def process_quantity_change(callback: types.CallbackQuery, state: FSMConte
         await state.update_data(current_qty=current_qty)
         await render_quantity_menu(callback, title, current_qty, price)
     elif callback.data == "qty_confirm":
-        # Cap current_qty to live_stock if it somehow exceeded it
         if current_qty > live_stock:
              await callback.answer(f"🚨 Stock updated. Max available: {live_stock}", show_alert=True)
              await state.update_data(current_qty=live_stock)
@@ -216,7 +225,6 @@ async def process_quantity_change(callback: types.CallbackQuery, state: FSMConte
         user_id = callback.from_user.id
         profile = await db.get_game_profile(user_id)
 
-        # Calculate total cost using latest price from database
         current_price = float(item['price'])
         total_cost = current_qty * current_price
 
@@ -239,7 +247,9 @@ async def process_quantity_change(callback: types.CallbackQuery, state: FSMConte
                 f"┗┅┅┅/ Spent: {total_cost} PTS /"
             )
             builder = InlineKeyboardBuilder()
-            builder.button(text='<tg-emoji emoji-id="5920332557466997677">🏪</tg-emoji> Shop', callback_data="game_shop")
+            builder.button(text='Shop', callback_data="game_shop", icon_custom_emoji_id="5920332557466997677")
+            builder.button(text='В главное меню', callback_data="main_menu", icon_custom_emoji_id="5257963315258204021")
+            builder.adjust(1)
             await safe_edit_text(callback, success_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
             buyer_username = f"@{callback.from_user.username}" if callback.from_user.username else f"ID: {user_id}"
@@ -263,31 +273,27 @@ async def process_quantity_change(callback: types.CallbackQuery, state: FSMConte
         else:
             await callback.answer("Ошибка транзакции базы данных или недостаточно средств/товара.", show_alert=True)
     else:
-        # For ignore and other qty_ cases, just re-render to keep the menu active
         await render_quantity_menu(callback, title, current_qty, price)
 
 @router.callback_query(F.data == "connect_ton_wallet")
 async def handle_connect_wallet(callback: types.CallbackQuery, state: FSMContext):
-    # This button now triggers the new flow in handlers/wallet.py
     from handlers.wallet import start_wallet_connect
     await start_wallet_connect(callback, state)
-
 
 @router.callback_query(F.data == "disconnect_ton_wallet")
 async def handle_disconnect_wallet(callback: types.CallbackQuery):
     await callback.answer()
     user_id = callback.from_user.id
 
-    # 1. Clear active bridge session if any
     from handlers.wallet import MANIFEST_URL
-    storage = SupabaseStorage(supabase, user_id)
+    # Задача 2: Передаем динамический db.client, чтобы избежать AttributeError 'NoneType'
+    storage = SupabaseStorage(db.client, user_id)
     connector = TonConnect(manifest_url=MANIFEST_URL, storage=storage)
 
     is_restored = await connector.restore_connection()
     if is_restored and connector.connected:
         await connector.disconnect()
 
-    # 2. Update database
     await db.unlink_wallet(user_id)
 
     disconnect_text = (
@@ -298,7 +304,8 @@ async def handle_disconnect_wallet(callback: types.CallbackQuery):
         "┗┅┅┅/ #NOTAPES /"
     )
     builder = InlineKeyboardBuilder()
-    builder.button(text="◀️ To Profile", callback_data="game_profile")
+    builder.button(text="◀️ Назад в профиль", callback_data="game_profile")
+    builder.button(text='В главное меню', callback_data="main_menu", icon_custom_emoji_id="5257963315258204021")
     builder.adjust(1)
 
     await safe_edit_text(callback, disconnect_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
@@ -310,10 +317,8 @@ async def open_leaderboard(callback: types.CallbackQuery):
     profile = await db.get_game_profile(user_id)
     user_wallet = profile.get("wallet_address") if profile else None
 
-    # Fetch ALL data dynamically from Stickers Tools API with caching
     api_holders = await fetch_all_api_holders()
 
-    # Build Top 10 rows
     leader_rows = ""
     user_in_top_10 = False
     user_rank_data = None
@@ -330,7 +335,6 @@ async def open_leaderboard(callback: types.CallbackQuery):
             user_in_top_10 = idx <= 10
             user_rank_data = (idx, short_addr, count)
 
-    # Append separate row if user is NOT in the top 10 rows
     if user_wallet and not user_in_top_10:
         leader_rows += "┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n"
         if user_rank_data:
@@ -340,8 +344,10 @@ async def open_leaderboard(callback: types.CallbackQuery):
             leader_rows += f"┋ <b>Н/А.</b> <code>{short_user_w}</code> (Вы) — 0 packs\n"
 
     builder = InlineKeyboardBuilder()
-    builder.button(text='<tg-emoji emoji-id="5257963315258204021">🏘</tg-emoji> Back to Arcade', callback_data="game_main")
-    builder.adjust(1)
+    # Задача 3: Раздельная навигация на одной строчке
+    builder.button(text='◀️ Назад', callback_data="game_main")
+    builder.button(text='В главное меню', callback_data="main_menu", icon_custom_emoji_id="5257963315258204021")
+    builder.adjust(2)
 
     leader_text = (
         "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ <b>/ PACK HOLDERS LEADERBOARD /</b>\n"

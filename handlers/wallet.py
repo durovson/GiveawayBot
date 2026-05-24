@@ -8,7 +8,8 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.enums import ParseMode
 
 from pytonconnect import TonConnect
-from loader import bot, supabase
+from loader import bot
+from database import db
 from storage import SupabaseStorage
 from utils import safe_edit_text
 
@@ -37,7 +38,7 @@ async def start_wallet_connect(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     chat_id = callback.message.chat.id
 
-    storage = SupabaseStorage(supabase, user_id)
+    storage = SupabaseStorage(db.client, user_id)
     connector = TonConnect(manifest_url=MANIFEST_URL, storage=storage)
 
     # Check for existing connection
@@ -89,13 +90,13 @@ async def wait_bridge_connection(connector: TonConnect, user_id: int, chat_id: i
             # Database transaction: points +100 and save address
             def _db_transaction():
                 # Get current profile
-                res = supabase.table("users_game_profile").select("points_balance").eq("id", user_id).execute()
+                res = db.client.table("users_game_profile").select("points_balance").eq("id", user_id).execute()
                 current_points = 0.0
                 if res.data:
                     current_points = float(res.data[0].get("points_balance", 0.0))
 
                 # Update profile
-                supabase.table("users_game_profile").upsert({
+                db.client.table("users_game_profile").upsert({
                     "id": user_id,
                     "wallet_address": raw_address,
                     "points_balance": current_points + 100.0
