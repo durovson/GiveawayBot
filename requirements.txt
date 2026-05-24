@@ -4,5 +4,5 @@ python-dotenv
 flask
 requests
 pytz
-aiogram-tonconnect==0.0.7
+aiogram-tonconnect>=0.14.0
 pytonconnect==0.3.0
