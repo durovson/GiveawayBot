@@ -9,7 +9,9 @@ from web_server import start_keep_alive
 from utils import safe_bot_send_message
 
 # Import handlers
+from handlers.wallet_events import register_tonconnect_callbacks
 from handlers.main_menu import router as main_menu_router
+from handlers.game_menu import router as game_menu_router
 from handlers.giveaway_creation import router as creation_router
 from handlers.participants import router as participants_router
 from handlers.otc_market import router as otc_market_router
@@ -35,7 +37,7 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
                     admin_id,
                     "<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>The bot is ready to work!</b>\n\n"
                     "<blockquote>The group has been automatically registered. Now you can create giveaways via private messages with the bot.</blockquote>\n\n"
-                    "<i>If the group does not appear in the list, use the command /setup</i>",
+                    "<blockquote>If the group does not appear in the list, use the command /setup</blockquote>",
                     parse_mode=ParseMode.HTML
                 )
             except Exception:
@@ -45,6 +47,7 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
 dp.include_router(admin_router)
 dp.include_router(notifications_router)
 dp.include_router(main_menu_router)
+dp.include_router(game_menu_router)
 dp.include_router(creation_router)
 dp.include_router(participants_router)
 dp.include_router(otc_market_router)
@@ -52,13 +55,13 @@ dp.include_router(otc_market_router)
 logging.basicConfig(level=logging.INFO)
 
 async def main():
+    from handlers.completion import check_timed_giveaways, check_periodic_notifications
     start_keep_alive()
     await db.connect()
+    await register_tonconnect_callbacks()
 
     # Start checking timed giveaways
-    from handlers.completion import check_timed_giveaways
     asyncio.create_task(check_timed_giveaways(bot))
-    from handlers.completion import check_periodic_notifications
     asyncio.create_task(check_periodic_notifications(bot))
 
     await dp.start_polling(bot, drop_pending_updates=True)
