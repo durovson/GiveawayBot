@@ -124,6 +124,42 @@ class Database:
             logger.error(f"Error getting giveaway {giveaway_id}: {e}")
             return None
 
+
+    async def get_expired_giveaways(self) -> List[Dict]:
+        """Получает список всех активных временных розыгрышей, срок которых истёк."""
+        if not self._check_client(): return []
+        try:
+            from datetime import datetime
+            now = datetime.utcnow().isoformat()
+            response = await self.client.table("giveaways") \
+                .select("*") \
+                .eq("status", "active") \
+                .eq("mode", "timed") \
+                .lt("end_at", now) \
+                .execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting expired giveaways: {e}")
+            return []
+
+
+    async def get_giveaway_messages(self, giveaway_id: int) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("giveaway_messages").select("*").eq("giveaway_id", int(giveaway_id)).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting giveaway messages for {giveaway_id}: {e}")
+            return []
+
+    async def get_chats(self) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("chats").select("*").execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting chats: {e}")
+            return []
     async def add_participant(self, giveaway_id: int, user_id: int, username: Optional[str]) -> bool:
         if not self._check_client(): return False
         try:
