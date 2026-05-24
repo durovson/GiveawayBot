@@ -88,21 +88,18 @@ async def wait_bridge_connection(connector: TonConnect, user_id: int, chat_id: i
             friendly_address_display = format_address(raw_address)
 
             # Database transaction: points +100 and save address
-            def _db_transaction():
-                # Get current profile
-                res = db.client.table("users_game_profile").select("points_balance").eq("id", user_id).execute()
-                current_points = 0.0
-                if res.data:
-                    current_points = float(res.data[0].get("points_balance", 0.0))
+            # Get current profile
+            res = await db.client.table("users_game_profile").select("points_balance").eq("id", user_id).execute()
+            current_points = 0.0
+            if res.data:
+                current_points = float(res.data[0].get("points_balance", 0.0))
 
-                # Update profile
-                db.client.table("users_game_profile").upsert({
-                    "id": user_id,
-                    "wallet_address": raw_address,
-                    "points_balance": current_points + 100.0
-                }).execute()
-
-            await asyncio.to_thread(_db_transaction)
+            # Update profile
+            await db.client.table("users_game_profile").upsert({
+                "id": user_id,
+                "wallet_address": raw_address,
+                "points_balance": current_points + 100.0
+            }).execute()
 
             await state.clear()
 
