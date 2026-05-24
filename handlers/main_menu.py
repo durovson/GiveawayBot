@@ -69,7 +69,7 @@ async def open_system_submenu(callback: types.CallbackQuery, state: FSMContext):
         if user_id == 786080766:
             builder.button(text="Update GIF", callback_data="admin_update_gif")
 
-    builder.button(text='🏘 <tg-emoji emoji-id="5257963315258204021">🏘</tg-emoji> Back to Main Menu', callback_data="main_menu")
+    builder.button(text='<tg-emoji emoji-id="5257963315258204021">🏘</tg-emoji> Back to Main Menu', callback_data="main_menu")
     builder.adjust(2 if is_user_admin else 1)
 
     system_text = (
