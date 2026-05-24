@@ -9,7 +9,7 @@ from web_server import start_keep_alive
 from utils import safe_bot_send_message
 
 # Import handlers
-from handlers.wallet_events import register_tonconnect_callbacks
+from handlers.wallet import router as wallet_router
 from handlers.main_menu import router as main_menu_router
 from handlers.game_menu import router as game_menu_router
 from handlers.giveaway_creation import router as creation_router
@@ -46,6 +46,7 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
 # Registration
 dp.include_router(admin_router)
 dp.include_router(notifications_router)
+dp.include_router(wallet_router)
 dp.include_router(main_menu_router)
 dp.include_router(game_menu_router)
 dp.include_router(creation_router)
@@ -58,7 +59,6 @@ async def main():
     from handlers.completion import check_timed_giveaways, check_periodic_notifications
     start_keep_alive()
     await db.connect()
-    await register_tonconnect_callbacks()
 
     # Start checking timed giveaways
     asyncio.create_task(check_timed_giveaways(bot))

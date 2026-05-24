@@ -8,7 +8,9 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.enums import ParseMode
 from database import db
 from utils import safe_edit_text
-from loader import bot, tonconnect_manager
+from loader import bot, supabase
+from storage import SupabaseStorage
+from pytonconnect import TonConnect
 
 router = Router()
 
@@ -156,20 +158,20 @@ async def setup_quantity_selector(callback: types.CallbackQuery, state: FSMConte
 async def render_quantity_menu(callback: types.CallbackQuery, title: str, qty: int, price: float):
     builder = InlineKeyboardBuilder()
     builder.button(text="–1", callback_data="qty_minus")
-    builder.button(text='<tg-emoji emoji-id="5258134813302332906">📦</tg-emoji> Кол-во: ' + str(qty), callback_data="qty_ignore")
+    builder.button(text='<tg-emoji emoji-id="5258134813302332906">📦</tg-emoji> Qty: ' + str(qty), callback_data="qty_ignore")
     builder.button(text="+1", callback_data="qty_plus")
-    builder.button(text='<tg-emoji emoji-id="5260726538302660868">✅</tg-emoji> Купить за ' + str(qty * price) + ' PTS', callback_data="qty_confirm")
-    builder.button(text='<tg-emoji emoji-id="5257963315258204021">🏘</tg-emoji> Отмена', callback_data="game_shop")
+    builder.button(text='<tg-emoji emoji-id="5260726538302660868">✅</tg-emoji> Buy for ' + str(qty * price) + ' PTS', callback_data="qty_confirm")
+    builder.button(text='<tg-emoji emoji-id="5257963315258204021">🏘</tg-emoji> Cancel', callback_data="game_shop")
     builder.adjust(3, 1, 1)
 
     menu_text = (
-        f"┏┅<tg-emoji emoji-id=\"5257963315258204021\">🏘</tg-emoji>┅ <b>/ НАСТРОЙКА ПОКУПКИ /</b>\n"
+        f"┏┅<tg-emoji emoji-id=\"5257963315258204021\">🏘</tg-emoji>┅ <b>/ PURCHASE SETUP /</b>\n"
         f"┋\n"
-        f"┣ <blockquote>Укажите точный объем партий для резервирования. Изменение балансов пересчитывается без дополнительных сетевых вызовов базы.</blockquote>\n"
+        f"┣ <blockquote>Specify the exact quantity for reservation. Balance changes are recalculated without additional network calls.</blockquote>\n"
         f"┋\n"
-        f"┣ <b>Предмет:</b> {html.escape(title)}\n"
+        f"┣ <b>Item:</b> {html.escape(title)}\n"
         f"┋\n"
-        f"┗┅┅┅/ Итого: {qty * price} PTS /"
+        f"┗┅┅┅/ Total: {qty * price} PTS /"
     )
     await safe_edit_text(callback, menu_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
@@ -224,33 +226,33 @@ async def process_quantity_change(callback: types.CallbackQuery, state: FSMConte
 
         order_id = await db.process_purchase(user_id, item_id, current_qty, total_cost)
         if order_id:
-            await callback.answer("🎉 Покупка успешно оформлена!", show_alert=True)
+            await callback.answer("🎉 Purchase successfully completed!", show_alert=True)
 
             success_text = (
-                f"┏┅<tg-emoji emoji-id=\"6041731551845159060\">🎉</tg-emoji>┅ <b>/ ЗАКАЗ №{order_id} ОФОРМЛЕН /</b>\n"
+                f"┏┅<tg-emoji emoji-id=\"6041731551845159060\">🎉</tg-emoji>┅ <b>/ ORDER #{order_id} CREATED /</b>\n"
                 f"┋\n"
-                f"┣ <blockquote>Ваш заказ успешно сгенерирован и передан в систему обработки. Распределение складских остатков завершено.</blockquote>\n"
+                f"┣ <blockquote>Your order has been successfully generated and passed to the processing system. Stock allocation is complete.</blockquote>\n"
                 f"┋\n"
-                f"┣ Скоро с вами свяжется <b>@klassikaone</b> для получения.\n"
+                f"┣ <b>@klassikaone</b> will contact you shortly for delivery.\n"
                 f"┋\n"
-                f"┣ <b>Детали:</b> {current_qty}x {html.escape(title)}\n"
-                f"┗┅┅┅/ Списано: {total_cost} PTS /"
+                f"┣ <b>Details:</b> {current_qty}x {html.escape(title)}\n"
+                f"┗┅┅┅/ Spent: {total_cost} PTS /"
             )
             builder = InlineKeyboardBuilder()
-            builder.button(text='<tg-emoji emoji-id="5920332557466997677">🏪</tg-emoji> Магазин', callback_data="game_shop")
+            builder.button(text='<tg-emoji emoji-id="5920332557466997677">🏪</tg-emoji> Shop', callback_data="game_shop")
             await safe_edit_text(callback, success_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
             buyer_username = f"@{callback.from_user.username}" if callback.from_user.username else f"ID: {user_id}"
             admin_alert_text = (
-                f"┏┅<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>┅ <b>/ НОВЫЙ ЗАКАЗ /</b>\n"
+                f"┏┅<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>┅ <b>/ NEW ORDER /</b>\n"
                 f"┋\n"
-                f"┣ <blockquote>Получено новое уведомление о покупке. Требуется ручная сверка и выдача ассетов.</blockquote>\n"
+                f"┣ <blockquote>New purchase notification received. Manual verification and asset delivery required.</blockquote>\n"
                 f"┋\n"
-                f"┣ <b>Номер заказа:</b> <code>#{order_id}</code>\n"
-                f"┣ <b>Покупатель:</b> {buyer_username} (<code>{user_id}</code>)\n"
-                f"┣ <b>Что приобрел:</b> {current_qty}x <b>{html.escape(title)}</b>\n"
+                f"┣ <b>Order Number:</b> <code>#{order_id}</code>\n"
+                f"┣ <b>Buyer:</b> {buyer_username} (<code>{user_id}</code>)\n"
+                f"┣ <b>Items:</b> {current_qty}x <b>{html.escape(title)}</b>\n"
                 f"┋\n"
-                f"┗┅┅┅/ Выдать заказ /"
+                f"┗┅┅┅/ Deliver Order /"
             )
             for admin_id in ADMINS_TO_NOTIFY:
                 try:
@@ -266,31 +268,9 @@ async def process_quantity_change(callback: types.CallbackQuery, state: FSMConte
 
 @router.callback_query(F.data == "connect_ton_wallet")
 async def handle_connect_wallet(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-    user_id = callback.from_user.id
-
-    # Инициализируем коннектор под текущего пользователя через менеджер
-    connector = tonconnect_manager.get_connector(user_id)
-
-    # Генерируем универсальную ссылку для подключения (подходит для большинства кошельков)
-    wallets = connector.get_wallets()
-    # Запрашиваем дефолтную универсальную ссылку подключения
-    generated_url = await connector.connect(wallets[0] if wallets else "tonkeeper")
-
-    connect_text = (
-        "┏┅<tg-emoji emoji-id=\"5316612764427367709\">🔗</tg-emoji>┅ <b>/ TON CONNECT ACTIVATION /</b>\n"
-        "┋\n"
-        "┣ <blockquote>Для успешной привязки криптографического кошелька нажмите на кнопку генерации сессии ниже. Вы будете автоматически перенаправлены в интерфейс приложения.</blockquote>\n"
-        "┋\n"
-        "┗┅┅┅/ Ссылка активна 3 минуты /"
-    )
-
-    builder = InlineKeyboardBuilder()
-    builder.button(text="📱 Connect via Wallet App", url=generated_url)
-    builder.button(text="◀️ Отмена", callback_data="game_profile")
-    builder.adjust(1)
-
-    await safe_edit_text(callback, connect_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    # This button now triggers the new flow in handlers/wallet.py
+    from handlers.wallet import start_wallet_connect
+    await start_wallet_connect(callback, state)
 
 
 @router.callback_query(F.data == "disconnect_ton_wallet")
@@ -298,23 +278,27 @@ async def handle_disconnect_wallet(callback: types.CallbackQuery):
     await callback.answer()
     user_id = callback.from_user.id
 
-    # 1. Сбрасываем активный сетевой мост в библиотеке
-    connector = tonconnect_manager.get_connector(user_id)
-    if connector.connected:
+    # 1. Clear active bridge session if any
+    from handlers.wallet import MANIFEST_URL
+    storage = SupabaseStorage(supabase, user_id)
+    connector = TonConnect(manifest_url=MANIFEST_URL, storage=storage)
+
+    is_restored = await connector.restore_connection()
+    if is_restored and connector.connected:
         await connector.disconnect()
 
-    # 2. Обнуляем записи структуры данных в Supabase
+    # 2. Update database
     await db.unlink_wallet(user_id)
 
     disconnect_text = (
         "┏┅<tg-emoji emoji-id=\"5258420634785947640\">🔄</tg-emoji>┅ <b>/ WALLET DISCONNECTED /</b>\n"
         "┋\n"
-        "┣ <blockquote>Криптографический адрес успешно отвязан от игрового профиля. Внутренние дескрипторы очищены. Пассивное накопление очков за владение NFT-паками заморожено.</blockquote>\n"
+        "┣ <blockquote>The cryptographic address has been successfully unlinked from your gaming profile. Internal descriptors are cleared. Points accumulation from NFT packs is frozen.</blockquote>\n"
         "┋\n"
         "┗┅┅┅/ #NOTAPES /"
     )
     builder = InlineKeyboardBuilder()
-    builder.button(text="◀️ В профиль", callback_data="game_profile")
+    builder.button(text="◀️ To Profile", callback_data="game_profile")
     builder.adjust(1)
 
     await safe_edit_text(callback, disconnect_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
@@ -362,7 +346,7 @@ async def open_leaderboard(callback: types.CallbackQuery):
     leader_text = (
         "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ <b>/ PACK HOLDERS LEADERBOARD /</b>\n"
         "┋\n"
-        "┣ <blockquote>Глобальный рейтинг распределения токенизированных коллекций. Данные синхронизируются в реальном времени напрямую через агрегатор Stickers Tools API.</blockquote>\n"
+        "┣ <blockquote>Global ranking of tokenized collection distribution. Data is synchronized in real-time directly via the Stickers Tools API aggregator.</blockquote>\n"
         "┋\n"
         f"{leader_rows}"
         "┋\n"
