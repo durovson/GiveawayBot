@@ -1,6 +1,0 @@
-aiogram>=3.27.0
-supabase
-python-dotenv
-flask
-requests
-pytz
