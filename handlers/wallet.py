@@ -6,6 +6,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBut
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.enums import ParseMode
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from pytonconnect import TonConnect
 from loader import bot
@@ -47,41 +48,30 @@ async def start_wallet_connect(callback: CallbackQuery, state: FSMContext):
         await callback.answer("Wallet is already connected!", show_alert=True)
         return
 
-    # Получаем список поддерживаемых кошельков и ищем Tonkeeper
+    # Получаем список поддерживаемых кошельков
     wallets = connector.get_wallets()
-    tonkeeper = next((w for w in wallets if w.get('appName') == 'tonkeeper' or w.get('name', '').lower() == 'tonkeeper'), None)
+    builder = InlineKeyboardBuilder()
 
-    if not tonkeeper and wallets:
-        tonkeeper = wallets[0]
+    for wallet in wallets:
+        # Проверяем популярные кошельки
+        app_name = wallet.get('appName') or wallet.get('app_name')
+        if app_name in ['tonkeeper', 'mytonwallet', 'tonhub', 'telegram-wallet']:
+            res = connector.connect(wallet)
+            connect_url = await res if asyncio.iscoroutine(res) else res
+            builder.button(text=wallet.get('name'), url=connect_url)
 
-    if not tonkeeper:
-        await callback.answer("Error: TON wallets config not found!", show_alert=True)
-        return
-
-    # Инициируем сессию подключения через метод connect()
-    res = connector.connect(tonkeeper)
-    connect_url = await res if asyncio.iscoroutine(res) else res
-
-    # Формируем прямую deep-link ссылку для Tonkeeper
-    if connect_url.startswith("tc://"):
-        tonkeeper_deeplink = connect_url.replace("tc://", "https://app.tonkeeper.com/ton-connect?")
-    else:
-        tonkeeper_deeplink = connect_url
-
-    markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔗 Connect Tonkeeper", url=tonkeeper_deeplink)],
-        [InlineKeyboardButton(text="❌ Cancel", callback_data="cancel_connect")]
-    ])
+    builder.button(text="❌ Cancel", callback_data="cancel_connect")
+    builder.adjust(2)
 
     connect_text = (
         f"┏┅<tg-emoji emoji-id=\"5316612764427367709\">🔗</tg-emoji>┅ <b>/ WALLET LINKING /</b>\n"
         f"┋\n"
-        f"┣ <blockquote>You are starting the process of linking your wallet. You have 3 minutes to confirm the action in your wallet application.</blockquote>\n"
+        f"┣ <blockquote>Select your preferred TON wallet. You have 3 minutes to confirm the action in your wallet application.</blockquote>\n"
         f"┋\n"
-        f"┗┅┅┅/ Tap the button below /"
+        f"┗┅┅┅/ Choose a wallet /"
     )
 
-    sent_message = await safe_edit_text(callback, connect_text, reply_markup=markup, parse_mode=ParseMode.HTML)
+    sent_message = await safe_edit_text(callback, connect_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
     await state.set_state(WalletConnectState.waiting_for_connection)
     await state.update_data(connect_msg_id=sent_message.message_id)
@@ -172,3 +162,13 @@ async def cancel_wallet_connect(callback: CallbackQuery, state: FSMContext):
         f"┗┅┅┅/ #NOTAPES /"
     )
     await safe_edit_text(callback, cancel_text, parse_mode=ParseMode.HTML)
+
+@router.callback_query(F.data == "unlink_wallet_request")
+async def process_unlink_wallet(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    await db.unlink_wallet(user_id)
+    await callback.answer("🔄 Кошелек успешно отключен от вашего профиля!", show_alert=True)
+
+    # Refresh profile view - using a hack to import here to avoid circular dependencies
+    from handlers.game_menu import open_profile
+    await open_profile(callback)

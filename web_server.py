@@ -19,8 +19,12 @@ def index():
 
 @app.route("/tonconnect-manifest.json", methods=["GET"])
 def tonconnect_manifest():
+    app_url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("CUSTOM_URL", "https://notfunrobot.onrender.com")
+    if not app_url.startswith("http"):
+        app_url = "https://" + app_url
+
     manifest = {
-        "url": "https://t.me/notfunrobot",
+        "url": app_url,
         "name": "NOTAPES SYSTEM",
         "iconUrl": "https://i.ibb.co/CKLMgCcD/photo-2026-05-22-22-45-17.jpg"
     }

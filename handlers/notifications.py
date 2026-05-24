@@ -165,23 +165,22 @@ async def select_notif_to_manage(callback: types.CallbackQuery, state: FSMContex
         custom_buttons = []
 
     await state.update_data(
-        id=notif['id'],
-        title=notif['title'],
-        text=notif['text'],
+        id=int(notif['id']),
+        title=str(notif['title']),
+        text=str(notif['text']),
         custom_buttons=custom_buttons,
-        interval_hours=notif['interval_hours'],
-        chat_id=notif['chat_id'],
-        is_active=notif['is_active'],
-        last_msg_id=callback.message.message_id
+        interval_hours=float(notif['interval_hours']),
+        chat_id=int(notif['chat_id']),
+        is_active=bool(notif['is_active']),
+        last_msg_id=int(callback.message.message_id)
     )
     await show_notification_params(callback, state, bot)
     await state.set_state(NotificationStates.CONFIRMATION)
 
 @router.message(NotificationStates.WAITING_FOR_TITLE)
-async def enter_notif_title(message: types.Message, state: FSMContext, bot: Bot):
+async def process_notif_title(message: types.Message, state: FSMContext, bot: Bot):
     try: await message.delete()
     except: pass
-
     await state.update_data(title=message.text)
     data = await state.get_data()
 
@@ -190,8 +189,8 @@ async def enter_notif_title(message: types.Message, state: FSMContext, bot: Bot)
         await state.set_state(NotificationStates.CONFIRMATION)
     else:
         await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
-            "<tg-emoji emoji-id=\"5891105528356018797\">📝</tg-emoji> <b>Notification Text</b>\n\n"
-            "<blockquote>Enter the main text of the notification.</blockquote>\n\n"
+            "<tg-emoji emoji-id=\"5258252276362909477\">➕</tg-emoji> <b>Notification Text</b>\n\n"
+            "<blockquote>Enter the advertising text. HTML is supported.</blockquote>\n\n"
             "<b>Enter text:</b>",
             reply_markup=get_notification_nav_keyboard(),
             parse_mode=ParseMode.HTML
@@ -199,10 +198,9 @@ async def enter_notif_title(message: types.Message, state: FSMContext, bot: Bot)
         await state.set_state(NotificationStates.WAITING_FOR_TEXT)
 
 @router.message(NotificationStates.WAITING_FOR_TEXT)
-async def enter_notif_text(message: types.Message, state: FSMContext, bot: Bot):
+async def process_notif_text(message: types.Message, state: FSMContext, bot: Bot):
     try: await message.delete()
     except: pass
-
     await state.update_data(text=message.text)
     data = await state.get_data()
 
@@ -212,27 +210,28 @@ async def enter_notif_text(message: types.Message, state: FSMContext, bot: Bot):
     else:
         await show_add_button_prompt(message, state, bot)
 
-async def show_add_button_prompt(message_or_cb, state: FSMContext, bot: Bot, error_msg: str = ""):
+async def show_add_button_prompt(message_or_cb, state: FSMContext, bot: Bot, error_msg: str = None):
     data = await state.get_data()
     buttons = data.get('custom_buttons', [])
 
-    text = (
-        f"<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji> <b>Notification Buttons</b> ({len(buttons)} added)\n\n"
-        "<blockquote>Please send the text for the button and its link.\n\n"
-        "Example: Visit Website https://example.com</blockquote>"
-    )
+    text = "<b>Add Buttons</b>\n\n"
+    if buttons:
+        text += "<b>Current buttons:</b>\n"
+        for i, btn in enumerate(buttons, 1):
+            text += f"{i}. {btn['text']} -> {btn['url']}\n"
+        text += "\n"
 
+    text += "<blockquote>Send a message in format: <code>Button Text https://link.com</code> to add a button. Or click Skip/Done.</blockquote>"
     if error_msg:
         text = f"{error_msg}\n\n{text}"
 
     builder = InlineKeyboardBuilder()
     if buttons:
-        builder.button(text="Done / Skip", callback_data="notif_buttons_done", icon_custom_emoji_id="5260416304224936047")
+        builder.button(text="Done ✅", callback_data="notif_buttons_done")
     else:
-        builder.button(text="Skip", callback_data="notif_buttons_done", icon_custom_emoji_id="5260687681733533075")
+        builder.button(text="Skip ➡️", callback_data="notif_buttons_done")
 
     builder.button(text="Back", callback_data="notif_back", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
     if isinstance(message_or_cb, types.CallbackQuery):
@@ -264,7 +263,7 @@ async def process_button_input(message: types.Message, state: FSMContext, bot: B
 
     data = await state.get_data()
     buttons = data.get('custom_buttons', [])
-    buttons.append({"text": button_title, "url": url})
+    buttons.append({"text": str(button_title), "url": str(url)})
 
     await state.update_data(custom_buttons=buttons)
     await show_add_button_prompt(message, state, bot)
@@ -365,31 +364,40 @@ async def select_notif_chat(callback: types.CallbackQuery, state: FSMContext, bo
 @router.callback_query(F.data == "notif_save", NotificationStates.CONFIRMATION)
 async def save_notification(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    if not data.get('chat_id') or not data.get('title') or not data.get('text') or not data.get('interval_hours'):
+    # Explicit casting and validation
+    chat_id = data.get('chat_id')
+    title = data.get('title')
+    text = data.get('text')
+    interval_hours = data.get('interval_hours')
+
+    if not chat_id or not title or not text or interval_hours is None:
         await callback.answer("❌ Please fill all fields", show_alert=True)
         return
 
     notif_data = {
-        "title": data['title'],
-        "text": data['text'],
+        "title": str(title),
+        "text": str(text),
         "custom_buttons": data.get('custom_buttons', []),
-        "interval_hours": data['interval_hours'],
-        "chat_id": data['chat_id'],
-        "is_active": data.get('is_active', True)
+        "interval_hours": float(interval_hours),
+        "chat_id": int(chat_id),
+        "is_active": bool(data.get('is_active', True))
     }
+
+    if data.get('id'):
+        notif_data['id'] = int(data['id'])
 
     # Still keep legacy fields for now just in case, but custom_buttons is primary
     if data.get('custom_buttons'):
-        notif_data['button_url'] = data['custom_buttons'][0]['url']
-        notif_data['button_text'] = data['custom_buttons'][0]['text']
+        notif_data['button_url'] = str(data['custom_buttons'][0]['url'])
+        notif_data['button_text'] = str(data['custom_buttons'][0]['text'])
 
-    if data.get('id'):
-        notif_data['id'] = data['id']
-
-    await db.upsert_notification(notif_data)
-    await callback.answer("✅ Saved successfully", show_alert=True)
-    await state.clear()
-    await start_notification_management(callback, state)
+    success = await db.upsert_notification(notif_data)
+    if success:
+        await callback.answer("✅ Saved successfully", show_alert=True)
+        await state.clear()
+        await start_notification_management(callback, state)
+    else:
+        await callback.answer("❌ Failed to save to database. Check logs.", show_alert=True)
 
 @router.callback_query(F.data == "notif_toggle", NotificationStates.CONFIRMATION)
 async def toggle_notification(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
@@ -412,7 +420,7 @@ async def edit_notif_field(callback: types.CallbackQuery, state: FSMContext, bot
         await safe_edit_text(callback, "<b>Enter new text:</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(NotificationStates.WAITING_FOR_TEXT)
     elif field == "buttons":
-        await state.update_data(custom_buttons=[]) # Reset buttons when editing for simplicity, or we could add management
+        await state.update_data(custom_buttons=[]) # Reset buttons when editing for simplicity
         await show_add_button_prompt(callback, state, bot)
     elif field == "interval":
         await safe_edit_text(callback, "<b>Select new interval:</b>", reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML)

@@ -6,8 +6,8 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.enums import ParseMode
-from database import db  # Импортируем синглтон базы данных напрямую
-from utils import safe_edit_text
+from database import db
+from utils import safe_edit_text, to_raw_address
 from loader import bot
 from storage import SupabaseStorage
 from pytonconnect import TonConnect
@@ -104,7 +104,7 @@ async def open_profile(callback: types.CallbackQuery):
     if not wallet:
         builder.button(text='Connect TON Wallet', callback_data="connect_ton_wallet", icon_custom_emoji_id="5316612764427367709")
     else:
-        builder.button(text='Disconnect Wallet', callback_data="disconnect_ton_wallet", icon_custom_emoji_id="5258420634785947640")
+        builder.button(text='Disconnect Wallet', callback_data="unlink_wallet_request", icon_custom_emoji_id="5258420634785947640")
 
     # Задача 3: Раздельные кнопки Назад и В главное меню
     builder.button(text='◀️ Назад', callback_data="game_main")
@@ -119,7 +119,7 @@ async def open_profile(callback: types.CallbackQuery):
         f"┣ <b>User ID:</b> <code>{user_id}</code>\n"
         f"┣ <b>TON Wallet:</b> {wallet_str}\n"
         f"┣ <b>Packs Held:</b> <code>{profile.get('packs_count', 0)} NFT</code>\n"
-        f"┣ <b>Points Balance:</b> <code>{profile.get('points_balance', 0.0)} $PTS</code>\n"
+        f"┣ <b>Points Balance:</b> <code>{profile.get('points_balance', 0.0)} </code>\n"
         f"┋\n"
         f"┗┅┅┅/ #NOTAPES /"
     )
@@ -151,75 +151,56 @@ async def open_shop(callback: types.CallbackQuery, state: FSMContext = None):
     await safe_edit_text(callback, shop_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data.startswith("buy_item_"))
-async def setup_quantity_selector(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
+async def handle_buy_item(callback: types.CallbackQuery, state: FSMContext):
     item_id = int(callback.data.split("_")[2])
     item = await db.get_shop_item_by_id(item_id)
-    if not item or item['stock_limit'] <= 0:
-        await callback.answer("This item is out of stock!", show_alert=True)
+    if not item:
+        await callback.answer("Item not found.", show_alert=True)
         return
 
+    await state.update_data(buy_item_id=item_id, buy_item_price=item['price'], buy_item_title=item['title'], buy_item_qty=1)
+    await render_quantity_menu(callback, item['title'], 1, item['price'])
     await state.set_state(ShopStates.select_quantity)
-    await state.update_data(item_id=item_id, current_qty=1, max_qty=item['stock_limit'], price=float(item['price']))
-    await render_quantity_menu(callback, item['title'], 1, float(item['price']))
 
-async def render_quantity_menu(callback: types.CallbackQuery, title: str, qty: int, price: float):
+async def render_quantity_menu(callback, title, qty, price):
+    total = qty * price
     builder = InlineKeyboardBuilder()
-    builder.button(text="–1", callback_data="qty_minus")
-    builder.button(text='Qty: ' + str(qty), callback_data="qty_ignore", icon_custom_emoji_id="5258134813302332906")
-    builder.button(text="+1", callback_data="qty_plus")
-    builder.button(text='Buy for ' + str(qty * price) + ' PTS', callback_data="qty_confirm", icon_custom_emoji_id="5260726538302660868")
+    builder.button(text="-1", callback_data="qty_minus_1")
+    builder.button(text=str(qty), callback_data="qty_current")
+    builder.button(text="+1", callback_data="qty_plus_1")
+    builder.button(text=f"Confirm Purchase ({total} PTS)", callback_data="confirm_buy_item", style="success")
+    builder.button(text="Cancel", callback_data="game_shop", style="danger")
+    builder.adjust(3, 1, 1)
 
-    # Задача 3: Назад ведет в магазин Drop Shop, В главное меню возвращает в корень бота
-    builder.button(text='◀️ Назад', callback_data="game_shop")
-    builder.button(text='В главное меню', callback_data="main_menu", icon_custom_emoji_id="5257963315258204021")
-    builder.adjust(3, 1, 2)  # Красиво группируем нижние навигационные кнопки в один ряд
-
-    menu_text = (
-        f"┏┅<tg-emoji emoji-id=\"5257963315258204021\">🏘</tg-emoji>┅ <b>/ PURCHASE SETUP /</b>\n"
-        f"┋\n"
-        f"┣ <blockquote>Specify the exact quantity for reservation. Balance changes are recalculated without additional network calls.</blockquote>\n"
-        f"┋\n"
-        f"┣ <b>Item:</b> {html.escape(title)}\n"
-        f"┋\n"
-        f"┗┅┅┅/ Total: {qty * price} PTS /"
-    )
-    await safe_edit_text(callback, menu_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    text = f"<b>Buying {html.escape(title)}</b>\n\nSelect quantity:"
+    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
 @router.callback_query(ShopStates.select_quantity)
-async def process_quantity_change(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-    if callback.data == "game_shop":
-        await state.clear()
-        return await open_shop(callback)
-
-    if not callback.data.startswith("qty_"):
-        return
-
+async def process_qty_change(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    current_qty, item_id, price = data['current_qty'], data['item_id'], data['price']
-    item = await db.get_shop_item_by_id(item_id)
-    if not item:
-        await callback.answer("🚨 Item no longer available.", show_alert=True)
-        await state.clear()
-        return await open_shop(callback)
+    current_qty = data.get("buy_item_qty", 1)
+    item_id = data.get("buy_item_id")
+    price = data.get("buy_item_price")
+    title = data.get("buy_item_title")
 
-    title = item['title']
-    live_stock = item['stock_limit']
-
-    if callback.data == "qty_minus" and current_qty > 1:
-        current_qty -= 1
-        current_qty = min(current_qty, live_stock)
-        await state.update_data(current_qty=current_qty)
-        await render_quantity_menu(callback, title, current_qty, price)
-    elif callback.data == "qty_plus" and current_qty < live_stock:
+    if callback.data == "qty_minus_1":
+        if current_qty > 1:
+            current_qty -= 1
+            await state.update_data(buy_item_qty=current_qty)
+            return await render_quantity_menu(callback, title, current_qty, price)
+        await callback.answer()
+    elif callback.data == "qty_plus_1":
         current_qty += 1
-        await state.update_data(current_qty=current_qty)
-        await render_quantity_menu(callback, title, current_qty, price)
-    elif callback.data == "qty_confirm":
-        if current_qty > live_stock:
-             await callback.answer(f"🚨 Stock updated. Max available: {live_stock}", show_alert=True)
-             await state.update_data(current_qty=live_stock)
+        await state.update_data(buy_item_qty=current_qty)
+        return await render_quantity_menu(callback, title, current_qty, price)
+    elif callback.data == "confirm_buy_item":
+        await callback.answer()
+        # Verify stock again
+        item = await db.get_shop_item_by_id(item_id)
+        if not item or item['stock_limit'] < current_qty:
+             live_stock = item['stock_limit'] if item else 0
+             await callback.answer(f"Insufficient stock! Available: {live_stock}", show_alert=True)
+             await state.update_data(buy_item_qty=live_stock)
              return await render_quantity_menu(callback, title, live_stock, price)
 
         user_id = callback.from_user.id
@@ -316,6 +297,7 @@ async def open_leaderboard(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     profile = await db.get_game_profile(user_id)
     user_wallet = profile.get("wallet_address") if profile else None
+    user_wallet_raw = to_raw_address(user_wallet)
 
     api_holders = await fetch_all_api_holders()
 
@@ -331,7 +313,7 @@ async def open_leaderboard(callback: types.CallbackQuery):
         if idx <= 10:
             leader_rows += f"┋ <b>{idx}.</b> <code>{short_addr}</code> — {count} packs\n"
 
-        if user_wallet and addr.lower() == user_wallet.lower():
+        if user_wallet_raw and to_raw_address(addr) == user_wallet_raw:
             user_in_top_10 = idx <= 10
             user_rank_data = (idx, short_addr, count)
 

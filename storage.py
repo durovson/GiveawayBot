@@ -1,4 +1,5 @@
 from pytonconnect.storage import IStorage
+from datetime import datetime
 
 class SupabaseStorage(IStorage):
     def __init__(self, supabase_client, user_id: int):
@@ -7,17 +8,17 @@ class SupabaseStorage(IStorage):
 
     async def set_item(self, key: str, value: str) -> None:
         await self.supabase.table("ton_connect_sessions").upsert({
-            "user_id": self.user_id,
-            "key": key,
-            "value": value,
-            "updated_at": "now()"
+            "user_id": int(self.user_id),
+            "key": str(key),
+            "value": str(value),
+            "updated_at": datetime.now().isoformat()
         }).execute()
 
     async def get_item(self, key: str, default_value: str = None) -> str:
         response = await self.supabase.table("ton_connect_sessions") \
             .select("value") \
-            .eq("user_id", self.user_id) \
-            .eq("key", key) \
+            .eq("user_id", int(self.user_id)) \
+            .eq("key", str(key)) \
             .execute()
 
         data = response.data
@@ -28,6 +29,6 @@ class SupabaseStorage(IStorage):
     async def remove_item(self, key: str) -> None:
         await self.supabase.table("ton_connect_sessions") \
             .delete() \
-            .eq("user_id", self.user_id) \
-            .eq("key", key) \
+            .eq("user_id", int(self.user_id)) \
+            .eq("key", str(key)) \
             .execute()

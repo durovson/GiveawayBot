@@ -39,6 +39,29 @@ class GiveawayCreation(StatesGroup):
 def get_giveaway_kind_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="Fast (No channels)", callback_data="kind_fast", icon_custom_emoji_id="5323761960829862762")
+@router.callback_query(F.data == "create_giveaway")
+async def start_giveaway_creation(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.clear()
+    await state.set_state(GiveawayCreation.SELECT_CHAT)
+
+    chats = await db.get_tracked_chats()
+    builder = InlineKeyboardBuilder()
+
+    for chat in chats:
+        builder.button(text=chat["title"], callback_data=f"chat_{chat['chat_id']}")
+
+    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(1)
+
+    await safe_edit_text(callback,
+        "<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Target chat</b>\n\n"
+        "<blockquote>Select the chat/channel where the giveaway will be held</blockquote>\n\n"
+        "<b>Select chat:</b>",
+        reply_markup=builder.as_markup(),
+        parse_mode=ParseMode.HTML
+    )
+
     builder.button(text="Partner (Required channels)", callback_data="kind_partner", icon_custom_emoji_id="5258486128742244085")
     builder.button(text="Back", callback_data="back", icon_custom_emoji_id="5260687119092817530")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
@@ -713,19 +736,28 @@ async def process_confirm_giveaway(callback: types.CallbackQuery, state: FSMCont
         return
 
     # Update to active if already exists or will be created as active
-    giveaway = await db.create_giveaway(
-        creator_id=callback.from_user.id,
-        chat_id=data['chat_id'],
-        title=data['title'],
-        mode=data['gtype'],
-        value=data['mode_value'],
-        winners_count=data['winners_count'],
-        prizes=data['prizes'],
-        end_at=end_at,
-        mandatory_channels=data.get('mandatory_channels', []),
-        allowed_users=data.get('allowed_users')
-    )
-    await db.update_giveaway_status(giveaway["id"], "active")
+    try:
+        giveaway = await db.create_giveaway(
+            creator_id=callback.from_user.id,
+            chat_id=int(data["chat_id"]),
+            title=str(data["title"]),
+            mode=str(data["gtype"]),
+            value=data["mode_value"],
+            winners_count=int(data["winners_count"]),
+            prizes=data["prizes"],
+            end_at=end_at,
+            mandatory_channels=data.get("mandatory_channels", []),
+            allowed_users=data.get("allowed_users")
+        )
+        if not giveaway:
+            await callback.answer("❌ Failed to create giveaway in database.", show_alert=True)
+            return
+
+        await db.update_giveaway_status(giveaway["id"], "active")
+    except Exception as e:
+        logger.error(f"Error in process_confirm_giveaway: {e}")
+        await callback.answer("❌ An unexpected error occurred while saving the giveaway.", show_alert=True)
+        return
 
     post_text, gif_to_send = await get_giveaway_post_data(giveaway)
 
