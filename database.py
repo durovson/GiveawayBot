@@ -60,7 +60,7 @@ class Database:
     async def get_tracked_groups(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("chats").select("*").in_("chat_type", ["group", "supergroup", "channel"]).execute()
+            response = await self.client.table("chats").select("*").in_("chat_type", ["group", "supergroup"]).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting tracked groups: {e}")
@@ -85,7 +85,7 @@ class Database:
             response = await self.client.table("giveaways").insert(data).execute()
             return response.data[0] if response.data else None
         except Exception as e:
-            logger.error(f"Error creating giveaway: {e}")
+            logger.error(f"❌ DATABASE ERROR (create_giveaway): {e}", exc_info=True)
             return None
 
     async def add_giveaway_message(self, giveaway_id: int, chat_id: int, message_id: int):
@@ -99,13 +99,13 @@ class Database:
         except Exception as e:
             logger.error(f"Error adding giveaway message: {e}")
 
-    async def get_giveaway_messages(self, giveaway_id: int) -> List[Dict]:
+    async def get_active_giveaways(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("giveaway_messages").select("*").eq("giveaway_id", int(giveaway_id)).execute()
+            response = await self.client.table("giveaways").select("*").eq("status", "active").execute()
             return response.data
         except Exception as e:
-            logger.error(f"Error getting giveaway messages for {giveaway_id}: {e}")
+            logger.error(f"Error getting active giveaways: {e}")
             return []
 
     async def finish_giveaway(self, giveaway_id: int):
@@ -114,29 +114,6 @@ class Database:
             await self.client.table("giveaways").update({"status": "finished"}).eq("id", int(giveaway_id)).execute()
         except Exception as e:
             logger.error(f"Error finishing giveaway {giveaway_id}: {e}")
-
-    async def update_giveaway_status(self, giveaway_id: int, status: str) -> bool:
-        if not self._check_client(): return False
-        try:
-            await self.client.table("giveaways").update({"status": str(status)}).eq("id", int(giveaway_id)).execute()
-            return True
-        except Exception as e:
-            logger.error(f"Error updating giveaway {giveaway_id} status to {status}: {e}")
-            return False
-
-    async def get_expired_giveaways(self, now: datetime) -> List[Dict]:
-        if not self._check_client(): return []
-        try:
-            response = await (self.client.table("giveaways")
-                .select("*")
-                .eq("status", "active")
-                .eq("mode", "timed")
-                .lte("end_at", now.isoformat())
-                .execute())
-            return response.data
-        except Exception as e:
-            logger.error(f"Error fetching expired giveaways: {e}")
-            return []
 
     async def get_giveaway(self, giveaway_id: int) -> Optional[Dict]:
         if not self._check_client(): return None
@@ -241,15 +218,15 @@ class Database:
             }
             if data.get('id'):
                 clean_data['id'] = int(data['id'])
-            if data.get('button_url'):
-                clean_data['button_url'] = str(data['button_url'])
+
+            # NOTE: 'button_url' column was removed from schema, we use 'custom_buttons' (jsonb)
             if data.get('button_text'):
                 clean_data['button_text'] = str(data['button_text'])
 
             await self.client.table("notifications").upsert(clean_data).execute()
             return True
         except Exception as e:
-            logger.error(f"Error upserting notification: {e}")
+            logger.error(f"❌ DATABASE ERROR (upsert_notification): {e}", exc_info=True)
             return False
 
     async def get_notifications(self) -> List[Dict]:

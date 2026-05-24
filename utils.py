@@ -47,24 +47,42 @@ async def safe_answer(message, text, **kwargs):
         except TelegramBadRequest:
             return await message.answer(strip_all_tags(text), **kwargs)
 
-async def safe_edit_text(message, text, **kwargs):
+async def safe_edit_text(message, text, state=None, **kwargs):
     # message can be Message or CallbackQuery
     target = message.message if hasattr(message, 'message') else message
     try:
         return await target.edit_text(text, **kwargs)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
+        err_str = str(e)
+        if "message to edit not found" in err_str:
+            res = await bot.send_message(target.chat.id, text, **kwargs)
+            if state:
+                await state.update_data(last_msg_id=res.message_id)
+            return res
+        if "message is not modified" in err_str:
+            return target
+
+        if "can't parse entities" not in err_str and "DOCUMENT_INVALID" not in err_str:
             raise e
         try:
             return await target.edit_text(strip_custom_emojis(text), **kwargs)
         except TelegramBadRequest:
             return await target.edit_text(strip_all_tags(text), **kwargs)
 
-async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
+async def safe_bot_edit_text(bot, chat_id, message_id, text, state=None, **kwargs):
     try:
         return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, **kwargs)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
+        err_str = str(e)
+        if "message to edit not found" in err_str:
+            res = await bot.send_message(chat_id, text, **kwargs)
+            if state:
+                await state.update_data(last_msg_id=res.message_id)
+            return res
+        if "message is not modified" in err_str:
+            return None
+
+        if "can't parse entities" not in err_str and "DOCUMENT_INVALID" not in err_str:
             raise e
         try:
             return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=strip_custom_emojis(text), **kwargs)

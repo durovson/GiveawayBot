@@ -19,7 +19,7 @@ def index():
 
 @app.route("/tonconnect-manifest.json", methods=["GET"])
 def tonconnect_manifest():
-    app_url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("CUSTOM_URL", "https://notfunrobot.onrender.com")
+    app_url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("CUSTOM_URL", "https://giveaway-bot-hiap.onrender.com")
     if not app_url.startswith("http"):
         app_url = "https://" + app_url
 
