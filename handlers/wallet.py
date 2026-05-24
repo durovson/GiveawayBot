@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 # Manifest URL - should point to the Flask endpoint
-BASE_URL = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("CUSTOM_URL", "https://notfunrobot.onrender.com")
+BASE_URL = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("CUSTOM_URL", "https://giveaway-bot-hiap.onrender.com")
 if not BASE_URL.startswith("http"):
     BASE_URL = "https://" + BASE_URL
 MANIFEST_URL = f"{BASE_URL.rstrip('/')}/tonconnect-manifest.json"

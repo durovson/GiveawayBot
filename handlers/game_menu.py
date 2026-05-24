@@ -53,10 +53,10 @@ async def fetch_all_api_holders():
                     holders = json_data["data"].get("holders", [])
                     all_holders.extend(holders)
 
-                    if not json_data["data"].get("hasMore") or len(holders) < limit:
+                    if not json_data["data"].get("hasMore") or not holders:
                         success_complete = True
                         break
-                    offset += limit
+                    offset += len(holders)
             except Exception:
                 break
 
@@ -100,13 +100,25 @@ async def open_profile(callback: types.CallbackQuery):
     wallet = profile.get("wallet_address")
     wallet_str = f"<code>{wallet[:6]}...{wallet[-6:]}</code>" if wallet else "❌ Not Connected"
 
+    # Dynamic pack verification
+    packs_count = 0
+    if wallet:
+        try:
+            user_raw = to_raw_address(wallet)
+            api_holders = await fetch_all_api_holders()
+            for holder in api_holders:
+                if to_raw_address(holder.get("addr")) == user_raw:
+                    packs_count = holder.get("count", 0)
+                    break
+        except Exception:
+            packs_count = 0
+
     builder = InlineKeyboardBuilder()
     if not wallet:
         builder.button(text='Connect TON Wallet', callback_data="connect_ton_wallet", icon_custom_emoji_id="5316612764427367709")
     else:
         builder.button(text='Disconnect Wallet', callback_data="unlink_wallet_request", icon_custom_emoji_id="5258420634785947640")
 
-    # Задача 3: Раздельные кнопки Назад и В главное меню
     builder.button(text='◀️ Назад', callback_data="game_main")
     builder.button(text='В главное меню', callback_data="main_menu", icon_custom_emoji_id="5257963315258204021")
     builder.adjust(1)
@@ -118,7 +130,7 @@ async def open_profile(callback: types.CallbackQuery):
         f"┋\n"
         f"┣ <b>User ID:</b> <code>{user_id}</code>\n"
         f"┣ <b>TON Wallet:</b> {wallet_str}\n"
-        f"┣ <b>Packs Held:</b> <code>{profile.get('packs_count', 0)} NFT</code>\n"
+        f"┣ <b>Packs Held:</b> <code>{packs_count} NFT</code>\n"
         f"┣ <b>Points Balance:</b> <code>{profile.get('points_balance', 0.0)} </code>\n"
         f"┋\n"
         f"┗┅┅┅/ #NOTAPES /"
