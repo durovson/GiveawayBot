@@ -1,5 +1,5 @@
 aiogram>=3.27.0
-supabase>=2.30.0
+supabase
 python-dotenv
 flask
 requests
