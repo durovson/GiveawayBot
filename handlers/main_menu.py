@@ -82,3 +82,8 @@ async def open_system_submenu(callback: types.CallbackQuery, state: FSMContext):
         "┗┅┅┅/ #NOTAPES /"
     )
     await safe_edit_text(callback, system_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+
+@router.callback_query(F.data == "create_giveaway")
+async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMContext):
+    from handlers.giveaway_creation import start_giveaway_creation
+    await start_giveaway_creation(callback, state)
