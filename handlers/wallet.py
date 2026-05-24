@@ -8,7 +8,6 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.enums import ParseMode
 
 from pytonconnect import TonConnect
-from pytonconnect.utils import Address
 from loader import bot, supabase
 from storage import SupabaseStorage
 from utils import safe_edit_text
@@ -24,6 +23,14 @@ MANIFEST_URL = f"{BASE_URL.rstrip('/')}/tonconnect-manifest.json"
 
 class WalletConnectState(StatesGroup):
     waiting_for_connection = State()
+
+def format_address(address: str) -> str:
+    """Safely formats TON address for display if Address utility is missing."""
+    if not address:
+        return "Unknown"
+    if len(address) <= 12:
+        return address
+    return f"{address[:6]}...{address[-6:]}"
 
 @router.callback_query(F.data == "start_connect")
 async def start_wallet_connect(callback: CallbackQuery, state: FSMContext):
@@ -76,12 +83,8 @@ async def wait_bridge_connection(connector: TonConnect, user_id: int, chat_id: i
         if is_connected and connector.connected:
             raw_address = connector.wallet.account.address
 
-            # Format address to User Friendly
-            friendly_address = Address(raw_address).to_str(
-                is_user_friendly=True,
-                is_url_safe=True,
-                is_bounceable=True
-            )
+            # Use raw address for DB, but format for display
+            friendly_address_display = format_address(raw_address)
 
             # Database transaction: points +100 and save address
             def _db_transaction():
@@ -94,7 +97,7 @@ async def wait_bridge_connection(connector: TonConnect, user_id: int, chat_id: i
                 # Update profile
                 supabase.table("users_game_profile").upsert({
                     "id": user_id,
-                    "wallet_address": friendly_address,
+                    "wallet_address": raw_address,
                     "points_balance": current_points + 100.0
                 }).execute()
 
@@ -105,7 +108,7 @@ async def wait_bridge_connection(connector: TonConnect, user_id: int, chat_id: i
             success_text = (
                 f"┏┅<tg-emoji emoji-id=\"6041731551845159060\">🎉</tg-emoji>┅ <b>/ WALLET CONNECTED /</b>\n"
                 f"┋\n"
-                f"┣ <b>Address:</b> <code>{friendly_address}</code>\n"
+                f"┣ <b>Address:</b> <code>{friendly_address_display}</code>\n"
                 f"┣ <b>Bonus:</b> <b>+100 PTS</b> added to your balance!\n"
                 f"┋\n"
                 f"┗┅┅┅/ Welcome to NOTAPES /"
