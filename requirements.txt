@@ -5,4 +5,4 @@ flask
 requests
 pytz
 aiogram-tonconnect>=0.14.0
-pytonconnect==0.3.0
+tonutils<2.0.0
