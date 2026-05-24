@@ -93,10 +93,10 @@ async def start_wallet_connect(callback: CallbackQuery, state: FSMContext):
 
 async def wait_bridge_connection(connector: TonConnect, user_id: int, chat_id: int, msg_id: int, state: FSMContext):
     try:
-        # Wait for SSE bridge connection (timeout 180s)
-        is_connected = await connector.wait_for_connection(timeout=180)
+        # Обертываем в asyncio.wait_for для корректной работы таймаута в библиотеке pytonconnect
+        await asyncio.wait_for(connector.wait_for_connection(), timeout=180)
 
-        if is_connected and connector.connected:
+        if connector.connected:
             raw_address = connector.wallet.account.address
 
             # Use raw address for DB, but format for display
