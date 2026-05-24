@@ -12,6 +12,3 @@ if not BOT_TOKEN:
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
-
-# Export Supabase client from db instance
-supabase = db.client
