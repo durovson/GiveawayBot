@@ -324,8 +324,7 @@ class Database:
         if not self._check_client(): return
         try:
             await self.client.table("users_game_profile").update({
-                "wallet_address": None,
-                "tonconnect_session": None
+                "wallet_address": None
             }).eq("id", user_id).execute()
             logger.info(f"🔄 Wallet unlinked for user {user_id}")
         except Exception as e:

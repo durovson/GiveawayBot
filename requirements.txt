@@ -1,8 +1,7 @@
 aiogram>=3.27.0
-supabase
+supabase>=2.30.0
 python-dotenv
 flask
 requests
 pytz
-aiogram-tonconnect==0.0.7
 pytonconnect==0.3.0
