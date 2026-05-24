@@ -36,9 +36,17 @@ class GiveawayCreation(StatesGroup):
     CONFIRMATION = State()
     EDIT_PARAMS = State()
 
+
+
 def get_giveaway_kind_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="Fast (No channels)", callback_data="kind_fast", icon_custom_emoji_id="5323761960829862762")
+    builder.button(text="Partner (Required channels)", callback_data="kind_partner", icon_custom_emoji_id="5258486128742244085")
+    builder.button(text="Back", callback_data="back", icon_custom_emoji_id="5260687119092817530")
+    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(1)
+    return builder.as_markup()
+
 @router.callback_query(F.data == "create_giveaway")
 async def start_giveaway_creation(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
@@ -62,11 +70,6 @@ async def start_giveaway_creation(callback: types.CallbackQuery, state: FSMConte
         parse_mode=ParseMode.HTML
     )
 
-    builder.button(text="Partner (Required channels)", callback_data="kind_partner", icon_custom_emoji_id="5258486128742244085")
-    builder.button(text="Back", callback_data="back", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(1)
-    return builder.as_markup()
 
 def get_nav_keyboard():
     builder = InlineKeyboardBuilder()
@@ -78,8 +81,9 @@ def get_nav_keyboard():
 def get_recheck_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="I added!", callback_data="recheck_admin", icon_custom_emoji_id="5260726538302660868")
+    builder.button(text="Back", callback_data="back", icon_custom_emoji_id="5260687119092817530")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(1)
+    builder.adjust(1, 2)
     return builder.as_markup()
 
 async def verify_all_channels(bot: Bot, channels_list: List[str]):
@@ -157,8 +161,9 @@ def get_edit_params_keyboard():
     builder.button(text="Winners", callback_data="edit_winners", icon_custom_emoji_id="5805553606635559688")
     builder.button(text="Prizes", callback_data="edit_prizes", icon_custom_emoji_id="5891105528356018797")
     builder.button(text="Confirm", callback_data="confirm_giveaway", icon_custom_emoji_id="5258073068852485953", style="success")
+    builder.button(text="Back", callback_data="back", icon_custom_emoji_id="5260687119092817530")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(2, 2, 2, 1, 1)
+    builder.adjust(2, 2, 2, 1, 2)
     return builder.as_markup()
 
 def get_message_link(chat, message_id: int) -> str:
@@ -577,9 +582,9 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
     )
 
     if isinstance(event, types.CallbackQuery):
-        await safe_edit_text(event, text, state=state, reply_markup=get_edit_params_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(event, text=text, state=state, reply_markup=get_edit_params_keyboard(), parse_mode=ParseMode.HTML)
     else:
-        await safe_bot_edit_text(bot, event.chat.id, data.get("last_msg_id"), state=state, text=text, reply_markup=get_edit_params_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_bot_edit_text(bot, event.chat.id, data.get("last_msg_id"), text=text, state=state, reply_markup=get_edit_params_keyboard(), parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data == "edit_title", StateFilter(GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS))
 async def edit_title(callback: types.CallbackQuery, state: FSMContext):
