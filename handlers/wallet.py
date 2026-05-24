@@ -47,11 +47,26 @@ async def start_wallet_connect(callback: CallbackQuery, state: FSMContext):
         await callback.answer("Wallet is already connected!", show_alert=True)
         return
 
-    # Generate bridge connection URL
-    connect_url = await connector.generate_connect_url()
+    # Получаем список поддерживаемых кошельков и ищем Tonkeeper
+    wallets = connector.get_wallets()
+    tonkeeper = next((w for w in wallets if w.get('appName') == 'tonkeeper' or w.get('name', '').lower() == 'tonkeeper'), None)
 
-    # Deep link for Tonkeeper
-    tonkeeper_deeplink = connect_url.replace("tc://", "https://app.tonkeeper.com/ton-connect?")
+    if not tonkeeper and wallets:
+        tonkeeper = wallets[0]
+
+    if not tonkeeper:
+        await callback.answer("Error: TON wallets config not found!", show_alert=True)
+        return
+
+    # Инициируем сессию подключения через метод connect()
+    res = connector.connect(tonkeeper)
+    connect_url = await res if asyncio.iscoroutine(res) else res
+
+    # Формируем прямую deep-link ссылку для Tonkeeper
+    if connect_url.startswith("tc://"):
+        tonkeeper_deeplink = connect_url.replace("tc://", "https://app.tonkeeper.com/ton-connect?")
+    else:
+        tonkeeper_deeplink = connect_url
 
     markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🔗 Connect Tonkeeper", url=tonkeeper_deeplink)],
@@ -88,7 +103,6 @@ async def wait_bridge_connection(connector: TonConnect, user_id: int, chat_id: i
             friendly_address_display = format_address(raw_address)
 
             # Database transaction: points +100 and save address
-            # Get current profile
             res = await db.client.table("users_game_profile").select("points_balance").eq("id", user_id).execute()
             current_points = 0.0
             if res.data:
@@ -118,7 +132,6 @@ async def wait_bridge_connection(connector: TonConnect, user_id: int, chat_id: i
                 parse_mode=ParseMode.HTML
             )
 
-            # Clean up the original connection message if possible
             try:
                 await bot.delete_message(chat_id, msg_id)
             except Exception:
