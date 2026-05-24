@@ -47,42 +47,24 @@ async def safe_answer(message, text, **kwargs):
         except TelegramBadRequest:
             return await message.answer(strip_all_tags(text), **kwargs)
 
-async def safe_edit_text(message, text, state=None, **kwargs):
+async def safe_edit_text(message, text, **kwargs):
     # message can be Message or CallbackQuery
     target = message.message if hasattr(message, 'message') else message
     try:
         return await target.edit_text(text, **kwargs)
     except TelegramBadRequest as e:
-        err_str = str(e)
-        if "message to edit not found" in err_str:
-            res = await bot.send_message(target.chat.id, text, **kwargs)
-            if state:
-                await state.update_data(last_msg_id=res.message_id)
-            return res
-        if "message is not modified" in err_str:
-            return target
-
-        if "can't parse entities" not in err_str and "DOCUMENT_INVALID" not in err_str:
+        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
             raise e
         try:
             return await target.edit_text(strip_custom_emojis(text), **kwargs)
         except TelegramBadRequest:
             return await target.edit_text(strip_all_tags(text), **kwargs)
 
-async def safe_bot_edit_text(bot, chat_id, message_id, text, state=None, **kwargs):
+async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
     try:
         return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, **kwargs)
     except TelegramBadRequest as e:
-        err_str = str(e)
-        if "message to edit not found" in err_str:
-            res = await bot.send_message(chat_id, text, **kwargs)
-            if state:
-                await state.update_data(last_msg_id=res.message_id)
-            return res
-        if "message is not modified" in err_str:
-            return None
-
-        if "can't parse entities" not in err_str and "DOCUMENT_INVALID" not in err_str:
+        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
             raise e
         try:
             return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=strip_custom_emojis(text), **kwargs)
@@ -99,27 +81,3 @@ async def safe_bot_send_message(bot, chat_id, text, **kwargs):
             return await bot.send_message(chat_id=chat_id, text=strip_custom_emojis(text), **kwargs)
         except TelegramBadRequest:
             return await bot.send_message(chat_id=chat_id, text=strip_all_tags(text), **kwargs)
-
-import base64
-
-def to_raw_address(address: str) -> str:
-    """Converts any TON address (Base64 or Raw) to lowercase Raw hex format."""
-    if not address:
-        return ""
-    if ":" in address:
-        return address.lower().strip()
-    try:
-        # Decode Base64
-        padded = address.replace('-', '+').replace('_', '/')
-        padded += "=" * ((4 - len(padded) % 4) % 4)
-        decoded = base64.b64decode(padded)
-
-        if len(decoded) == 36:
-            workchain = decoded[1]
-            if workchain == 255:
-                workchain = -1
-            hex_part = decoded[2:34].hex()
-            return f"{workchain}:{hex_part}".lower().strip()
-    except Exception:
-        pass
-    return address.lower().strip()

@@ -1,8 +1,8 @@
 import os
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.enums import ParseMode
 from dotenv import load_dotenv
-from database import db
 
 load_dotenv()
 

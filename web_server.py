@@ -3,7 +3,7 @@ import threading
 import time
 import requests
 import logging
-from flask import Flask, jsonify
+from flask import Flask
 
 logger = logging.getLogger(__name__)
 
@@ -16,19 +16,6 @@ def health():
 @app.route('/')
 def index():
     return "Bot is running", 200
-
-@app.route("/tonconnect-manifest.json", methods=["GET"])
-def tonconnect_manifest():
-    app_url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("CUSTOM_URL", "https://giveaway-bot-hiap.onrender.com")
-    if not app_url.startswith("http"):
-        app_url = "https://" + app_url
-
-    manifest = {
-        "url": app_url,
-        "name": "NOTAPES SYSTEM",
-        "iconUrl": "https://i.ibb.co/CKLMgCcD/photo-2026-05-22-22-45-17.jpg"
-    }
-    return jsonify(manifest), 200, {'Content-Type': 'application/json; charset=utf-8'}
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))

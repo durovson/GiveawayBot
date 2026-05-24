@@ -1,62 +1,64 @@
 import asyncio
 import logging
 import html
+import os
 import secrets
 import pytz
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional
+from typing import List, Dict, Any
 
-from aiogram import Bot
-from aiogram.enums import ChatType
-from aiogram.exceptions import TelegramBadRequest
+from aiogram import Bot, types
+from aiogram.enums import ParseMode, ChatType
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.exceptions import TelegramBadRequest
 
 from database import db
 from utils import strip_custom_emojis
 
 logger = logging.getLogger(__name__)
 
-# Super Admin ID for notifications
+# Constants
 ADMIN_ID = 786080766
 
 async def complete_giveaway(giveaway_id: int, bot: Bot):
-    """Processes giveaway completion: selects winners, saves them, and updates messages."""
     try:
         giveaway = await db.get_giveaway(giveaway_id)
         if not giveaway or giveaway["status"] != "active":
             return
 
-        # Ensure title is safe
-        safe_title = html.escape(giveaway.get("title") or "Giveaway")
-
-        # 1. Fetch participants
         participants = await db.get_participants(giveaway_id)
+        safe_title = html.escape(giveaway["title"])
 
         if not participants:
             results_text = (
                 f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {safe_title} /</b>\n"
                 f"┋\n"
-                f"┣ <blockquote>Розыгрыш завершен, но участников не оказалось.</blockquote>\n"
+                f"┋ <b>Unfortunately, there were no humans...</b>\n"
                 f"┋\n"
+                f"┣<b>GIVEAWAY</b>\n"
+                f"┣[ HUMANS.. NOT APES ]\n"
                 f"┗┅┅┅/ #NOTAPES /"
             )
         else:
-            # 2. Cryptographically secure shuffle
+            # 4. Криптографически стойкое перемешивание верифицированного пула участников
             secrets.SystemRandom().shuffle(participants)
 
-            # Determine winners
+            # Определение целевого количества победителей
             winners_count_target = min(len(participants), giveaway["winners_count"])
+
+            # Победителями становятся первые N участников. Никаких доборов и fallback-списков!
             winners = participants[:winners_count_target]
 
-            # 3. Distribute prizes
+            # 5. Распределение призов среди выбранных победителей
             prizes = giveaway["prizes"]
             winners_prizes = [[] for _ in range(len(winners))]
 
+            # Распределяем призы по циклу (сохрани текущий алгоритм распределения prizes)
             for idx, prize in enumerate(prizes):
                 w_idx = idx % len(winners)
                 winners_prizes[w_idx].append(prize)
 
-            # 4. Format results
+            # Формируем структуру данных для сохранения победителей в БД
             winners_to_save = []
             winners_list_str = ""
             for idx, w in enumerate(winners):
@@ -69,6 +71,7 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
                     "prize": prizes_str
                 })
 
+                # Формируем строку для вывода результатов (сохрани текущее форматирование HTML)
                 raw_username = w.get("username") or f"ID:{w['user_id']}"
                 safe_username = html.escape(raw_username)
                 if raw_username and not raw_username.startswith("ID:"):
@@ -77,7 +80,7 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
                     mention = f"<b><a href=\"tg://user?id={w['user_id']}\">{safe_username}</a></b>"
                 winners_list_str += f"┋<tg-emoji emoji-id=\"5274159185959872191\">👑</tg-emoji> {mention} — {html.escape(prizes_str)}\n"
 
-            # 5. Save winners
+            # Save winners before sending message to ensure state is consistent
             await db.save_winners(giveaway_id, winners_to_save)
 
             results_text = (
@@ -91,7 +94,6 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
                 f"┗┅┅┅/ #NOTAPES /"
             )
 
-        # 6. Update all giveaway messages
         messages = await db.get_giveaway_messages(giveaway_id)
 
         async def update_msg(msg):
@@ -104,45 +106,45 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
                 except Exception:
                     pass
 
-                # Try caption edit (animations)
+                # 1. Try to edit caption (for animations)
                 try:
                     await bot.edit_message_caption(
                         chat_id=msg["chat_id"],
                         message_id=msg["message_id"],
                         caption=final_results_text,
-                        parse_mode="HTML",
+                        parse_mode=ParseMode.HTML,
                         reply_markup=None
                     )
                     return
                 except Exception:
                     pass
 
-                # Try text edit
+                # 2. Try to edit text (for plain messages)
                 try:
                     await bot.edit_message_text(
                         chat_id=msg["chat_id"],
                         message_id=msg["message_id"],
                         text=final_results_text,
-                        parse_mode="HTML",
+                        parse_mode=ParseMode.HTML,
                         reply_markup=None
                     )
                     return
                 except Exception:
                     pass
 
-                # Fallback send
+                # 3. Fallback: send NEW message if editing failed
                 await bot.send_message(
                     chat_id=msg["chat_id"],
                     text=final_results_text,
-                    parse_mode="HTML"
+                    parse_mode=ParseMode.HTML
                 )
             except Exception as e:
-                logger.error(f"Failed to update message in chat {msg['chat_id']}: {e}")
+                logger.error(f"Failed to update or send message in chat {msg['chat_id']}: {e}")
 
         if messages:
-            await asyncio.gather(*(update_msg(m) for m in messages), return_exceptions=True)
+            await asyncio.gather(*(update_msg(m) for m in messages))
 
-        # 7. Notify creator
+        # Notify creator and whitelisted admin
         notify_text = (
             f"<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji> <b>Розыгрыш «{safe_title}» завершен!</b>\n\n"
             f"Результаты опубликованы в группе."
@@ -150,32 +152,30 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
         recipients = {giveaway["creator_id"], ADMIN_ID}
         for r_id in recipients:
             try:
-                await bot.send_message(r_id, notify_text, parse_mode="HTML")
+                await bot.send_message(r_id, notify_text, parse_mode=ParseMode.HTML)
             except Exception:
                 pass
 
     except Exception as e:
-        logger.error(f"Critical error in complete_giveaway for {giveaway_id}: {e}")
+        logger.error(f"Error in complete_giveaway for {giveaway_id}: {e}")
     finally:
+        # Guarantee status update
         await db.finish_giveaway(giveaway_id)
 
 async def check_timed_giveaways(bot: Bot):
-    """Background task to check and complete expired giveaways."""
     while True:
         try:
             now = datetime.now(pytz.UTC) 
             expired_giveaways = await db.get_expired_giveaways(now)
             
             for giveaway in expired_giveaways:
-                logger.info(f"Closing giveaway {giveaway['id']}")
+                logger.info(f"Завершение розыгрыша {giveaway['id']}")
                 await complete_giveaway(giveaway['id'], bot)
         except Exception as e:
-            logger.error(f"Fatal error in check_timed_giveaways loop: {e}")
-
+            logger.error(f"Error in check_timed_giveaways: {e}")
         await asyncio.sleep(30)
 
 async def check_periodic_notifications(bot: Bot):
-    """Background task to send periodic ad notifications."""
     while True:
         try:
             now = datetime.now(pytz.UTC)
@@ -188,6 +188,7 @@ async def check_periodic_notifications(bot: Bot):
                     if interval < 15: interval *= 60
 
                     if last_sent is None:
+                        # For new notifications, send immediately
                         last_sent_dt = now - timedelta(minutes=interval)
                     else:
                         if isinstance(last_sent, str):
@@ -195,6 +196,7 @@ async def check_periodic_notifications(bot: Bot):
                         else:
                             last_sent_dt = last_sent
 
+                        # Convert to UTC if it is naive or in another timezone
                         if last_sent_dt.tzinfo is None:
                             last_sent_dt = pytz.UTC.localize(last_sent_dt)
                         else:
@@ -206,7 +208,7 @@ async def check_periodic_notifications(bot: Bot):
                     chat_id = notif["chat_id"]
                     last_message_id = notif.get("last_message_id")
 
-                    # Auto-cleaning mechanism
+                    # 1. Delete step 2 minutes before start
                     if now >= delete_threshold and now < next_send_time and last_message_id is not None:
                         try:
                             await bot.delete_message(chat_id=chat_id, message_id=last_message_id)
@@ -215,12 +217,15 @@ async def check_periodic_notifications(bot: Bot):
                         finally:
                             await db.update_notification_last_msg(notif["id"], None)
 
-                    # Posting stage
+                    # 2. New message sending stage
                     if now >= next_send_time:
+                        title = notif["title"]
+                        text = notif["text"]
+
                         ad_text = (
-                            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ / {html.escape(notif['title'])} /\n"
+                            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ / {html.escape(title)} /\n"
                             f"┋\n"
-                            f"┣{html.escape(notif['text'])}\n"
+                            f"┣{html.escape(text)}\n"
                             f"┋\n"
                             f"┗┅┅┅/ #NOTAPES /"
                         )
@@ -245,7 +250,7 @@ async def check_periodic_notifications(bot: Bot):
                             chat_id=chat_id,
                             text=ad_text,
                             reply_markup=builder.as_markup() if (custom_buttons or notif.get("button_url")) else None,
-                            parse_mode="HTML"
+                            parse_mode=ParseMode.HTML
                         )
 
                         await db.update_notification_stats(
@@ -257,6 +262,6 @@ async def check_periodic_notifications(bot: Bot):
                     logger.error(f"Error processing notification {notif.get('id')}: {e}")
 
         except Exception as e:
-            logger.error(f"Fatal error in check_periodic_notifications loop: {e}")
+            logger.error(f"Error in check_periodic_notifications: {e}")
 
-        await asyncio.sleep(60)
+        await asyncio.sleep(60) # Check every minute

@@ -4,4 +4,3 @@ python-dotenv
 flask
 requests
 pytz
-pytonconnect==0.3.0
