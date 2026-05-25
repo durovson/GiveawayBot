@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import aiohttp
+import json
 from database import db
 from loader import bot, ADMIN_IDS
 
@@ -24,6 +25,7 @@ async def fetch_holders():
                     data = await response.json()
                     
                     current_holders = data.get("holders", data.get("result", []))
+                    has_more = data.get("hasMore", data.get("has_more", False))
                     
                     if not current_holders:
                         logger.info(f"Pagination finished. Total holders collected: {len(holders)}")
@@ -31,11 +33,13 @@ async def fetch_holders():
                     
                     holders.extend(current_holders)
                     
-                    if len(current_holders) < limit:
-                        logger.info(f"Reached the last page. Total holders collected: {len(holders)}")
+                    logger.info(f"Collected {len(current_holders)} holders at offset {offset}")
+
+                    if not has_more:
+                        logger.info(f"Reached the last page (hasMore is False). Total holders collected: {len(holders)}")
                         break
                         
-                    offset += limit
+                    offset += len(current_holders)
                     
                     await asyncio.sleep(0.1)
                     
@@ -54,11 +58,15 @@ async def daily_sync_task(bot):
             holders = await fetch_holders()
 
             if holders:
-                logger.info(f"Successfully fetched {len(holders)} holders. Saving snapshot...")
+                logger.info(f"Successfully fetched {len(holders)} holders. Saving to cache...")
+                # Save to settings table for leaderboard display
+                await db.update_setting("cached_holders", json.dumps(holders))
+
+                # Also save snapshot for history
                 await db.save_snapshot({"data": holders})
-                logger.info("Snapshot saved successfully.")
+                logger.info("Holders saved successfully.")
             else:
-                logger.warning("No holders fetched. Skipping snapshot.")
+                logger.warning("No holders fetched. Skipping update.")
 
         except Exception as e:
             logger.error(f"Error in daily_sync_task: {e}", exc_info=True)
