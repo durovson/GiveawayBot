@@ -44,3 +44,25 @@ async def fetch_holders():
                 break
                 
     return holders
+
+async def daily_sync_task(bot):
+    """Background task to sync holders from Stickers Tools API daily."""
+    logger.info("Starting daily sync task")
+    while True:
+        try:
+            logger.info("Fetching holders from Stickers Tools API...")
+            holders = await fetch_holders()
+
+            if holders:
+                logger.info(f"Successfully fetched {len(holders)} holders. Saving snapshot...")
+                await db.save_snapshot({"data": holders})
+                logger.info("Snapshot saved successfully.")
+            else:
+                logger.warning("No holders fetched. Skipping snapshot.")
+
+        except Exception as e:
+            logger.error(f"Error in daily_sync_task: {e}", exc_info=True)
+
+        # Sleep for 24 hours
+        logger.info("Daily sync task sleeping for 24 hours.")
+        await asyncio.sleep(24 * 3600)
