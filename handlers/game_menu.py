@@ -6,7 +6,7 @@ import html
 import json
 
 from database import db
-from utils import safe_edit_text
+from utils import safe_edit_text, normalize_to_raw, raw_to_user_friendly
 
 router = Router()
 
@@ -37,22 +37,27 @@ async def leaderboard_handler(callback: types.CallbackQuery):
     await callback.answer()
     user_id = callback.from_user.id
 
+    # 1. Получаем список холдеров (из кэша настроек или снимка)
     cached_data = await db.get_setting("cached_holders")
     holders = json.loads(cached_data) if cached_data else []
 
+    # 2. Привязываем кошельки к Telegram ID, нормализуя ключи в Raw формат
     linked_wallets = await db.get_all_linked_wallets()
-    wallet_to_user = {w['wallet_address']: w['telegram_id'] for w in linked_wallets}
-
-    # Pre-fetch usernames for linked wallets in top 10
-    top_10 = holders[:10]
+    wallet_to_user = {
+        normalize_to_raw(w['wallet_address']): w['telegram_id']
+        for w in linked_wallets if w.get('wallet_address')
+    }
 
     lines = []
-    for i, h in enumerate(top_10, 1):
+    for i, h in enumerate(holders[:10], 1):
         addr = h['address']
-        packs = h['packsCount']
-        tg_id = wallet_to_user.get(addr)
+        addr_raw = normalize_to_raw(addr)
+        tg_id = wallet_to_user.get(addr_raw)
 
-        display_name = f"{addr[:6]}...{addr[-4:]}"
+        # Выводим адреса топ-10 в красивом UQ... формате
+        friendly_addr = raw_to_user_friendly(addr)
+        display_name = f"{friendly_addr[:6]}...{friendly_addr[-4:]}"
+
         if tg_id:
             try:
                 user = await callback.bot.get_chat(tg_id)
@@ -60,16 +65,28 @@ async def leaderboard_handler(callback: types.CallbackQuery):
             except:
                 pass
 
+        packs = h.get('packsCount', h.get('packs', 0))
         lines.append(f"┋ {i}. {html.escape(display_name)} — {packs} packs")
 
-    # Find current user position
+    # 3. Поиск позиции текущего пользователя с нормализацией адресов
     user_wallet = await db.get_user_wallet(user_id)
     user_pos_line = ""
+
     if user_wallet:
-        pos = next((i for i, h in enumerate(holders, 1) if h['address'] == user_wallet), None)
+        user_wallet_raw = normalize_to_raw(user_wallet)
+        # Ищем совпадение в полном списке холдеров
+        pos = next((i for i, h in enumerate(holders, 1) if normalize_to_raw(h['address']) == user_wallet_raw), None)
+
+        friendly_wallet = raw_to_user_friendly(user_wallet)
+        short_wallet = f"{friendly_wallet[:6]}...{friendly_wallet[-4:]}"
+
         if pos:
             user_h = holders[pos-1]
-            user_pos_line = f"┋ {pos}. {user_wallet[:6]}...{user_wallet[-4:]} (Вы) — {user_h['packsCount']} packs"
+            packs = user_h.get('packsCount', user_h.get('packs', 0))
+            user_pos_line = f"┋ {pos}. {short_wallet} (Вы) — {packs} packs"
+        else:
+            # Если кошелек привязан, но паков 0 (или нет в выгрузке API)
+            user_pos_line = f"┋ —. {short_wallet} (Вы) — 0 packs"
 
     text = (
         "┏┅🍑┅ / PACK HOLDERS LEADERBOARD /\n"
@@ -79,8 +96,7 @@ async def leaderboard_handler(callback: types.CallbackQuery):
         "┋\n"
         + "\n".join(lines) + "\n"
         "┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n"
-        + (user_pos_line + "\n" if user_pos_line else "┋ Wallet not linked or not found in list\n") +
-        "┋\n"
+        + (user_pos_line if user_pos_line else "┋ Wallet not linked or not found in list\n┋") + "\n"
         "┗┅┅┅/ Live Blockchain Parsing /"
     )
 
