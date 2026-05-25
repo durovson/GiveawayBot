@@ -13,7 +13,7 @@ from datetime import datetime
 import secrets
 
 from database import db
-from utils import safe_edit_text, safe_bot_edit_text
+from utils import safe_edit_text, safe_bot_edit_text, raw_to_user_friendly
 from loader import bot
 
 logger = logging.getLogger(__name__)
@@ -60,6 +60,14 @@ class SupabaseStorage(IStorage):
             .eq("key", str(key)) \
             .execute()
 
+def format_address(address: str) -> str:
+    if not address:
+        return "Unknown"
+
+    # Принудительно конвертируем сырой hex (0:...) в красивый UQ...
+    friendly_addr = raw_to_user_friendly(address)
+    return f"{friendly_addr[:6]}...{friendly_addr[-6:]}"
+
 @router.callback_query(F.data == "wallet_menu")
 async def wallet_menu_handler(callback: types.CallbackQuery):
     await callback.answer()
@@ -67,9 +75,10 @@ async def wallet_menu_handler(callback: types.CallbackQuery):
     wallet = await db.get_user_wallet(user_id)
 
     if wallet:
+        formatted_addr = format_address(wallet)
         text = (
             "<b>💳 Wallet connected!</b>\n\n"
-            f"<blockquote>Your address: <code>{wallet}</code></blockquote>\n\n"
+            f"<blockquote>Your address: <code>{formatted_addr}</code></blockquote>\n\n"
             "You can disconnect your wallet if you want to link another one."
         )
         builder = InlineKeyboardBuilder()
@@ -151,11 +160,10 @@ async def wait_bridge_connection(connector: TonConnect, user_id: int, chat_id: i
             await db.update_user_wallet(user_id, raw_address)
 
             await state.clear()
-            await bot.send_message(chat_id=user_id, text=f"<b>🎉 Wallet successfully connected!</b>\nAddress: <code>{raw_address}</code>", parse_mode=ParseMode.HTML)
 
-            # Award points for first connection (optional, based on requirement)
-            # In memory it says successful binding rewards 100 points.
-            # But db doesn't seem to have points. I'll stick to updating the wallet.
+            friendly_addr = format_address(raw_address)
+            await bot.send_message(chat_id=user_id, text=f"<b>🎉 Wallet successfully connected!</b>\nAddress: <code>{friendly_addr}</code>", parse_mode=ParseMode.HTML)
+
     except asyncio.TimeoutError:
         await state.clear()
         try:

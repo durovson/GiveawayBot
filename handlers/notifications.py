@@ -356,7 +356,11 @@ async def show_chat_selection(message_or_cb, state: FSMContext, bot: Bot):
 
 @router.callback_query(F.data.startswith("notif_chat_"), NotificationStates.SELECTING_CHATS)
 async def select_notif_chat(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
-    await callback.answer()
+    try:
+        await callback.answer()
+    except Exception as e:
+        logger.warning(f"Сбой отправки callback.answer (игнорируем): {e}")
+
     chat_id = int(callback.data.split("_")[-1])
     await state.update_data(chat_id=chat_id)
     await show_notification_params(callback, state, bot)
@@ -364,9 +368,15 @@ async def select_notif_chat(callback: types.CallbackQuery, state: FSMContext, bo
 
 @router.callback_query(F.data == "notif_save", NotificationStates.CONFIRMATION)
 async def save_notification(callback: types.CallbackQuery, state: FSMContext):
+    # 1. Сразу гасим часики на кнопке и изолируем сетевую ошибку Telegram
+    try:
+        await callback.answer()
+    except Exception as e:
+        logger.warning(f"Сбой отправки callback.answer (игнорируем): {e}")
+
     data = await state.get_data()
     if not data.get('chat_id') or not data.get('title') or not data.get('text') or not data.get('interval_hours'):
-        await callback.answer("❌ Please fill all fields", show_alert=True)
+        await callback.message.answer("❌ Please fill all fields")
         return
 
     notif_data = {
@@ -386,10 +396,18 @@ async def save_notification(callback: types.CallbackQuery, state: FSMContext):
     if data.get('id'):
         notif_data['id'] = data['id']
 
-    await db.upsert_notification(notif_data)
-    await callback.answer("✅ Saved successfully", show_alert=True)
-    await state.clear()
-    await start_notification_management(callback, state)
+    try:
+        # 3. Логика записи в БД Supabase (убедись, что этот блок выполняется независимо)
+        await db.upsert_notification(notif_data)
+
+        # 4. Уведомляем пользователя об успешном создании
+        await callback.message.answer("✅ Saved successfully")
+        await state.clear()
+        await start_notification_management(callback, state)
+
+    except Exception as db_error:
+        logger.error(f"Ошибка при записи уведомления в Supabase: {db_error}")
+        await callback.message.answer("❌ Не удалось сохранить уведомление в базу данных. Попробуйте еще раз.")
 
 @router.callback_query(F.data == "notif_toggle", NotificationStates.CONFIRMATION)
 async def toggle_notification(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
