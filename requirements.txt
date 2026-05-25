@@ -1,6 +1,11 @@
 aiogram>=3.27.0
 supabase
+postgrest
 python-dotenv
-flask
-requests
 pytz
+pytonconnect
+pynacl
+aiohttp
+aiohttp-session
+aiocache
+aiocron
