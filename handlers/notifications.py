@@ -299,7 +299,7 @@ async def select_notif_interval(callback: types.CallbackQuery, state: FSMContext
         )
         await state.set_state(NotificationStates.CUSTOM_INTERVAL)
     else:
-        await state.update_data(interval_hours=float(val) * 60)
+        await state.update_data(interval_hours=float(val) * 480)
         data = await state.get_data()
 
         if data.get('is_editing'):
