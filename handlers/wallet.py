@@ -17,7 +17,7 @@ from loader import bot
 logger = logging.getLogger(__name__)
 router = Router()
 
-MANIFEST_URL = "https://raw.githubusercontent.com/Geist-Project/geist-manifest/main/tonconnect-manifest.json"
+MANIFEST_URL = "https://github.com/jammm3675/GiveawayBot/blob/main/tonconnect-manifest.json"
 
 class FileStorage(IStorage):
     def __init__(self, user_id: int):
