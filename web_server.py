@@ -19,7 +19,7 @@ async def tonconnect_manifest(request):
 
     manifest = {
         "url": app_url,
-        "name": "Giveaway Bot System",
+        "name": "NOTAPES | SYSTEM",
         "iconUrl": "https://i.ibb.co/CKLMgCcD/photo-2026-05-22-22-45-17.jpg"
     }
     return web.json_response(manifest)
