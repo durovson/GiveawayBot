@@ -1,10 +1,11 @@
 from aiogram import Router, types, F
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.enums import ParseMode
 import html
 from database import db
+from loader import ADMIN_IDS
 from handlers.giveaway_creation import GiveawayCreation
 from utils import is_admin, is_any_admin, safe_answer, safe_edit_text, is_holder
 
@@ -13,37 +14,52 @@ router = Router()
 async def get_main_menu_keyboard(user_id: int):
     builder = InlineKeyboardBuilder()
     
-    # Ряд 1
-    builder.button(text="Giveaway", callback_data="create_giveaway", icon_custom_emoji_id="5258185631355378853")
-    builder.button(text="History", callback_data="history_created", icon_custom_emoji_id="5257969839313526622")
-    
-    # Ряд 2
-    builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5258204546391351475")
-    builder.button(text="Notifications", callback_data="manage_notifications", icon_custom_emoji_id="5260325873688518261")
-
-    # Ряд 3
-    builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
-
-    # Условие для Ряда 4 и динамической сетки
-    if user_id == 786080766:
-        builder.button(text="Update GIF", callback_data="admin_update_gif")
-        builder.adjust(2, 2, 1, 1)  # Сетка для главного админа
+    if user_id in ADMIN_IDS:
+        # Admin Menu (Original)
+        builder.button(text="Giveaway", callback_data="create_giveaway", icon_custom_emoji_id="5258185631355378853")
+        builder.button(text="History", callback_data="history_created", icon_custom_emoji_id="5257969839313526622")
+        builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5258204546391351475")
+        builder.button(text="Notifications", callback_data="manage_notifications", icon_custom_emoji_id="5260325873688518261")
+        builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
+        if user_id == 786080766:
+            builder.button(text="Update GIF", callback_data="admin_update_gif")
+            builder.adjust(2, 2, 1, 1)
+        else:
+            builder.adjust(2, 2, 1)
     else:
-        builder.adjust(2, 2, 1)     # Сетка для всех остальных
+        # User Menu
+        builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5422626434331990897")
+        builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
+        builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5258204546391351475")
+        builder.adjust(2, 1)
 
     return builder.as_markup()
 
 MAIN_MENU_TEXT = (
     "<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji><b>NOTAPES | SYSTEM</b><tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>\n\n"
     "<blockquote>Here you can:\n\n"
-    "• Conduct quick giveaway\n"
-    "• Track the history of completed raffle\n"
+    "• Participate in giveaways\n"
+    "• Connect your wallet\n"
     "• Create OTC ads</blockquote>\n\n"
     "<b>Ready to get started? Select the desired section from the menu:</b>"
 )
 
 @router.message(Command("start"))
-async def cmd_start(message: types.Message):
+async def cmd_start(message: types.Message, state: FSMContext, command: CommandObject):
+    args = command.args
+    await state.clear()
+
+    if args:
+        # Handle deep-linking (e.g. start=join_123)
+        if args.startswith("join_"):
+            try:
+                giveaway_id = int(args.split("_")[1])
+                # We can manually trigger the join callback logic or just show the menu.
+                # For now, let's proceed to menu but we have the ID if needed.
+                pass
+            except:
+                pass
+
     if not await is_holder(message.from_user.id):
         text = (
             "┏┅⋐[ ◉ _◉ ]っ🍌\n"

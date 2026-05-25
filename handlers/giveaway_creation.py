@@ -725,7 +725,6 @@ async def process_confirm_giveaway(callback: types.CallbackQuery, state: FSMCont
         mandatory_channels=data.get('mandatory_channels', []),
         allowed_users=data.get('allowed_users')
     )
-    await db.update_giveaway_status(giveaway["id"], "active")
 
     post_text, gif_to_send = await get_giveaway_post_data(giveaway)
 

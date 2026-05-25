@@ -1,6 +1,6 @@
 import re
 import pytz
-from loader import bot
+from loader import bot, ADMIN_IDS
 from aiogram.exceptions import TelegramBadRequest
 
 def strip_custom_emojis(text: str) -> str:
@@ -20,7 +20,7 @@ async def is_admin(chat_id: int, user_id: int) -> bool:
 async def is_any_admin(user_id: int) -> bool:
     from database import db
     # Hardcoded admin check as a fallback or primary
-    if user_id in [786080766, 734720997]:
+    if user_id in ADMIN_IDS:
         return True
 
     chats = await db.get_tracked_chats()
