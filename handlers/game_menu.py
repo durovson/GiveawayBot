@@ -50,7 +50,11 @@ async def leaderboard_handler(callback: types.CallbackQuery):
 
     lines = []
     for i, h in enumerate(top, 1):
+        if not isinstance(h, dict):
+            continue
         addr = h.get('wallet') or h.get('address') or h.get('owner')
+        if not addr:
+            continue
         addr_raw = normalize_to_raw(addr)
         tg_id = wallet_to_user.get(addr_raw)
 
@@ -75,7 +79,15 @@ async def leaderboard_handler(callback: types.CallbackQuery):
     if user_wallet:
         user_wallet_raw = normalize_to_raw(user_wallet)
         # Ищем совпадение в полном списке холдеров
-        pos = next((i for i, h in enumerate(holders, 1) if normalize_to_raw((h.get('wallet') or h.get('address') or h.get('owner'))) == user_wallet_raw), None)
+        pos = next(
+            (
+                i for i, h in enumerate(holders, 1)
+                if isinstance(h, dict)
+                and (h.get('wallet') or h.get('address') or h.get('owner'))
+                and normalize_to_raw((h.get('wallet') or h.get('address') or h.get('owner'))) == user_wallet_raw
+            ),
+            None,
+        )
 
         friendly_wallet = raw_to_user_friendly(user_wallet)
         short_wallet = f"{friendly_wallet[:6]}...{friendly_wallet[-4:]}"

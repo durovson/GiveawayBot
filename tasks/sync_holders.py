@@ -12,10 +12,8 @@ API_URL = "https://stickers.tools/api/v1/launching/packs/0:81abce045d81dc32c42ae
 
 async def fetch_holders():
     def extract_wallet(item):
-        if isinstance(item, str):
-            return item
         if isinstance(item, dict):
-            return item.get("wallet") or item.get("address") or item.get("owner")
+            return item.get("wallet") or item.get("holder") or item.get("address") or item.get("owner")
         return None
 
     def extract_packs(item):
@@ -31,7 +29,7 @@ async def fetch_holders():
     async with aiohttp.ClientSession() as session:
         while True:
             url = f"{API_URL}?offset={offset}&limit={limit}"
-            data = None
+            payload = None
             page = []
 
             for attempt in range(1, retries + 1):
@@ -43,23 +41,17 @@ async def fetch_holders():
                             await asyncio.sleep(attempt)
                             continue
 
-                        data = await response.json()
-                        if isinstance(data, list):
-                            page = data
-                        elif isinstance(data, dict):
-                            page = (
-                                data.get("holders")
-                                or data.get("data")
-                                or data.get("result")
-                                or data.get("items")
-                                or []
-                            )
+                        payload = await response.json()
+                        if isinstance(payload, dict):
+                            page = payload.get("holders", [])
+                        elif isinstance(payload, list):
+                            page = payload
                         else:
                             page = []
 
                         logger.info(
                             "HOLDERS_RESPONSE_TYPE=%s HOLDERS_ITEMS=%s",
-                            type(data).__name__,
+                            type(payload).__name__,
                             len(page) if isinstance(page, list) else 0,
                         )
                         break
@@ -70,14 +62,16 @@ async def fetch_holders():
 
             valid_count = 0
             for row in page:
+                if not isinstance(row, dict):
+                    continue
                 wallet = extract_wallet(row)
-                packs = extract_packs(row)
+                packs = int(extract_packs(row) or 0)
                 if wallet:
                     valid_count += 1
                     holders.append({"wallet": wallet, "packs": packs})
             logger.info("HOLDERS_VALID=%s", valid_count)
 
-            has_more = data.get("hasMore") if isinstance(data, dict) else None
+            has_more = payload.get("hasMore") if isinstance(payload, dict) else None
             if has_more is False:
                 break
             if len(page) < limit:

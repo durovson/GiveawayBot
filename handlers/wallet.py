@@ -13,6 +13,8 @@ from database import db
 from utils import safe_edit_text, raw_to_user_friendly
 from loader import bot
 from services.ton_connect_service import TonConnectService
+from services.ui_cleanup import remember_message, clear_messages
+from handlers.main_menu import MAIN_MENU_TEXT, get_main_menu_keyboard
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -41,20 +43,22 @@ async def await_wallet(connector: TonConnect, user_id: int):
     return None
 
 
-async def finish_wallet_flow(callback: types.CallbackQuery, state: FSMContext):
+async def finish_wallet_flow(callback: types.CallbackQuery, state: FSMContext, success: bool = True):
+    await clear_messages(callback.bot, callback.message.chat.id, state)
     await state.clear()
-    try:
-        await callback.message.delete()
-    except Exception:
-        pass
-    callback.data = "wallet_menu"
-    await wallet_menu_handler(callback)
+    status_text = "✅ Wallet connected" if success else "❌ Wallet connection cancelled"
+    await callback.bot.send_message(callback.message.chat.id, status_text)
+    await callback.bot.send_message(
+        callback.message.chat.id,
+        MAIN_MENU_TEXT,
+        reply_markup=await get_main_menu_keyboard(callback.from_user.id),
+        parse_mode=ParseMode.HTML,
+    )
 
 
 async def cleanup_connect(user_id: int, state: FSMContext):
     await db.client.table("ton_connect_sessions").delete().eq("user_id", user_id).execute()
     TonConnectService.drop_connector(user_id)
-    await state.clear()
 
 
 @router.callback_query(F.data == "wallet_menu")
@@ -89,6 +93,7 @@ async def wallet_menu_handler(callback: types.CallbackQuery):
 
 @router.callback_query(F.data == "connect_wallet")
 async def start_wallet_connect(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     connector = await TonConnectService.connector(user_id)
 
@@ -104,11 +109,13 @@ async def start_wallet_connect(callback: types.CallbackQuery, state: FSMContext)
     builder.button(text="Back", callback_data="wallet_menu")
     builder.adjust(2)
 
-    await safe_edit_text(callback, text="<b>💳 Select your TON wallet:</b>", reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    msg = await safe_edit_text(callback, text="<b>💳 Select your TON wallet:</b>", reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await state.update_data(wallet_messages=[msg.message_id])
 
 
 @router.callback_query(F.data.startswith("wallet_select:"))
 async def process_wallet_selection(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     chat_id = callback.message.chat.id
     selected_app = callback.data.split(":")[1]
@@ -144,44 +151,44 @@ async def process_wallet_selection(callback: types.CallbackQuery, state: FSMCont
         builder.button(text="❌ Cancel", callback_data="wallet_cancel_connect")
         builder.adjust(1)
 
-        await safe_edit_text(
+        msg = await safe_edit_text(
             callback,
             text="<b>🔗 Confirm connection in your wallet application.</b>",
             reply_markup=builder.as_markup(),
             parse_mode=ParseMode.HTML,
         )
+        await remember_message(state, msg)
 
         await state.set_state(WalletConnectState.waiting_for_connection)
-        raw_address = await asyncio.wait_for(await_wallet(connector, user_id), timeout=180)
+        raw_address = await asyncio.wait_for(await_wallet(connector, user_id), timeout=120)
 
         if raw_address:
             friendly_addr = format_address(raw_address)
-            await bot.send_message(
+            msg = await bot.send_message(
                 chat_id=chat_id,
                 text=f"<b>🎉 Wallet successfully connected!</b>\nAddress: <code>{friendly_addr}</code>",
                 parse_mode=ParseMode.HTML,
             )
+            await remember_message(state, msg)
         await cleanup_connect(user_id, state)
-        await finish_wallet_flow(callback, state)
+        await finish_wallet_flow(callback, state, success=bool(raw_address))
     except asyncio.TimeoutError:
-        await bot.send_message(chat_id=chat_id, text="❌ Connection timeout reached.")
         await cleanup_connect(user_id, state)
-        await finish_wallet_flow(callback, state)
+        await finish_wallet_flow(callback, state, success=False)
     except UserRejectsError:
-        await bot.send_message(chat_id=chat_id, text="❌ Connection rejected in wallet.")
         await cleanup_connect(user_id, state)
-        await finish_wallet_flow(callback, state)
+        await finish_wallet_flow(callback, state, success=False)
     except asyncio.CancelledError:
         await cleanup_connect(user_id, state)
-        await finish_wallet_flow(callback, state)
+        await finish_wallet_flow(callback, state, success=False)
     except APIError as e:
         logger.warning("TON_CONNECT_BRIDGE_WARNING user_id=%s error=%s", user_id, e)
         await cleanup_connect(user_id, state)
-        await finish_wallet_flow(callback, state)
+        await finish_wallet_flow(callback, state, success=False)
     except Exception as e:
         logger.error(f"Error in wallet connection flow: {e}")
         await cleanup_connect(user_id, state)
-        await finish_wallet_flow(callback, state)
+        await finish_wallet_flow(callback, state, success=False)
     finally:
         unsubscribe()
 
@@ -190,16 +197,12 @@ async def process_wallet_selection(callback: types.CallbackQuery, state: FSMCont
 async def wallet_cancel_connect_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer("Connection canceled.")
     await cleanup_connect(callback.from_user.id, state)
-    try:
-        await callback.message.delete()
-    except Exception:
-        pass
-    callback.data = "wallet_menu"
-    await wallet_menu_handler(callback)
+    await finish_wallet_flow(callback, state, success=False)
 
 
 @router.callback_query(F.data == "disconnect_wallet")
 async def disconnect_wallet_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     connector = await TonConnectService.connector(user_id)
 
@@ -212,10 +215,4 @@ async def disconnect_wallet_handler(callback: types.CallbackQuery, state: FSMCon
     await cleanup_connect(user_id, state)
     await db.update_user_wallet(user_id, None)
 
-    try:
-        await callback.message.delete()
-    except Exception:
-        pass
-
-    callback.data = "wallet_menu"
     await wallet_menu_handler(callback)
