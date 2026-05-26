@@ -14,12 +14,26 @@ API_URL = "https://stickers.tools/api/v1/launching/packs/0:81abce045d81dc32c42ae
 async def fetch_holders():
     def extract_wallet(item):
         if isinstance(item, dict):
-            return item.get("wallet") or item.get("holder") or item.get("address") or item.get("owner")
+            return (
+                item.get("wallet")
+                or item.get("address")
+                or item.get("owner")
+                or item.get("user")
+                or item.get("account")
+                or item.get("holder")
+            )
         return None
 
     def extract_packs(item):
         if isinstance(item, dict):
-            return item.get("packs") or item.get("packsCount") or item.get("count") or item.get("balance") or 0
+            return (
+                item.get("packs")
+                or item.get("count")
+                or item.get("balance")
+                or item.get("amount")
+                or item.get("packsCount")
+                or 0
+            )
         return 0
 
     holders = []
@@ -29,11 +43,19 @@ async def fetch_holders():
 
     def extract_page(payload):
         if isinstance(payload, list):
+            logger.info("USING_KEY=root_list")
             return payload
         if isinstance(payload, dict):
-            for key in ("holders", "items", "data"):
+            logger.info("HOLDERS_KEYS=%s", list(payload.keys())[:20])
+            possible = ["holders", "items", "data", "result", "results", "addresses", "users"]
+            for key in possible:
                 value = payload.get(key)
                 if isinstance(value, list):
+                    logger.info("USING_KEY=%s", key)
+                    return value
+            for key, value in payload.items():
+                if isinstance(value, list):
+                    logger.warning("FALLBACK_ARRAY=%s", key)
                     return value
         return []
 
@@ -54,12 +76,7 @@ async def fetch_holders():
 
                         payload = await response.json()
                         page = extract_page(payload)
-
-                        total_value = payload.get("total") if isinstance(payload, dict) else None
-                        if isinstance(total_value, int):
-                            logger.info("HOLDERS_RESPONSE_TYPE=%s HOLDERS_TOTAL=%s", type(payload).__name__, total_value)
-                        else:
-                            logger.info("HOLDERS_RESPONSE_TYPE=%s", type(payload).__name__)
+                        logger.info("HOLDERS_ARRAY_SOURCE=page LEN=%s", len(page))
 
                         break
                 except (asyncio.TimeoutError, aiohttp.ClientError, json.JSONDecodeError):
@@ -67,6 +84,7 @@ async def fetch_holders():
                         return holders
                     await asyncio.sleep(attempt)
 
+            logger.info("FIRST_ITEM_KEYS=%s", list(page[0].keys()) if page and isinstance(page[0], dict) else [])
             valid_count = 0
             for row in page:
                 if not isinstance(row, dict):
