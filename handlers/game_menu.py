@@ -3,7 +3,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 import html
-import json
 
 from database import db
 from services.leaderboard import LeaderboardService
@@ -45,7 +44,7 @@ async def leaderboard_handler(callback: types.CallbackQuery):
     linked_wallets = await db.get_all_linked_wallets()
     wallet_to_user = {
         normalize_to_raw(w['wallet_address']): w['telegram_id']
-        for w in linked_wallets if w.get('wallet_address')
+        for w in linked_wallets if w.get('wallet_address') and normalize_to_raw(w['wallet_address'])
     }
 
     lines = []
@@ -56,6 +55,8 @@ async def leaderboard_handler(callback: types.CallbackQuery):
         if not addr:
             continue
         addr_raw = normalize_to_raw(addr)
+        if not addr_raw:
+            continue
         tg_id = wallet_to_user.get(addr_raw)
 
         # Выводим адреса топ-10 в красивом UQ... формате
@@ -78,16 +79,16 @@ async def leaderboard_handler(callback: types.CallbackQuery):
 
     if user_wallet:
         user_wallet_raw = normalize_to_raw(user_wallet)
-        # Ищем совпадение в полном списке холдеров
-        pos = next(
-            (
-                i for i, h in enumerate(holders, 1)
-                if isinstance(h, dict)
-                and (h.get('wallet') or h.get('address') or h.get('owner'))
-                and normalize_to_raw((h.get('wallet') or h.get('address') or h.get('owner'))) == user_wallet_raw
-            ),
-            None,
-        )
+        pos = None
+        if user_wallet_raw:
+            pos = next(
+                (
+                    i for i, h in enumerate(holders, 1)
+                    if (h.get('wallet') or h.get('address') or h.get('owner'))
+                    and normalize_to_raw((h.get('wallet') or h.get('address') or h.get('owner'))) == user_wallet_raw
+                ),
+                None,
+            )
 
         friendly_wallet = raw_to_user_friendly(user_wallet)
         short_wallet = f"{friendly_wallet[:6]}...{friendly_wallet[-4:]}"
@@ -105,7 +106,7 @@ async def leaderboard_handler(callback: types.CallbackQuery):
             "┏┅🍑┅ / PACK HOLDERS LEADERBOARD /\n"
             "┋\n"
             "┣ No holder statistics available yet.\n"
-            "┣ Sync in progress.\n"
+            "┣ Blockchain sync in progress.\n"
             "┋\n"
             "┗┅┅┅/ Live Blockchain Parsing /"
         )

@@ -23,7 +23,24 @@ class LeaderboardService:
         if not cached_data:
             return []
         try:
-            cls._cache = json.loads(cached_data)
+            value = json.loads(cached_data)
+            if isinstance(value, dict):
+                holders = value.get("holders") or value.get("items") or value.get("data") or []
+            elif isinstance(value, list):
+                holders = value
+            else:
+                holders = []
+
+            clean = []
+            for row in holders:
+                if not isinstance(row, dict):
+                    continue
+                wallet = row.get("wallet") or row.get("address") or row.get("owner")
+                if not wallet:
+                    continue
+                clean.append(row)
+
+            cls._cache = clean
             cls._cache_ts = now
         except Exception as e:
             logger.error(f"LEADERBOARD_CACHE_PARSE_FAILED: {e}")
@@ -36,11 +53,7 @@ class LeaderboardService:
         holders = await cls._load_holders()
         top = []
         for row in holders:
-            if not isinstance(row, dict):
-                continue
             wallet = row.get("wallet") or row.get("address") or row.get("owner")
-            if not wallet:
-                continue
             packs = row.get("packs") or row.get("packsCount") or row.get("count") or 0
             top.append({"wallet": wallet, "packs": packs})
             if len(top) >= limit:
@@ -53,6 +66,8 @@ class LeaderboardService:
     async def get_wallet(cls, wallet: str) -> Optional[Dict]:
         holders = await cls._load_holders()
         target = normalize_to_raw(wallet)
+        if not target:
+            return None
         for idx, row in enumerate(holders, 1):
             candidate = row.get("wallet") or row.get("address") or row.get("owner")
             if candidate and normalize_to_raw(candidate) == target:
