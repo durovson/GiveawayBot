@@ -6,6 +6,7 @@ import html
 import json
 
 from database import db
+from services.leaderboard import LeaderboardService
 from utils import safe_edit_text, normalize_to_raw, raw_to_user_friendly
 
 router = Router()
@@ -37,9 +38,8 @@ async def leaderboard_handler(callback: types.CallbackQuery):
     await callback.answer()
     user_id = callback.from_user.id
 
-    # 1. Получаем список холдеров (из кэша настроек или снимка)
-    cached_data = await db.get_setting("cached_holders")
-    holders = json.loads(cached_data) if cached_data else []
+    top = await LeaderboardService.get_top(limit=10)
+    holders = await LeaderboardService._load_holders()
 
     # 2. Привязываем кошельки к Telegram ID, нормализуя ключи в Raw формат
     linked_wallets = await db.get_all_linked_wallets()
@@ -49,8 +49,8 @@ async def leaderboard_handler(callback: types.CallbackQuery):
     }
 
     lines = []
-    for i, h in enumerate(holders[:10], 1):
-        addr = h['address']
+    for i, h in enumerate(top, 1):
+        addr = h.get('wallet') or h.get('address') or h.get('owner')
         addr_raw = normalize_to_raw(addr)
         tg_id = wallet_to_user.get(addr_raw)
 
@@ -65,7 +65,7 @@ async def leaderboard_handler(callback: types.CallbackQuery):
             except:
                 pass
 
-        packs = h.get('packsCount', h.get('packs', 0))
+        packs = h.get('packs', h.get('packsCount', 0))
         lines.append(f"┋ {i}. {html.escape(display_name)} — {packs} packs")
 
     # 3. Поиск позиции текущего пользователя с нормализацией адресов
@@ -75,7 +75,7 @@ async def leaderboard_handler(callback: types.CallbackQuery):
     if user_wallet:
         user_wallet_raw = normalize_to_raw(user_wallet)
         # Ищем совпадение в полном списке холдеров
-        pos = next((i for i, h in enumerate(holders, 1) if normalize_to_raw(h['address']) == user_wallet_raw), None)
+        pos = next((i for i, h in enumerate(holders, 1) if normalize_to_raw((h.get('wallet') or h.get('address') or h.get('owner'))) == user_wallet_raw), None)
 
         friendly_wallet = raw_to_user_friendly(user_wallet)
         short_wallet = f"{friendly_wallet[:6]}...{friendly_wallet[-4:]}"
