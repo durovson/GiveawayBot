@@ -49,21 +49,27 @@ dp.include_router(participants_router)
 dp.include_router(otc_market_router)
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 async def main():
     await db.connect()
+    background_tasks = []
 
-    # Start background tasks
     from handlers.completion import check_timed_giveaways, check_periodic_notifications
-    asyncio.create_task(check_timed_giveaways(bot))
-    asyncio.create_task(check_periodic_notifications(bot))
+    background_tasks.append(asyncio.create_task(check_timed_giveaways(bot), name="check_timed_giveaways"))
+    background_tasks.append(asyncio.create_task(check_periodic_notifications(bot), name="check_periodic_notifications"))
 
-    # Import and run daily sync
     from tasks.sync_holders import daily_sync_task
-    asyncio.create_task(daily_sync_task(bot))
+    background_tasks.append(asyncio.create_task(daily_sync_task(bot), name="daily_sync_task"))
 
-    # Start aiohttp server in the same loop
-    await start_keep_alive_async(bot, dp)
+    try:
+        await start_keep_alive_async(bot, dp)
+    finally:
+        for task in background_tasks:
+            task.cancel()
+        await asyncio.gather(*background_tasks, return_exceptions=True)
+        await bot.session.close()
+        logger.info("Shutdown completed")
 
 if __name__ == "__main__":
     try:

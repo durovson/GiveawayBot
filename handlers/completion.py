@@ -178,6 +178,8 @@ async def check_timed_giveaways(bot: Bot):
                 await complete_giveaway(giveaway['id'], bot)
         except Exception as e:
             logger.error(f"Error in check_timed_giveaways: {e}")
+        except asyncio.CancelledError:
+            break
         await asyncio.sleep(30)
 
 async def check_periodic_notifications(bot: Bot):
@@ -264,5 +266,7 @@ async def check_periodic_notifications(bot: Bot):
 
         except Exception as e:
             logger.error(f"Error in check_periodic_notifications: {e}")
+        except asyncio.CancelledError:
+            break
 
         await asyncio.sleep(60)

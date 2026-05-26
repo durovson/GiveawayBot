@@ -314,7 +314,8 @@ class Database:
     async def save_snapshot(self, data):
         if not await self._ensure_connection(): return
         try:
-            await self.client.table("snapshots").insert({"data": data}).execute()
+            snapshot_data = {"holders": data} if isinstance(data, list) else data
+            await self.client.table("snapshots").insert({"data": snapshot_data}).execute()
         except Exception as e:
             logger.error(f"Error saving snapshot: {e}")
 

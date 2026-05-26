@@ -39,6 +39,16 @@ async def await_wallet(connector: TonConnect, user_id: int):
     return None
 
 
+async def finish_wallet_flow(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
+    callback.data = "wallet_menu"
+    await wallet_menu_handler(callback)
+
+
 @router.callback_query(F.data == "wallet_menu")
 async def wallet_menu_handler(callback: types.CallbackQuery):
     await callback.answer()
@@ -135,7 +145,6 @@ async def process_wallet_selection(callback: types.CallbackQuery, state: FSMCont
 
         await state.set_state(WalletConnectState.waiting_for_connection)
         raw_address = await await_wallet(connector, user_id)
-        await state.clear()
 
         if raw_address:
             friendly_addr = format_address(raw_address)
@@ -144,33 +153,38 @@ async def process_wallet_selection(callback: types.CallbackQuery, state: FSMCont
                 text=f"<b>🎉 Wallet successfully connected!</b>\nAddress: <code>{friendly_addr}</code>",
                 parse_mode=ParseMode.HTML,
             )
+        TonConnectService.drop_connector(user_id)
+        await finish_wallet_flow(callback, state)
     except asyncio.TimeoutError:
-        await state.clear()
         await bot.send_message(chat_id=chat_id, text="❌ Connection timeout reached.")
+        await finish_wallet_flow(callback, state)
     except Exception as e:
         logger.error(f"Error in wallet connection flow: {e}")
-        await state.clear()
-        await callback.answer("❌ Wallet connection failed.", show_alert=True)
+        await finish_wallet_flow(callback, state)
     finally:
         unsubscribe()
 
 
 @router.callback_query(F.data == "disconnect_wallet")
-async def disconnect_wallet_handler(callback: types.CallbackQuery):
-    await callback.answer()
+async def disconnect_wallet_handler(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     connector = await TonConnectService.connector(user_id)
 
     try:
-        await connector.restore_connection()
         if connector.connected:
             await connector.disconnect()
+    except Exception:
+        pass
 
-        await db.client.table("ton_connect_sessions").delete().eq("user_id", user_id).execute()
-        await db.update_user_wallet(user_id, None)
-        TonConnectService.drop_connector(user_id)
+    await db.client.table("ton_connect_sessions").delete().eq("user_id", user_id).execute()
+    await db.update_user_wallet(user_id, None)
+    TonConnectService.drop_connector(user_id)
+    await state.clear()
 
-        await wallet_menu_handler(callback)
-    except Exception as e:
-        logger.error(f"Error disconnecting wallet: {e}")
-        await callback.answer("❌ Error disconnecting wallet.", show_alert=True)
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
+
+    callback.data = "wallet_menu"
+    await wallet_menu_handler(callback)
