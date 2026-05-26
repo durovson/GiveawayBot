@@ -6,8 +6,12 @@ from datetime import datetime, timezone
 
 from pytonconnect import TonConnect
 from pytonconnect.storage import IStorage
+from postgrest.exceptions import APIError
 
 from database import db
+import logging
+
+logger = logging.getLogger(__name__)
 
 BASE_URL = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("CUSTOM_URL", "https://giveaway-bot-hiap.onrender.com")
 if not BASE_URL.startswith("http"):
@@ -20,16 +24,38 @@ class SupabaseStorage(IStorage):
         self.supabase = supabase_client
         self.user_id = int(user_id)
 
+    async def ensure_user_exists(self, user_id: int):
+        response = await (
+            self.supabase
+            .table("users")
+            .select("telegram_id")
+            .eq("telegram_id", int(user_id))
+            .limit(1)
+            .execute()
+        )
+        if response.data:
+            return
+
+        try:
+            await self.supabase.table("users").insert({"telegram_id": int(user_id)}).execute()
+        except APIError:
+            pass
+
     async def set_item(self, key: str, value):
         if isinstance(value, (dict, list)):
             value = json.dumps(value)
 
-        await self.supabase.table("ton_connect_sessions").upsert({
-            "user_id": self.user_id,
-            "key": key,
-            "value": value,
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }).execute()
+        await self.ensure_user_exists(self.user_id)
+
+        try:
+            await self.supabase.table("ton_connect_sessions").upsert({
+                "user_id": self.user_id,
+                "key": key,
+                "value": value,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }, on_conflict="user_id,key").execute()
+        except APIError as e:
+            logger.warning("TON_CONNECT_STORAGE_WARNING user_id=%s key=%s error=%s", self.user_id, key, e)
 
     async def get_item(self, key: str, default_value: str = None):
         response = await self.supabase.table("ton_connect_sessions").select("value").eq(

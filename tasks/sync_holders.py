@@ -11,6 +11,18 @@ logger = logging.getLogger(__name__)
 API_URL = "https://stickers.tools/api/v1/launching/packs/0:81abce045d81dc32c42aebc27b1ad6898bb4f89306231d2b58031908a4c267c7/holders"
 
 async def fetch_holders():
+    def extract_wallet(item):
+        if isinstance(item, str):
+            return item
+        if isinstance(item, dict):
+            return item.get("wallet") or item.get("address") or item.get("owner")
+        return None
+
+    def extract_packs(item):
+        if isinstance(item, dict):
+            return item.get("packs") or item.get("packsCount") or item.get("count") or item.get("balance") or 0
+        return 0
+
     holders = []
     offset = 0
     limit = 100
@@ -37,24 +49,33 @@ async def fetch_holders():
                         elif isinstance(data, dict):
                             page = (
                                 data.get("holders")
+                                or data.get("data")
                                 or data.get("result")
                                 or data.get("items")
-                                or data.get("data")
                                 or []
                             )
                         else:
                             page = []
+
+                        logger.info(
+                            "HOLDERS_RESPONSE_TYPE=%s HOLDERS_ITEMS=%s",
+                            type(data).__name__,
+                            len(page) if isinstance(page, list) else 0,
+                        )
                         break
                 except (asyncio.TimeoutError, aiohttp.ClientError, json.JSONDecodeError):
                     if attempt == retries:
                         return holders
                     await asyncio.sleep(attempt)
 
+            valid_count = 0
             for row in page:
-                wallet = row.get("wallet") or row.get("address") or row.get("owner")
-                packs = row.get("packs") or row.get("packsCount") or row.get("count") or row.get("balance") or 0
+                wallet = extract_wallet(row)
+                packs = extract_packs(row)
                 if wallet:
+                    valid_count += 1
                     holders.append({"wallet": wallet, "packs": packs})
+            logger.info("HOLDERS_VALID=%s", valid_count)
 
             has_more = data.get("hasMore") if isinstance(data, dict) else None
             if has_more is False:
@@ -77,9 +98,9 @@ async def daily_sync_task(bot):
                 await db.update_setting("cached_holders", json.dumps(holders))
                 LeaderboardService.invalidate_cache()
                 await db.save_snapshot(holders)
-                logger.info(f"Holders synchronized: {len(holders)}")
+                logger.info("HOLDERS_FETCH_DONE total=%s", len(holders))
             else:
-                logger.warning("No holders fetched. Skipping update.")
+                logger.warning("Holders API returned empty dataset. Skipping update.")
 
         except Exception as e:
             logger.error(f"Error in daily_sync_task: {e}", exc_info=True)
