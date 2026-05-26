@@ -1,11 +1,18 @@
 import base64
 import logging
 
-def normalize_to_raw(address: str) -> str:
+def normalize_to_raw(address: str):
     """Приводит любой формат адреса TON (Raw, Bounceable, Non-bounceable) к единому Raw-виду (0:hex)"""
-    if not address:
-        return ""
+    if not isinstance(address, str):
+        return None
+
+    if len(address) < 20:
+        return None
+
     address = address.strip()
+    if not address:
+        return None
+
     if ":" in address:
         parts = address.split(":")
         return f"{parts[0]}:{parts[1].lower()}"
@@ -21,9 +28,9 @@ def normalize_to_raw(address: str) -> str:
                 workchain = -1
             account_id = data[2:34].hex().lower()
             return f"{workchain}:{account_id}"
-    except Exception as e:
-        logging.error(f"Error normalizing address {address}: {e}")
-    return address
+    except Exception:
+        return None
+    return None
 
 def raw_to_user_friendly(raw_address: str, bounceable: bool = False) -> str:
     """Конвертирует сырой адрес (0:hex) в стандартный User-Friendly формат (начинается с UQ для non-bounceable)"""
