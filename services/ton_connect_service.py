@@ -63,12 +63,24 @@ class TonConnectService:
                 cls.drop_connector(user_id)
 
             if user_id in cls._instances:
-                cls._last_access[user_id] = now
-                return cls._instances[user_id]
+                connector = cls._instances[user_id]
+                try:
+                    await connector.restore_connection()
+                except Exception:
+                    cls.drop_connector(user_id)
+                    connector = None
+                if connector is not None and user_id in cls._instances:
+                    cls._last_access[user_id] = now
+                    return connector
 
             storage = SupabaseStorage(db.client, user_id)
             connector = TonConnect(manifest_url=MANIFEST_URL, storage=storage)
-            await connector.restore_connection()
+            try:
+                await connector.restore_connection()
+            except Exception:
+                cls.drop_connector(user_id)
+                storage = SupabaseStorage(db.client, user_id)
+                connector = TonConnect(manifest_url=MANIFEST_URL, storage=storage)
 
             cls._instances[user_id] = connector
             cls._last_access[user_id] = now
