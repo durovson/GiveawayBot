@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import aiohttp
-import json
 from database import db
 from loader import bot, ADMIN_IDS
 from services.leaderboard import LeaderboardService
@@ -95,10 +94,14 @@ async def daily_sync_task(bot):
             holders = cached.get("holders", []) if isinstance(cached, dict) else []
 
             if holders:
-                await db.update_setting("cached_holders", json.dumps(cached))
+                try:
+                    await db.save_snapshot(holders)
+                    await db.cleanup_old_snapshots(days=14)
+                except Exception:
+                    logger.exception("Snapshot save failed")
+
                 LeaderboardService.invalidate_cache()
-                await db.save_snapshot(holders)
-                logger.info("Cached holders updated")
+                logger.info("Holders snapshot updated")
             else:
                 logger.warning("Holders API returned empty dataset. Skipping update.")
 

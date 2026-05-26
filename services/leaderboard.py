@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from typing import List, Dict, Optional
@@ -19,18 +18,10 @@ class LeaderboardService:
         now = time.time()
         if cls._cache and (now - cls._cache_ts) < cls.TTL:
             return cls._cache
-        cached_data = await db.get_setting("cached_holders")
-        if not cached_data:
+        holders = await db.get_latest_snapshot()
+        if not holders:
             return []
         try:
-            value = json.loads(cached_data)
-            if isinstance(value, dict):
-                holders = value.get("holders") or value.get("items") or value.get("data") or []
-            elif isinstance(value, list):
-                holders = value
-            else:
-                holders = []
-
             clean = []
             for row in holders:
                 if not isinstance(row, dict):
