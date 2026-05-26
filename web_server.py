@@ -51,5 +51,3 @@ async def start_keep_alive_async(bot: Bot, dp: Dispatcher):
     return runner
 
 
-def start_keep_alive():
-    pass
