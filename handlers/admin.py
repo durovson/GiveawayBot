@@ -37,8 +37,7 @@ async def start_gif_update(callback: types.CallbackQuery, state: FSMContext):
         callback,
         "📝 <b>GIF Management</b>\n\nSelect which section's animation you want to update:",
         reply_markup=get_gif_type_kb(),
-        parse_mode=ParseMode.HTML
-    )
+        parse_mode=ParseMode.HTML, state=state)
     await callback.answer()
 
 # 3. Выбор типа (куда ставим GIF)
@@ -55,8 +54,7 @@ async def process_type_choice(callback: types.CallbackQuery, state: FSMContext):
         f"🎬 <b>Upload Media</b>\n\nPlease send a <b>GIF</b> or <b>Video</b> for the <b>{label}</b> section.\n\n"
         "<i>Note: Telegram might convert large GIFs to videos, but I will handle both.</i>",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="❌ Cancel", callback_data="cancel_update")]]),
-        parse_mode=ParseMode.HTML
-    )
+        parse_mode=ParseMode.HTML, state=state)
     await callback.answer()
 
 # 4. Прием и сохранение файла (ловим анимации и видео)
@@ -78,12 +76,11 @@ async def process_gif_file(message: types.Message, state: FSMContext):
         await safe_answer(
             message,
             f"✅ <b>Successfully updated!</b>\n\nThe new media for <code>{setting_key}</code> has been saved and is now active.",
-            parse_mode=ParseMode.HTML
-        )
+            parse_mode=ParseMode.HTML, state=state)
         logger.info(f"Admin {message.from_user.id} updated GIF for {setting_key}")
     except Exception as e:
         logger.error(f"Error saving GIF: {e}")
-        await safe_answer(message, "❌ <b>Database Error</b>\nFailed to save the new file ID.")
+        await safe_answer(message, "❌ <b>Database Error</b>\nFailed to save the new file ID.", state=state)
     
     await state.clear()
 
@@ -91,5 +88,5 @@ async def process_gif_file(message: types.Message, state: FSMContext):
 @router.callback_query(F.data == "cancel_update")
 async def cancel_handler(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
-    await safe_edit_text(callback, "🚫 Update cancelled. Returning to main menu...")
+    await safe_edit_text(callback, "🚫 Update cancelled. Returning to main menu...", state=state)
     await callback.answer()

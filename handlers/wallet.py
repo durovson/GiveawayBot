@@ -58,7 +58,7 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
             [InlineKeyboardButton(text="◀️ Back", callback_data="game_menu")]
         ])
 
-    await safe_edit_text(callback, text, kb, state=state)
+    await safe_edit_text(callback, text, reply_markup=kb, state=state)
 
 @router.callback_query(F.data == "disconnect_wallet")
 async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext):
@@ -101,7 +101,7 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
     await safe_edit_text(
         callback,
         "<b>Select your wallet:</b>",
-        InlineKeyboardMarkup(inline_keyboard=kb_list),
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=kb_list),
         state=state
     )
 
@@ -133,7 +133,7 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         [InlineKeyboardButton(text="◀️ Cancel", callback_data="wallet_menu")]
     ])
 
-    await safe_edit_text(callback, text, kb, state=state)
+    await safe_edit_text(callback, text, reply_markup=kb, state=state)
 
     # Polling for connection status
     # We use a background task for this specific connection attempt

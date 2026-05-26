@@ -40,7 +40,7 @@ async def start_otc_market(callback: types.CallbackQuery, state: FSMContext):
         "<blockquote>Select the type of trade:</blockquote>"
     )
 
-    msg = await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    msg = await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     await state.update_data(last_msg_id=msg.message_id)
     await state.set_state(OTCMarket.SELECT_TYPE)
 
@@ -65,7 +65,7 @@ async def select_trade_type(callback: types.CallbackQuery, state: FSMContext):
         "Example: Rare NFT https://t.me/nft_link</blockquote>"
     )
 
-    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(OTCMarket.ENTER_ITEM)
 
 @router.callback_query(F.data == "otc_no_link")
@@ -79,7 +79,7 @@ async def otc_no_link_selected(callback: types.CallbackQuery, state: FSMContext)
         "<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji> <b>Item Name</b>\n\n"
         "<blockquote>Please send only the name of the item.</blockquote>"
     )
-    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(OTCMarket.ENTER_NAME_ONLY)
 
 @router.message(OTCMarket.ENTER_NAME_ONLY, F.text)
@@ -110,7 +110,7 @@ async def enter_name_only(message: types.Message, state: FSMContext, bot: Bot):
         "<blockquote>Enter the price in TON or click the \"Skip (Offer)\" button.</blockquote>"
     )
 
-    await safe_bot_edit_text(bot, message.chat.id, last_msg_id, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_bot_edit_text(bot, message.chat.id, last_msg_id, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(OTCMarket.ENTER_PRICE)
 
 @router.message(OTCMarket.ENTER_ITEM, F.text)
@@ -136,7 +136,7 @@ async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot
             "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>Invalid Input</b>\n\n"
             "<blockquote>Please include a valid URL (http:// or https://) in your message or click <b>No-link</b>.</blockquote>"
         )
-        await safe_bot_edit_text(bot, message.chat.id, last_msg_id, warning_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_bot_edit_text(bot, message.chat.id, last_msg_id, warning_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
         return
 
     url = url_match.group(0)
@@ -164,7 +164,7 @@ async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot
         "<blockquote>Enter the price in TON or click the \"Skip (Offer)\" button.</blockquote>"
     )
 
-    await safe_bot_edit_text(bot, message.chat.id, last_msg_id, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_bot_edit_text(bot, message.chat.id, last_msg_id, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(OTCMarket.ENTER_PRICE)
 
 @router.callback_query(OTCMarket.ENTER_PRICE, F.data == "otc_price_skip")
@@ -268,9 +268,9 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot):
         success_text = "✅ <b>Post published successfully!</b>\n\n<blockquote>Your order has been sent to the OTC channel.</blockquote>"
 
         if isinstance(event, types.CallbackQuery):
-            await safe_edit_text(event.message, success_text, reply_markup=success_builder.as_markup(), parse_mode=ParseMode.HTML)
+            await safe_edit_text(event.message, success_text, reply_markup=success_builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
         else:
-            await safe_bot_edit_text(bot, event.chat.id, last_msg_id, success_text, reply_markup=success_builder.as_markup(), parse_mode=ParseMode.HTML)
+            await safe_bot_edit_text(bot, event.chat.id, last_msg_id, success_text, reply_markup=success_builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
     except Exception as e:
         logger.error(f"OTC Publication error: {e}")
@@ -329,9 +329,9 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
     builder.adjust(2, 1, 1)
 
     if isinstance(event, types.CallbackQuery):
-        await safe_edit_text(event.message, preview_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(event.message, preview_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     else:
-        await safe_bot_edit_text(bot, event.chat.id, last_msg_id, preview_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_bot_edit_text(bot, event.chat.id, last_msg_id, preview_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
     await state.set_state(OTCMarket.PREVIEW)
 
@@ -354,7 +354,7 @@ async def otc_edit_item(callback: types.CallbackQuery, state: FSMContext):
             "<blockquote>Please send the name of the item and a link to it.\n\n"
             "Example: Rare NFT https://t.me/nft_link</blockquote>"
         )
-        await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(OTCMarket.ENTER_ITEM)
     else:
         builder = InlineKeyboardBuilder()
@@ -366,7 +366,7 @@ async def otc_edit_item(callback: types.CallbackQuery, state: FSMContext):
             "<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji> <b>Item Name</b>\n\n"
             "<blockquote>Please send only the name of the item.</blockquote>"
         )
-        await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(OTCMarket.ENTER_NAME_ONLY)
 
 
@@ -385,7 +385,7 @@ async def otc_edit_price(callback: types.CallbackQuery, state: FSMContext):
         "<blockquote>Enter the price in TON or click the \"Skip (Offer)\" button.</blockquote>"
     )
 
-    await safe_edit_text(callback, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_edit_text(callback, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(OTCMarket.ENTER_PRICE)
 
 

@@ -1,4 +1,5 @@
 from aiogram import Router, types, F
+from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.enums import ParseMode
 import logging
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 @router.callback_query(F.data == "history_created")
-async def history_created(callback: types.CallbackQuery):
+async def history_created(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     user_id = callback.from_user.id
     giveaways = await db.get_user_created_giveaways(user_id)
@@ -62,7 +63,7 @@ async def history_created(callback: types.CallbackQuery):
 
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
-    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
 @router.callback_query(F.data.startswith("join_"))
 async def join_giveaway(callback: types.CallbackQuery):
