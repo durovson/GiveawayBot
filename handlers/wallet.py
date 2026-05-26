@@ -1,5 +1,3 @@
-import os
-import json
 import asyncio
 import logging
 from aiogram import Router, types, F
@@ -8,65 +6,38 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from pytonconnect import TonConnect
-from pytonconnect.storage import IStorage
-from datetime import datetime
-import secrets
 
 from database import db
-from utils import safe_edit_text, safe_bot_edit_text, raw_to_user_friendly
+from utils import safe_edit_text, raw_to_user_friendly
 from loader import bot
+from services.ton_connect_service import TonConnectService
 
 logger = logging.getLogger(__name__)
 router = Router()
 
-# Dynamic MANIFEST_URL
-BASE_URL = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("CUSTOM_URL", "https://giveaway-bot-hiap.onrender.com")
-if not BASE_URL.startswith("http"):
-    BASE_URL = "https://" + BASE_URL
-MANIFEST_URL = f"{BASE_URL.rstrip('/')}/tonconnect-manifest.json"
 
 class WalletConnectState(StatesGroup):
     waiting_for_connection = State()
 
-class SupabaseStorage(IStorage):
-    def __init__(self, supabase_client, user_id: int):
-        self.supabase = supabase_client
-        self.user_id = user_id
-
-    async def set_item(self, key: str, value: str) -> None:
-        await self.supabase.table("ton_connect_sessions").upsert({
-            "user_id": int(self.user_id),
-            "key": str(key),
-            "value": str(value),
-            "updated_at": datetime.now().isoformat()
-        }).execute()
-
-    async def get_item(self, key: str, default_value: str = None) -> str:
-        response = await self.supabase.table("ton_connect_sessions") \
-            .select("value") \
-            .eq("user_id", int(self.user_id)) \
-            .eq("key", str(key)) \
-            .execute()
-
-        data = response.data
-        if data and len(data) > 0:
-            return data[0]["value"]
-        return default_value
-
-    async def remove_item(self, key: str) -> None:
-        await self.supabase.table("ton_connect_sessions") \
-            .delete() \
-            .eq("user_id", int(self.user_id)) \
-            .eq("key", str(key)) \
-            .execute()
 
 def format_address(address: str) -> str:
     if not address:
         return "Unknown"
 
-    # Принудительно конвертируем сырой hex (0:...) в красивый UQ...
     friendly_addr = raw_to_user_friendly(address)
     return f"{friendly_addr[:6]}...{friendly_addr[-6:]}"
+
+
+async def await_wallet(connector: TonConnect, user_id: int):
+    await asyncio.wait_for(connector.wait_for_connection(), timeout=180)
+
+    if connector.connected:
+        address = connector.wallet.account.address
+        await db.update_user_wallet(user_id, address)
+        return address
+
+    return None
+
 
 @router.callback_query(F.data == "wallet_menu")
 async def wallet_menu_handler(callback: types.CallbackQuery):
@@ -97,13 +68,13 @@ async def wallet_menu_handler(callback: types.CallbackQuery):
 
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
+
 @router.callback_query(F.data == "connect_wallet")
 async def start_wallet_connect(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    storage = SupabaseStorage(db.client, user_id)
-    connector = TonConnect(manifest_url=MANIFEST_URL, storage=storage)
+    connector = await TonConnectService.connector(user_id)
 
-    if await connector.restore_connection() and connector.connected:
+    if connector.connected:
         await callback.answer("Wallet is already connected!", show_alert=True)
         return
 
@@ -117,79 +88,87 @@ async def start_wallet_connect(callback: types.CallbackQuery, state: FSMContext)
 
     await safe_edit_text(callback, text="<b>💳 Select your TON wallet:</b>", reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
+
 @router.callback_query(F.data.startswith("wallet_select:"))
 async def process_wallet_selection(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     chat_id = callback.message.chat.id
     selected_app = callback.data.split(":")[1]
 
-    storage = SupabaseStorage(db.client, user_id)
-    connector = TonConnect(manifest_url=MANIFEST_URL, storage=storage)
-
+    connector = await TonConnectService.connector(user_id)
     wallets = connector.get_wallets()
+
     target_wallet = None
-    for w in wallets:
-        if w.get('appName', w.get('app_name')) == selected_app:
-            target_wallet = w
+    for wallet in wallets:
+        if wallet.get("appName", wallet.get("app_name")) == selected_app:
+            target_wallet = wallet
             break
 
     if not target_wallet:
         await callback.answer("Wallet not supported!", show_alert=True)
         return
 
-    res = connector.connect(target_wallet)
-    connect_url = await res if asyncio.iscoroutine(res) else res
+    def status_changed(wallet):
+        logger.info("TON_CONNECT_CONNECTED")
 
-    builder = InlineKeyboardBuilder()
-    builder.button(text=f"Open {target_wallet.get('name', 'Wallet')}", url=connect_url)
-    builder.button(text="❌ Cancel", callback_data="wallet_menu")
-    builder.adjust(1)
+    def status_error(e):
+        logger.error("TON_CONNECT_FAILED")
 
-    sent_message = await safe_edit_text(callback, text="<b>🔗 Confirm connection in your wallet application.</b>", reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    unsubscribe = lambda: None
 
-    await state.set_state(WalletConnectState.waiting_for_connection)
-    asyncio.create_task(wait_bridge_connection(connector, user_id, chat_id, sent_message.message_id, state))
-
-async def wait_bridge_connection(connector: TonConnect, user_id: int, chat_id: int, msg_id: int, state: FSMContext):
     try:
-        await asyncio.wait_for(connector.wait_for_connection(), timeout=180)
-        if connector.connected:
-            raw_address = connector.wallet.account.address
+        unsubscribe = connector.on_status_change(status_changed, status_error)
+        res = connector.connect(target_wallet)
+        connect_url = await res if asyncio.iscoroutine(res) else res
 
-            # Save address to our users table
-            await db.update_user_wallet(user_id, raw_address)
+        builder = InlineKeyboardBuilder()
+        builder.button(text=f"Open {target_wallet.get('name', 'Wallet')}", url=connect_url)
+        builder.button(text="❌ Cancel", callback_data="wallet_menu")
+        builder.adjust(1)
 
-            await state.clear()
+        await safe_edit_text(
+            callback,
+            text="<b>🔗 Confirm connection in your wallet application.</b>",
+            reply_markup=builder.as_markup(),
+            parse_mode=ParseMode.HTML,
+        )
 
+        await state.set_state(WalletConnectState.waiting_for_connection)
+        raw_address = await await_wallet(connector, user_id)
+        await state.clear()
+
+        if raw_address:
             friendly_addr = format_address(raw_address)
-            await bot.send_message(chat_id=user_id, text=f"<b>🎉 Wallet successfully connected!</b>\nAddress: <code>{friendly_addr}</code>", parse_mode=ParseMode.HTML)
-
+            await bot.send_message(
+                chat_id=chat_id,
+                text=f"<b>🎉 Wallet successfully connected!</b>\nAddress: <code>{friendly_addr}</code>",
+                parse_mode=ParseMode.HTML,
+            )
     except asyncio.TimeoutError:
         await state.clear()
-        try:
-            await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text="❌ Connection timeout reached.", parse_mode=ParseMode.HTML)
-        except:
-            pass
+        await bot.send_message(chat_id=chat_id, text="❌ Connection timeout reached.")
     except Exception as e:
-        logger.error(f"Error in wait_bridge_connection: {e}")
+        logger.error(f"Error in wallet connection flow: {e}")
         await state.clear()
+        await callback.answer("❌ Wallet connection failed.", show_alert=True)
+    finally:
+        unsubscribe()
+
 
 @router.callback_query(F.data == "disconnect_wallet")
 async def disconnect_wallet_handler(callback: types.CallbackQuery):
     await callback.answer()
     user_id = callback.from_user.id
-
-    storage = SupabaseStorage(db.client, user_id)
-    connector = TonConnect(MANIFEST_URL, storage)
+    connector = await TonConnectService.connector(user_id)
 
     try:
-        if await connector.restore_connection():
+        await connector.restore_connection()
+        if connector.connected:
             await connector.disconnect()
 
-        await db.update_user_wallet(user_id, None)
-
-        # Clear sessions for this user in Supabase
         await db.client.table("ton_connect_sessions").delete().eq("user_id", user_id).execute()
+        await db.update_user_wallet(user_id, None)
+        TonConnectService.drop_connector(user_id)
 
         await wallet_menu_handler(callback)
     except Exception as e:

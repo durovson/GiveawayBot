@@ -4,6 +4,7 @@ import aiohttp
 import json
 from database import db
 from loader import bot, ADMIN_IDS
+from services.leaderboard import LeaderboardService
 
 logger = logging.getLogger(__name__)
 
@@ -12,41 +13,53 @@ API_URL = "https://stickers.tools/api/v1/launching/packs/0:81abce045d81dc32c42ae
 async def fetch_holders():
     holders = []
     offset = 0
-    limit = 30
+    limit = 100
+    retries = 3
 
     async with aiohttp.ClientSession() as session:
         while True:
-            try:
-                async with session.get(f"{API_URL}?offset={offset}&limit={limit}", timeout=15) as response:
-                    if response.status != 200:
-                        logger.error(f"Error fetching holders: {response.status}")
-                        break
-                        
-                    data = await response.json()
-                    
-                    current_holders = data.get("holders", data.get("result", []))
-                    has_more = data.get("hasMore", data.get("has_more", False))
-                    
-                    if not current_holders:
-                        logger.info(f"Pagination finished. Total holders collected: {len(holders)}")
-                        break
-                    
-                    holders.extend(current_holders)
-                    
-                    logger.info(f"Collected {len(current_holders)} holders at offset {offset}")
+            url = f"{API_URL}?offset={offset}&limit={limit}"
 
-                    if not has_more:
-                        logger.info(f"Reached the last page (hasMore is False). Total holders collected: {len(holders)}")
+            for attempt in range(1, retries + 1):
+                try:
+                    async with session.get(url, timeout=30) as response:
+                        if response.status != 200:
+                            logger.error(f"HOLDERS_FETCH_BAD_STATUS status={response.status} offset={offset}")
+                            if attempt == retries:
+                                return holders
+                            await asyncio.sleep(attempt)
+                            continue
+
+                        data = await response.json()
+                        page = data.get("holders") or data.get("result") or data.get("items") or []
+
+                        if not page:
+                            logger.info(f"HOLDERS_FETCH_DONE total={len(holders)} offset={offset}")
+                            return holders
+
+                        normalized = []
+                        for row in page:
+                            wallet = row.get("wallet") or row.get("address") or row.get("owner")
+                            packs = row.get("packs") or row.get("count") or row.get("packsCount") or 0
+                            if wallet:
+                                normalized.append({"wallet": wallet, "packs": packs})
+
+                        holders.extend(normalized)
+                        logger.info(f"HOLDERS_FETCH_PAGE offset={offset} page_size={len(page)} total={len(holders)}")
+
+                        if len(page) < limit:
+                            logger.info(f"HOLDERS_FETCH_LAST_PAGE total={len(holders)}")
+                            return holders
+
+                        offset += limit
+                        await asyncio.sleep(0.1)
                         break
-                        
-                    offset += len(current_holders)
-                    
-                    await asyncio.sleep(0.1)
-                    
-            except Exception as e:
-                logger.error(f"Exception fetching holders at offset {offset}: {e}")
-                break
-                
+                except Exception as e:
+                    logger.error(f"HOLDERS_FETCH_EXCEPTION offset={offset} attempt={attempt} err={e}")
+                    if attempt == retries:
+                        return holders
+                    await asyncio.sleep(attempt)
+
     return holders
 
 async def daily_sync_task(bot):
@@ -61,9 +74,10 @@ async def daily_sync_task(bot):
                 logger.info(f"Successfully fetched {len(holders)} holders. Saving to cache...")
                 # Save to settings table for leaderboard display
                 await db.update_setting("cached_holders", json.dumps(holders))
+                LeaderboardService.invalidate_cache()
 
                 # Also save snapshot for history
-                await db.save_snapshot({"data": holders})
+                await db.save_snapshot(holders)
                 logger.info("Holders saved successfully.")
             else:
                 logger.warning("No holders fetched. Skipping update.")

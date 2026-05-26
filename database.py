@@ -102,6 +102,7 @@ class Database:
                 "chat_id": chat_id,
                 "message_id": message_id
             }).execute()
+            await self.client.table("giveaways").update({"message_id": message_id}).eq("id", giveaway_id).execute()
         except Exception as e:
             logger.error(f"Error adding giveaway message: {e}")
 
@@ -310,10 +311,10 @@ class Database:
             logger.error(f"Error getting all linked wallets: {e}")
             return []
 
-    async def save_snapshot(self, data: Dict):
+    async def save_snapshot(self, data):
         if not await self._ensure_connection(): return
         try:
-            await self.client.table("snapshots").insert(data).execute()
+            await self.client.table("snapshots").insert({"data": data}).execute()
         except Exception as e:
             logger.error(f"Error saving snapshot: {e}")
 
