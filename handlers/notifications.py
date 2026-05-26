@@ -35,9 +35,11 @@ def get_notification_nav_keyboard():
 
 def get_interval_keyboard():
     builder = InlineKeyboardBuilder()
-    intervals = [1, 2, 3]
-    for h in intervals:
-        builder.button(text=f"{h}h", callback_data=f"notif_int_{h}")
+    intervals = [60, 120, 180, 360, 720]
+    for m in intervals:
+        hours, minutes = divmod(m, 60)
+        label = f"{hours}h {minutes}m" if hours and minutes else (f"{hours}h" if hours else f"{minutes}m")
+        builder.button(text=label, callback_data=f"notif_int_{m}")
     builder.button(text="Custom", callback_data="notif_int_custom", icon_custom_emoji_id="5274008024585871702")
     builder.button(text="Back", callback_data="notif_back", icon_custom_emoji_id="5260687119092817530")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
@@ -83,7 +85,7 @@ async def show_notification_params(message_or_cb, state: FSMContext, bot: Bot):
     data = await state.get_data()
     preview = format_notification_preview(data.get('title'), data.get('text'), data.get('custom_buttons', []))
 
-    interval = data.get('interval_hours', 0)
+    interval = data.get('interval_minutes', 0)
     is_active = data.get('is_active', True)
     chat_id = data.get('chat_id')
     chat_title = "None"
@@ -96,7 +98,7 @@ async def show_notification_params(message_or_cb, state: FSMContext, bot: Bot):
     status_text = (
         f"<b>Notification Parameters:</b>\n\n"
         f"<blockquote>"
-        f"<b>Interval:</b> {int(interval)}m\n"
+        f"<b>Interval:</b> {format_interval(interval)}\n"
         f"<b>Chat:</b> {chat_title}\n"
         f"<b>Status:</b> {'Active' if is_active else 'Inactive'}"
         f"</blockquote>\n\n"
@@ -114,6 +116,14 @@ async def show_notification_params(message_or_cb, state: FSMContext, bot: Bot):
 
 def status_text_preview_helper(preview: str) -> str:
     return preview
+
+def format_interval(interval_minutes: int) -> str:
+    h, m = divmod(int(interval_minutes), 60)
+    if h and m:
+        return f"{h}h {m}m"
+    if h:
+        return f"{h}h"
+    return f"{m}m"
 
 @router.callback_query(F.data == "manage_notifications")
 async def start_notification_management(callback: types.CallbackQuery, state: FSMContext):
@@ -169,7 +179,7 @@ async def select_notif_to_manage(callback: types.CallbackQuery, state: FSMContex
         title=notif['title'],
         text=notif['text'],
         custom_buttons=custom_buttons,
-        interval_hours=notif['interval_hours'],
+        interval_minutes=notif['interval_minutes'],
         chat_id=notif['chat_id'],
         is_active=notif['is_active'],
         last_msg_id=callback.message.message_id
@@ -293,13 +303,13 @@ async def select_notif_interval(callback: types.CallbackQuery, state: FSMContext
 
     if val == "custom":
         await safe_edit_text(callback,
-            "<b>Enter interval in minutes (min 15, max 60):</b>",
+            "<b>Enter interval in minutes (min 15, max 720):</b>",
             reply_markup=get_notification_nav_keyboard(),
             parse_mode=ParseMode.HTML
         )
         await state.set_state(NotificationStates.CUSTOM_INTERVAL)
     else:
-        await state.update_data(interval_hours=float(val) * 480)
+        await state.update_data(interval_minutes=int(val))
         data = await state.get_data()
 
         if data.get('is_editing'):
@@ -316,10 +326,10 @@ async def process_custom_interval(message: types.Message, state: FSMContext, bot
     data = await state.get_data()
     try:
         val = int(message.text)
-        if not (15 <= val <= 60):
+        if not (15 <= val <= 720):
             raise ValueError("Out of range")
 
-        await state.update_data(interval_hours=float(val))
+        await state.update_data(interval_minutes=float(val))
         data = await state.get_data()
 
         if data.get('is_editing'):
@@ -329,8 +339,8 @@ async def process_custom_interval(message: types.Message, state: FSMContext, bot
             await show_chat_selection(message, state, bot)
     except ValueError:
         await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
-            "❌ Invalid number. Please enter a number between 15 and 60.\n\n"
-            "<b>Enter interval in minutes (min 15, max 60):</b>",
+            "❌ Invalid number. Please enter a number between 15 and 720.\n\n"
+            "<b>Enter interval in minutes (min 15, max 720):</b>",
             reply_markup=get_notification_nav_keyboard(),
             parse_mode=ParseMode.HTML)
 
@@ -375,7 +385,7 @@ async def save_notification(callback: types.CallbackQuery, state: FSMContext):
         logger.warning(f"Сбой отправки callback.answer (игнорируем): {e}")
 
     data = await state.get_data()
-    if not data.get('chat_id') or not data.get('title') or not data.get('text') or not data.get('interval_hours'):
+    if not data.get('chat_id') or not data.get('title') or not data.get('text') or not data.get('interval_minutes'):
         await callback.message.answer("❌ Please fill all fields")
         return
 
@@ -383,7 +393,7 @@ async def save_notification(callback: types.CallbackQuery, state: FSMContext):
         "title": data['title'],
         "text": data['text'],
         "custom_buttons": data.get('custom_buttons', []),
-        "interval_hours": data['interval_hours'],
+        "interval_minutes": data['interval_minutes'],
         "chat_id": data['chat_id'],
         "is_active": data.get('is_active', True)
     }
@@ -398,7 +408,7 @@ async def save_notification(callback: types.CallbackQuery, state: FSMContext):
 
     try:
         # 3. Логика записи в БД Supabase (убедись, что этот блок выполняется независимо)
-        await db.upsert_notification(notif_data)
+        await (db.update_notification(data['id'], notif_data) if data.get('id') else db.create_notification(notif_data))
 
         # 4. Уведомляем пользователя об успешном создании
         await callback.message.answer("✅ Saved successfully")

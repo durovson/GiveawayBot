@@ -231,12 +231,23 @@ class Database:
         except Exception as e:
             logger.error(f"Error updating setting {key}: {e}")
 
-    async def upsert_notification(self, data: dict):
+    async def create_notification(self, data: dict) -> Optional[Dict]:
+        if not await self._ensure_connection(): return None
+        try:
+            response = await self.client.table("notifications").insert(data).execute()
+            logger.info("notification created: title=%s chat_id=%s", data.get("title"), data.get("chat_id"))
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error creating notification: {e}")
+            return None
+
+    async def update_notification(self, notification_id: int, data: dict):
         if not await self._ensure_connection(): return
         try:
-            await self.client.table("notifications").upsert(data).execute()
+            await self.client.table("notifications").update(data).eq("id", notification_id).execute()
+            logger.info("notification updated: id=%s", notification_id)
         except Exception as e:
-            logger.error(f"Error upserting notification: {e}")
+            logger.error(f"Error updating notification: {e}")
 
     async def get_notifications(self) -> List[Dict]:
         if not await self._ensure_connection(): return []
@@ -270,6 +281,7 @@ class Database:
                 "last_sent": last_sent.isoformat(),
                 "last_message_id": last_message_id
             }).eq("id", notification_id).execute()
+            logger.info("notification stats updated: id=%s msg=%s", notification_id, last_message_id)
         except Exception as e:
             logger.error(f"Error updating notification stats: {e}")
 

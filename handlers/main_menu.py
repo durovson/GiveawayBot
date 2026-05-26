@@ -7,7 +7,7 @@ import html
 from database import db
 from loader import ADMIN_IDS
 from handlers.giveaway_creation import GiveawayCreation
-from utils import is_admin, is_any_admin, safe_answer, safe_edit_text, is_holder
+from utils import is_admin, is_any_admin, safe_answer, safe_edit_text
 
 router = Router()
 
@@ -61,24 +61,6 @@ async def cmd_start(message: types.Message, state: FSMContext, command: CommandO
                 pass
             except:
                 pass
-
-    if not await is_holder(message.from_user.id):
-        text = (
-            "┏┅⋐[ ◉ _◉ ]っ🍌\n"
-            "┋\n"
-            "┣ <b>Hmm... You still don't have an ape?</b>\n"
-            "┋\n"
-            "┣ <b>You can buy it using the button below</b>\n"
-            "┋ <b>or contact the collection owner :)</b>\n"
-            "┋\n"
-            "┗[ <b>HUMANS.. NOT APES</b> ]"
-        )
-        builder = InlineKeyboardBuilder()
-        builder.button(text="GetGems", url="https://getgems.io/notapes")
-        builder.button(text="KLASSIKA", url="https://t.me/klassikaone")
-        builder.adjust(1)
-        await safe_answer(message, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
-        return
 
     await safe_answer(
         message,

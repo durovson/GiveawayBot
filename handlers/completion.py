@@ -176,11 +176,14 @@ async def check_timed_giveaways(bot: Bot):
             for giveaway in expired_giveaways:
                 logger.info(f"Finishing giveaway {giveaway['id']}")
                 await complete_giveaway(giveaway['id'], bot)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             logger.error(f"Error in check_timed_giveaways: {e}")
+        try:
+            await asyncio.sleep(30)
         except asyncio.CancelledError:
-            break
-        await asyncio.sleep(30)
+            raise
 
 async def check_periodic_notifications(bot: Bot):
     while True:
@@ -191,8 +194,7 @@ async def check_periodic_notifications(bot: Bot):
             for notif in active_notifications:
                 try:
                     last_sent = notif.get("last_sent")
-                    interval = notif["interval_hours"]
-                    if interval < 15: interval *= 60
+                    interval = int(notif["interval_minutes"])
 
                     if last_sent is None:
                         last_sent_dt = now - timedelta(minutes=interval)
@@ -212,14 +214,6 @@ async def check_periodic_notifications(bot: Bot):
 
                     chat_id = notif["chat_id"]
                     last_message_id = notif.get("last_message_id")
-
-                    if now >= delete_threshold and now < next_send_time and last_message_id is not None:
-                        try:
-                            await bot.delete_message(chat_id=chat_id, message_id=last_message_id)
-                        except TelegramBadRequest as e:
-                            logger.error(f"Failed to delete old ad message: {e}")
-                        finally:
-                            await db.update_notification_last_msg(notif["id"], None)
 
                     if now >= next_send_time:
                         title = notif["title"]
@@ -261,12 +255,21 @@ async def check_periodic_notifications(bot: Bot):
                             last_sent=now,
                             last_message_id=new_msg.message_id
                         )
+                        logger.info("notification sent: id=%s chat_id=%s", notif["id"], chat_id)
+                        if last_message_id is not None:
+                            try:
+                                await bot.delete_message(chat_id=chat_id, message_id=last_message_id)
+                                logger.info("notification deleted: id=%s old_message_id=%s", notif["id"], last_message_id)
+                            except TelegramBadRequest as e:
+                                logger.error(f"Failed to delete old ad message: {e}")
                 except Exception as e:
                     logger.error(f"Error processing notification {notif.get('id')}: {e}")
 
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             logger.error(f"Error in check_periodic_notifications: {e}")
+        try:
+            await asyncio.sleep(30)
         except asyncio.CancelledError:
-            break
-
-        await asyncio.sleep(60)
+            raise
