@@ -100,7 +100,17 @@ async def leaderboard_handler(callback: types.CallbackQuery):
             # Если кошелек привязан, но паков 0 (или нет в выгрузке API)
             user_pos_line = f"┋ —. {short_wallet} (Вы) — 0 packs"
 
-    text = (
+    if not lines:
+        text = (
+            "┏┅🍑┅ / PACK HOLDERS LEADERBOARD /\n"
+            "┋\n"
+            "┣ No holder statistics available yet.\n"
+            "┣ Sync in progress.\n"
+            "┋\n"
+            "┗┅┅┅/ Live Blockchain Parsing /"
+        )
+    else:
+        text = (
         "┏┅🍑┅ / PACK HOLDERS LEADERBOARD /\n"
         "┋\n"
         "┣ Global ranking of tokenized collection distribution. \n"
@@ -110,7 +120,7 @@ async def leaderboard_handler(callback: types.CallbackQuery):
         "┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n"
         + (user_pos_line if user_pos_line else "┋ Wallet not linked or not found in list\n┋") + "\n"
         "┗┅┅┅/ Live Blockchain Parsing /"
-    )
+        )
 
     builder = InlineKeyboardBuilder()
     builder.button(text="Back", callback_data="game_menu")

@@ -35,10 +35,18 @@ class LeaderboardService:
     async def get_top(cls, limit: int = 10) -> List[Dict]:
         holders = await cls._load_holders()
         top = []
-        for idx, row in enumerate(holders[:limit], 1):
+        for row in holders:
+            if not isinstance(row, dict):
+                continue
             wallet = row.get("wallet") or row.get("address") or row.get("owner")
+            if not wallet:
+                continue
             packs = row.get("packs") or row.get("packsCount") or row.get("count") or 0
-            top.append({"rank": idx, "wallet": wallet, "packs": packs})
+            top.append({"wallet": wallet, "packs": packs})
+            if len(top) >= limit:
+                break
+        for idx, row in enumerate(top, 1):
+            row["rank"] = idx
         return top
 
     @classmethod
