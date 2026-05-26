@@ -5,6 +5,7 @@ import json
 from database import db
 from loader import bot, ADMIN_IDS
 from services.leaderboard import LeaderboardService
+from utils import normalize_to_raw
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,16 @@ async def fetch_holders():
     limit = 100
     retries = 5
 
+    def extract_page(payload):
+        if isinstance(payload, list):
+            return payload
+        if isinstance(payload, dict):
+            for key in ("holders", "items", "data"):
+                value = payload.get(key)
+                if isinstance(value, list):
+                    return value
+        return []
+
     async with aiohttp.ClientSession() as session:
         while True:
             url = f"{API_URL}?offset={offset}&limit={limit}"
@@ -42,18 +53,14 @@ async def fetch_holders():
                             continue
 
                         payload = await response.json()
-                        if isinstance(payload, dict):
-                            page = payload.get("holders", [])
-                        elif isinstance(payload, list):
-                            page = payload
-                        else:
-                            page = []
+                        page = extract_page(payload)
 
-                        logger.info(
-                            "HOLDERS_RESPONSE_TYPE=%s HOLDERS_ITEMS=%s",
-                            type(payload).__name__,
-                            len(page) if isinstance(page, list) else 0,
-                        )
+                        total_value = payload.get("total") if isinstance(payload, dict) else None
+                        if isinstance(total_value, int):
+                            logger.info("HOLDERS_RESPONSE_TYPE=%s HOLDERS_TOTAL=%s", type(payload).__name__, total_value)
+                        else:
+                            logger.info("HOLDERS_RESPONSE_TYPE=%s", type(payload).__name__)
+
                         break
                 except (asyncio.TimeoutError, aiohttp.ClientError, json.JSONDecodeError):
                     if attempt == retries:
@@ -65,10 +72,15 @@ async def fetch_holders():
                 if not isinstance(row, dict):
                     continue
                 wallet = extract_wallet(row)
+                if not wallet:
+                    continue
+                try:
+                    normalized = normalize_to_raw(wallet)
+                except Exception:
+                    continue
                 packs = int(extract_packs(row) or 0)
-                if wallet:
-                    valid_count += 1
-                    holders.append({"wallet": wallet, "packs": packs})
+                valid_count += 1
+                holders.append({"wallet": normalized, "packs": packs})
             logger.info("HOLDERS_VALID=%s", valid_count)
 
             has_more = payload.get("hasMore") if isinstance(payload, dict) else None
