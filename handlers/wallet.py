@@ -118,6 +118,12 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("Wallet configuration not found.", show_alert=True)
         return
 
+    if connector.connected:
+        try:
+            await connector.disconnect()
+        except Exception:
+            pass
+
     generated_url = await connector.connect(wallet_config)
 
     # Check if universal link or direct bridge

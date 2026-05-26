@@ -41,7 +41,7 @@ async def start_otc_market(callback: types.CallbackQuery, state: FSMContext):
     )
 
     msg = await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
-    await state.update_data(last_msg_id=msg.message_id)
+    if msg: await state.update_data(last_msg_id=msg.message_id)
     await state.set_state(OTCMarket.SELECT_TYPE)
 
 @router.callback_query(F.data == "otc_back_to_type")

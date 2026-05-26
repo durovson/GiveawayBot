@@ -86,10 +86,20 @@ async def main():
             except Exception as e:
                 logger.warning(f"failed to cleanup web runner: {e}")
 
+        # Centralized cleanup for TonConnect sessions
+        try:
+            from services.ton_connect_service import TonConnectService
+            await TonConnectService.close_all()
+        except Exception as e:
+            logger.warning(f"failed to close TonConnect sessions: {e}")
+
         try:
             await bot.session.close()
         except Exception as e:
             logger.warning(f"failed to close bot session: {e}")
+
+        # Final sleep to allow loop to process close events
+        await asyncio.sleep(0.5)
 
         logger.info("shutdown completed")
 
