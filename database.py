@@ -314,8 +314,21 @@ class Database:
     async def save_snapshot(self, data):
         if not await self._ensure_connection(): return
         try:
-            holders = data if isinstance(data, list) else (data.get("holders", []) if isinstance(data, dict) else [])
-            await self.client.table("snapshots").insert({"holders": holders}).execute()
+            payload = data if isinstance(data, dict) else {}
+            holders = payload.get("holders", data if isinstance(data, list) else [])
+            total = payload.get("total", len(holders) if isinstance(holders, list) else 0)
+            now_iso = datetime.now(timezone.utc).isoformat()
+
+            if not isinstance(holders, list):
+                holders = []
+
+            snapshot_data = {
+                "holders": holders,
+                "total": total,
+                "timestamp": now_iso
+            }
+
+            await self.client.table("snapshots").insert({"data": snapshot_data}).execute()
         except Exception as e:
             logger.error(f"Error saving snapshot: {e}")
 
@@ -323,13 +336,14 @@ class Database:
         if not await self._ensure_connection(): return []
         try:
             response = await self.client.table("snapshots") \
-                .select("holders") \
+                .select("data") \
                 .order("created_at", desc=True) \
                 .limit(1) \
                 .execute()
             if not response.data:
                 return []
-            holders = response.data[0].get("holders", [])
+            latest = response.data[0].get("data", {})
+            holders = latest.get("holders", []) if isinstance(latest, dict) else []
             return holders if isinstance(holders, list) else []
         except Exception as e:
             logger.error(f"Error getting latest snapshot: {e}")

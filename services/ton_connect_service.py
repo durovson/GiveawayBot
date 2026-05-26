@@ -51,8 +51,7 @@ class SupabaseStorage(IStorage):
             await self.supabase.table("ton_connect_sessions").upsert({
                 "user_id": self.user_id,
                 "key": key,
-                "value": value,
-                "updated_at": datetime.now(timezone.utc).isoformat()
+                "value": value
             }, on_conflict="user_id,key").execute()
         except APIError as e:
             logger.warning("TON_CONNECT_STORAGE_WARNING user_id=%s key=%s error=%s", self.user_id, key, e)
