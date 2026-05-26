@@ -5,6 +5,7 @@ from database import db
 from loader import bot, ADMIN_IDS
 from services.leaderboard import LeaderboardService
 from utils import normalize_to_raw
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -105,10 +106,10 @@ async def daily_sync_task(bot):
             else:
                 logger.warning("Holders API returned empty dataset. Skipping update.")
 
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             logger.error(f"Error in daily_sync_task: {e}", exc_info=True)
-        except asyncio.CancelledError:
-            break
 
         # Sleep for 24 hours
         await asyncio.sleep(24 * 3600)

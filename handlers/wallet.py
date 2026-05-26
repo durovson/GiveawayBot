@@ -1,172 +1,170 @@
 import asyncio
 import logging
-from aiogram import Router, types, F
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.enums import ParseMode
+from aiogram import Router, F, types, html
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from aiogram.enums import ParseMode
 from pytonconnect import TonConnect
 from pytonconnect.exceptions import UserRejectsError
 from postgrest.exceptions import APIError
 
-from database import db
-from utils import safe_edit_text, raw_to_user_friendly
 from loader import bot
+from database import db
 from services.ton_connect_service import TonConnectService
 from services.ui_cleanup import remember_message, clear_messages
-from handlers.main_menu import MAIN_MENU_TEXT, get_main_menu_keyboard
+from utils import normalize_to_raw, raw_to_user_friendly, safe_edit_text, safe_bot_edit_text
 
-logger = logging.getLogger(__name__)
 router = Router()
+logger = logging.getLogger(__name__)
 
-
-class WalletConnectState(StatesGroup):
-    waiting_for_connection = State()
-
-
-def format_address(address: str) -> str:
-    if not address:
-        return "Unknown"
-
-    friendly_addr = raw_to_user_friendly(address)
-    return f"{friendly_addr[:6]}...{friendly_addr[-6:]}"
-
-
-async def await_wallet(connector: TonConnect, user_id: int):
-    await connector.wait_for_connection()
-
-    if connector.connected:
-        address = connector.wallet.account.address
-        await db.update_user_wallet(user_id, address)
-        return address
-
-    return None
-
-
-async def finish_wallet_flow(callback: types.CallbackQuery, state: FSMContext, success: bool = True):
-    await clear_messages(callback.bot, callback.message.chat.id, state)
+async def finish_wallet_flow(callback: types.CallbackQuery, state: FSMContext, success=True):
+    from handlers.game_menu import show_game_menu
     await state.clear()
-    status_text = "✅ Wallet connected" if success else "❌ Wallet connection cancelled"
-    await callback.bot.send_message(callback.message.chat.id, status_text)
-    await callback.bot.send_message(
-        callback.message.chat.id,
-        MAIN_MENU_TEXT,
-        reply_markup=await get_main_menu_keyboard(callback.from_user.id),
-        parse_mode=ParseMode.HTML,
-    )
-
+    await show_game_menu(callback, state)
 
 async def cleanup_connect(user_id: int, state: FSMContext):
-    await db.client.table("ton_connect_sessions").delete().eq("user_id", user_id).execute()
-    TonConnectService.drop_connector(user_id)
-
+    try:
+        connector = await TonConnectService.connector(user_id)
+        if not connector.connected:
+             TonConnectService.drop_connector(user_id)
+    except Exception:
+        pass
 
 @router.callback_query(F.data == "wallet_menu")
-async def wallet_menu_handler(callback: types.CallbackQuery):
-    await callback.answer()
+async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     wallet = await db.get_user_wallet(user_id)
 
     if wallet:
-        formatted_addr = format_address(wallet)
+        friendly_addr = raw_to_user_friendly(wallet)
         text = (
-            "<b>💳 Wallet connected!</b>\n\n"
-            f"<blockquote>Your address: <code>{formatted_addr}</code></blockquote>\n\n"
-            "You can disconnect your wallet if you want to link another one."
+            f"<b><tg-emoji emoji-id=\"5431520110395292209\">💎</tg-emoji> Wallet Connected</b>\n\n"
+            f"<blockquote><code>{friendly_addr}</code></blockquote>\n\n"
+            f"<i>You can disconnect this wallet and link a new one if needed.</i>"
         )
-        builder = InlineKeyboardBuilder()
-        builder.button(text="Disconnect", callback_data="disconnect_wallet")
-        builder.button(text="Back", callback_data="game_menu")
-        builder.adjust(1)
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Disconnect", callback_data="disconnect_wallet")],
+            [InlineKeyboardButton(text="◀️ Back", callback_data="game_menu")]
+        ])
     else:
         text = (
-            "<b>💳 Wallet not connected</b>\n\n"
-            "<blockquote>Connect your TON wallet to verify ownership and participate in the ecosystem.</blockquote>"
+            f"<b><tg-emoji emoji-id=\"5431520110395292209\">💎</tg-emoji> Connect Wallet</b>\n\n"
+            f"<blockquote>Link your TON wallet to participate in the game and receive rewards.</blockquote>\n\n"
+            f"<i>Choose your preferred wallet below:</i>"
         )
-        builder = InlineKeyboardBuilder()
-        builder.button(text="Connect Wallet", callback_data="connect_wallet")
-        builder.button(text="Back", callback_data="game_menu")
-        builder.adjust(1)
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔗 Connect Wallet", callback_data="connect_wallet")],
+            [InlineKeyboardButton(text="◀️ Back", callback_data="game_menu")]
+        ])
 
-    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_edit_text(callback, text, kb, state=state)
 
+@router.callback_query(F.data == "disconnect_wallet")
+async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+
+    # 1. Clear from DB
+    await db.update_user_wallet(user_id, None)
+
+    # 2. Clear from TonConnect
+    try:
+        connector = await TonConnectService.connector(user_id)
+        if connector.connected:
+            await connector.disconnect()
+        TonConnectService.drop_connector(user_id)
+    except Exception:
+        pass
+
+    await callback.answer("Wallet disconnected", show_alert=True)
+    await wallet_menu(callback, state)
 
 @router.callback_query(F.data == "connect_wallet")
-async def start_wallet_connect(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
+async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     connector = await TonConnectService.connector(user_id)
 
-    if connector.connected:
-        await callback.answer("Wallet is already connected!", show_alert=True)
+    wallets_list = connector.get_wallets()
+    # Filter only supported wallets
+    supported = ["Tonkeeper", "MyTonWallet", "Tonhub", "Telegram Wallet"]
+    available = [w for w in wallets_list if w['name'] in supported]
+
+    if not available:
+        await callback.answer("No supported wallets found.", show_alert=True)
         return
 
-    builder = InlineKeyboardBuilder()
-    builder.button(text="Tonkeeper", callback_data="wallet_select:tonkeeper")
-    builder.button(text="MyTonWallet", callback_data="wallet_select:mytonwallet")
-    builder.button(text="Tonhub", callback_data="wallet_select:tonhub")
-    builder.button(text="Telegram Wallet", callback_data="wallet_select:telegram-wallet")
-    builder.button(text="Back", callback_data="wallet_menu")
-    builder.adjust(2)
+    kb_list = []
+    for w in available:
+        kb_list.append([InlineKeyboardButton(text=w['name'], callback_data=f"select_wallet_{w['name']}")])
+    kb_list.append([InlineKeyboardButton(text="◀️ Back", callback_data="wallet_menu")])
 
-    msg = await safe_edit_text(callback, text="<b>💳 Select your TON wallet:</b>", reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
-    await state.update_data(wallet_messages=[msg.message_id])
+    await safe_edit_text(
+        callback,
+        "<b>Select your wallet:</b>",
+        InlineKeyboardMarkup(inline_keyboard=kb_list),
+        state=state
+    )
 
-
-@router.callback_query(F.data.startswith("wallet_select:"))
-async def process_wallet_selection(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
+@router.callback_query(F.data.startswith("select_wallet_"))
+async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
+    wallet_name = callback.data.replace("select_wallet_", "")
     user_id = callback.from_user.id
-    chat_id = callback.message.chat.id
-    selected_app = callback.data.split(":")[1]
-
     connector = await TonConnectService.connector(user_id)
-    wallets = connector.get_wallets()
 
-    target_wallet = None
-    for wallet in wallets:
-        if wallet.get("appName", wallet.get("app_name")) == selected_app:
-            target_wallet = wallet
-            break
+    wallets_list = connector.get_wallets()
+    wallet_config = next((w for w in wallets_list if w['name'] == wallet_name), None)
 
-    if not target_wallet:
-        await callback.answer("Wallet not supported!", show_alert=True)
+    if not wallet_config:
+        await callback.answer("Wallet configuration not found.", show_alert=True)
         return
 
-    def status_changed(wallet):
-        logger.info("TON_CONNECT_CONNECTED")
+    generated_url = await connector.connect(wallet_config)
 
-    def status_error(e):
-        logger.error("TON_CONNECT_FAILED")
+    # Check if universal link or direct bridge
+    url = generated_url
 
-    unsubscribe = lambda: None
+    text = (
+        f"<b><tg-emoji emoji-id=\"5773950294719202419\">📲</tg-emoji> Connecting {wallet_name}</b>\n\n"
+        f"<blockquote>Please click the button below to open your wallet and confirm the connection.</blockquote>"
+    )
+
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🚀 Open Wallet", url=url)],
+        [InlineKeyboardButton(text="◀️ Cancel", callback_data="wallet_menu")]
+    ])
+
+    await safe_edit_text(callback, text, kb, state=state)
+
+    # Polling for connection status
+    # We use a background task for this specific connection attempt
+    asyncio.create_task(wait_for_connection(user_id, connector, callback, state))
+
+async def wait_for_connection(user_id: int, connector: TonConnect, callback: types.CallbackQuery, state: FSMContext):
+    # This task is short-lived for the duration of the connection attempt
+    def status_changed(wallet_info):
+        pass
+
+    def items_sent(items):
+        pass
+
+    unsubscribe = connector.on_status_change(status_changed)
 
     try:
-        unsubscribe = connector.on_status_change(status_changed, status_error)
-        res = connector.connect(target_wallet)
-        connect_url = await res if asyncio.iscoroutine(res) else res
-
-        builder = InlineKeyboardBuilder()
-        builder.button(text=f"Open {target_wallet.get('name', 'Wallet')}", url=connect_url)
-        builder.button(text="❌ Cancel", callback_data="wallet_cancel_connect")
-        builder.adjust(1)
-
-        msg = await safe_edit_text(
-            callback,
-            text="<b>🔗 Confirm connection in your wallet application.</b>",
-            reply_markup=builder.as_markup(),
-            parse_mode=ParseMode.HTML,
-        )
-        await remember_message(state, msg)
-
-        await state.set_state(WalletConnectState.waiting_for_connection)
-        raw_address = await asyncio.wait_for(await_wallet(connector, user_id), timeout=120)
+        # Wait up to 3 minutes for connection
+        raw_address = None
+        for _ in range(180):
+            if connector.connected:
+                if connector.account and connector.account.address:
+                    raw_address = normalize_to_raw(connector.account.address)
+                    break
+            await asyncio.sleep(1)
 
         if raw_address:
-            friendly_addr = format_address(raw_address)
+            await db.update_user_wallet(user_id, raw_address)
             msg = await bot.send_message(
-                chat_id=chat_id,
-                text=f"<b>🎉 Wallet successfully connected!</b>\nAddress: <code>{friendly_addr}</code>",
+                user_id,
+                f"<b><tg-emoji emoji-id=\"5431520110395292209\">💎</tg-emoji> Success!</b>\n\n"
+                f"Your wallet has been linked: <code>{raw_to_user_friendly(raw_address)}</code>",
                 parse_mode=ParseMode.HTML,
             )
             await remember_message(state, msg)
@@ -181,6 +179,7 @@ async def process_wallet_selection(callback: types.CallbackQuery, state: FSMCont
     except asyncio.CancelledError:
         await cleanup_connect(user_id, state)
         await finish_wallet_flow(callback, state, success=False)
+        raise # Added raise as per requirement
     except APIError as e:
         logger.warning("TON_CONNECT_BRIDGE_WARNING user_id=%s error=%s", user_id, e)
         await cleanup_connect(user_id, state)
@@ -191,28 +190,3 @@ async def process_wallet_selection(callback: types.CallbackQuery, state: FSMCont
         await finish_wallet_flow(callback, state, success=False)
     finally:
         unsubscribe()
-
-
-@router.callback_query(F.data == "wallet_cancel_connect")
-async def wallet_cancel_connect_handler(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("Connection canceled.")
-    await cleanup_connect(callback.from_user.id, state)
-    await finish_wallet_flow(callback, state, success=False)
-
-
-@router.callback_query(F.data == "disconnect_wallet")
-async def disconnect_wallet_handler(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-    user_id = callback.from_user.id
-    connector = await TonConnectService.connector(user_id)
-
-    try:
-        if connector.connected:
-            await connector.disconnect()
-    except Exception:
-        pass
-
-    await cleanup_connect(user_id, state)
-    await db.update_user_wallet(user_id, None)
-
-    await wallet_menu_handler(callback)

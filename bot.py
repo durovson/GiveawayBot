@@ -62,21 +62,35 @@ async def main():
     from tasks.sync_holders import daily_sync_task
     background_tasks.append(asyncio.create_task(daily_sync_task(bot), name="daily_sync_task"))
 
+    runner = None
     try:
-        runner = await start_keep_alive_async(bot, dp)
         logger.info("polling started")
-        await dp.start_polling(bot, drop_pending_updates=True)
-        logger.info("polling stopped")
+
+        runner = await start_keep_alive_async(bot, dp)
+        try:
+            await dp.start_polling(bot)
+        finally:
+            logger.info("polling stopped")
+
     finally:
         logger.info("shutdown started")
+
         for task in background_tasks:
             task.cancel()
+
         await asyncio.gather(*background_tasks, return_exceptions=True)
-        if 'runner' in locals():
-            await runner.cleanup()
-        if db.client:
-            await db.client.aclose()
-        await bot.session.close()
+
+        if runner:
+            try:
+                await runner.cleanup()
+            except Exception as e:
+                logger.warning(f"failed to cleanup web runner: {e}")
+
+        try:
+            await bot.session.close()
+        except Exception as e:
+            logger.warning(f"failed to close bot session: {e}")
+
         logger.info("shutdown completed")
 
 if __name__ == "__main__":
