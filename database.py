@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional, Dict, Any
 from supabase import create_async_client, AsyncClient
 from postgrest.exceptions import APIError
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -314,9 +314,33 @@ class Database:
     async def save_snapshot(self, data):
         if not await self._ensure_connection(): return
         try:
-            snapshot_data = {"holders": data} if isinstance(data, list) else data
-            await self.client.table("snapshots").insert({"data": snapshot_data}).execute()
+            holders = data if isinstance(data, list) else (data.get("holders", []) if isinstance(data, dict) else [])
+            await self.client.table("snapshots").insert({"holders": holders}).execute()
         except Exception as e:
             logger.error(f"Error saving snapshot: {e}")
+
+    async def get_latest_snapshot(self) -> List[Dict]:
+        if not await self._ensure_connection(): return []
+        try:
+            response = await self.client.table("snapshots") \
+                .select("holders") \
+                .order("created_at", desc=True) \
+                .limit(1) \
+                .execute()
+            if not response.data:
+                return []
+            holders = response.data[0].get("holders", [])
+            return holders if isinstance(holders, list) else []
+        except Exception as e:
+            logger.error(f"Error getting latest snapshot: {e}")
+            return []
+
+    async def cleanup_old_snapshots(self, days: int = 14):
+        if not await self._ensure_connection(): return
+        try:
+            threshold = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+            await self.client.table("snapshots").delete().lt("created_at", threshold).execute()
+        except Exception as e:
+            logger.warning(f"Error cleaning up old snapshots: {e}")
 
 db = Database()
