@@ -12,57 +12,19 @@ logger = logging.getLogger(__name__)
 API_URL = "https://stickers.tools/api/v1/launching/packs/0:81abce045d81dc32c42aebc27b1ad6898bb4f89306231d2b58031908a4c267c7/holders"
 
 async def fetch_holders():
-    def extract_wallet(item):
-        if isinstance(item, dict):
-            return (
-                item.get("wallet")
-                or item.get("address")
-                or item.get("owner")
-                or item.get("user")
-                or item.get("account")
-                or item.get("holder")
-            )
-        return None
-
-    def extract_packs(item):
-        if isinstance(item, dict):
-            return (
-                item.get("packs")
-                or item.get("count")
-                or item.get("balance")
-                or item.get("amount")
-                or item.get("packsCount")
-                or 0
-            )
-        return 0
-
     holders = []
     offset = 0
-    limit = 100
+    limit = 30
     retries = 5
 
-    def extract_page(payload):
-        if isinstance(payload, list):
-            logger.info("USING_KEY=root_list")
-            return payload
-        if isinstance(payload, dict):
-            logger.info("HOLDERS_KEYS=%s", list(payload.keys())[:20])
-            possible = ["holders", "items", "data", "result", "results", "addresses", "users"]
-            for key in possible:
-                value = payload.get(key)
-                if isinstance(value, list):
-                    logger.info("USING_KEY=%s", key)
-                    return value
-            for key, value in payload.items():
-                if isinstance(value, list):
-                    logger.warning("FALLBACK_ARRAY=%s", key)
-                    return value
-        return []
+    total = 0
+    total_held = 0
+    has_more = False
 
     async with aiohttp.ClientSession() as session:
         while True:
             url = f"{API_URL}?offset={offset}&limit={limit}"
-            payload = None
+            payload = {}
             page = []
 
             for attempt in range(1, retries + 1):
@@ -70,38 +32,44 @@ async def fetch_holders():
                     async with session.get(url, timeout=30) as response:
                         if response.status != 200:
                             if attempt == retries:
-                                return holders
+                                return {"holders": holders, "total": 0, "totalHeld": 0, "hasMore": False}
                             await asyncio.sleep(attempt)
                             continue
 
-                        payload = await response.json()
-                        page = extract_page(payload)
-                        logger.info("HOLDERS_ARRAY_SOURCE=page LEN=%s", len(page))
+                        response_json = await response.json()
+                        payload = response_json.get("data", {}) if isinstance(response_json, dict) else {}
+                        page = payload.get("holders", []) if isinstance(payload, dict) else []
+                        has_more = payload.get("hasMore", False) if isinstance(payload, dict) else False
+                        total = payload.get("total", 0) if isinstance(payload, dict) else 0
+                        total_held = payload.get("totalHeld", 0) if isinstance(payload, dict) else 0
+
+                        logger.info("HOLDERS_TOTAL=%s", total)
+                        logger.info("HOLDERS_RECEIVED=%s", len(page))
 
                         break
                 except (asyncio.TimeoutError, aiohttp.ClientError, json.JSONDecodeError):
                     if attempt == retries:
-                        return holders
+                        return {"holders": holders, "total": 0, "totalHeld": 0, "hasMore": False}
                     await asyncio.sleep(attempt)
 
-            logger.info("FIRST_ITEM_KEYS=%s", list(page[0].keys()) if page and isinstance(page[0], dict) else [])
-            valid_count = 0
-            for row in page:
-                if not isinstance(row, dict):
+            valid = []
+            for item in page:
+                if not isinstance(item, dict):
                     continue
-                wallet = extract_wallet(row)
-                if not wallet:
+                addr = item.get("addr")
+                if not addr:
                     continue
                 try:
-                    normalized = normalize_to_raw(wallet)
+                    valid.append({
+                        "wallet": normalize_to_raw(addr),
+                        "packs": item.get("count", 0),
+                        "rank": item.get("rank")
+                    })
                 except Exception:
                     continue
-                packs = int(extract_packs(row) or 0)
-                valid_count += 1
-                holders.append({"wallet": normalized, "packs": packs})
-            logger.info("HOLDERS_VALID=%s", valid_count)
+            logger.info("HOLDERS_VALID=%s", len(valid))
+            holders.extend(valid)
 
-            has_more = payload.get("hasMore") if isinstance(payload, dict) else None
             if has_more is False:
                 break
             if len(page) < limit:
@@ -109,20 +77,28 @@ async def fetch_holders():
             offset += limit
             await asyncio.sleep(0.1)
 
-    return holders
+    cached = {
+        "holders": holders,
+        "total": total,
+        "totalHeld": total_held,
+        "hasMore": has_more,
+    }
+
+    return cached
 
 async def daily_sync_task(bot):
     """Background task to sync holders from Stickers Tools API daily."""
     logger.info("Starting daily sync task")
     while True:
         try:
-            holders = await fetch_holders()
+            cached = await fetch_holders()
+            holders = cached.get("holders", []) if isinstance(cached, dict) else []
 
             if holders:
-                await db.update_setting("cached_holders", json.dumps(holders))
+                await db.update_setting("cached_holders", json.dumps(cached))
                 LeaderboardService.invalidate_cache()
                 await db.save_snapshot(holders)
-                logger.info("HOLDERS_FETCH_DONE total=%s", len(holders))
+                logger.info("Cached holders updated")
             else:
                 logger.warning("Holders API returned empty dataset. Skipping update.")
 
