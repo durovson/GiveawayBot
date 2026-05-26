@@ -109,10 +109,10 @@ async def show_notification_params(message_or_cb, state: FSMContext, bot: Bot):
     reply_markup = get_edit_notification_keyboard(is_active)
 
     if isinstance(message_or_cb, types.CallbackQuery):
-        await safe_edit_text(message_or_cb, status_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+        await safe_edit_text(message_or_cb, status_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML, state=state)
     else:
         last_msg_id = data.get('last_msg_id')
-        await safe_bot_edit_text(bot, message_or_cb.chat.id, last_msg_id, status_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+        await safe_bot_edit_text(bot, message_or_cb.chat.id, last_msg_id, status_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML, state=state)
 
 def status_text_preview_helper(preview: str) -> str:
     return preview
@@ -142,7 +142,7 @@ async def start_notification_management(callback: types.CallbackQuery, state: FS
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
-    await safe_edit_text(callback, "<b>Notification Management</b>", reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_edit_text(callback, "<b>Notification Management</b>", reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
 @router.callback_query(F.data == "notif_new")
 async def create_notif_title(callback: types.CallbackQuery, state: FSMContext):
@@ -153,8 +153,7 @@ async def create_notif_title(callback: types.CallbackQuery, state: FSMContext):
         "<blockquote>Enter the internal title for this notification (visible only to you).</blockquote>\n\n"
         "<b>Enter title:</b>",
         reply_markup=get_notification_nav_keyboard(),
-        parse_mode=ParseMode.HTML
-    )
+        parse_mode=ParseMode.HTML, state=state)
     await state.update_data(last_msg_id=msg.message_id, custom_buttons=[])
     await state.set_state(NotificationStates.WAITING_FOR_TITLE)
 
@@ -204,8 +203,7 @@ async def enter_notif_title(message: types.Message, state: FSMContext, bot: Bot)
             "<blockquote>Enter the main text of the notification.</blockquote>\n\n"
             "<b>Enter text:</b>",
             reply_markup=get_notification_nav_keyboard(),
-            parse_mode=ParseMode.HTML
-        )
+            parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.WAITING_FOR_TEXT)
 
 @router.message(NotificationStates.WAITING_FOR_TEXT)
@@ -246,9 +244,9 @@ async def show_add_button_prompt(message_or_cb, state: FSMContext, bot: Bot, err
     builder.adjust(1)
 
     if isinstance(message_or_cb, types.CallbackQuery):
-        await safe_edit_text(message_or_cb, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(message_or_cb, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     else:
-        await safe_bot_edit_text(bot, message_or_cb.chat.id, data['last_msg_id'], text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_bot_edit_text(bot, message_or_cb.chat.id, data['last_msg_id'], text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
     await state.set_state(NotificationStates.WAITING_FOR_BUTTONS)
 
@@ -292,8 +290,7 @@ async def finish_buttons(callback: types.CallbackQuery, state: FSMContext, bot: 
             "<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>Sending Interval</b>\n\n"
             "<blockquote>Select how often the notification should be sent.</blockquote>",
             reply_markup=get_interval_keyboard(),
-            parse_mode=ParseMode.HTML
-        )
+            parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.WAITING_FOR_INTERVAL)
 
 @router.callback_query(F.data.startswith("notif_int_"), NotificationStates.WAITING_FOR_INTERVAL)
@@ -305,8 +302,7 @@ async def select_notif_interval(callback: types.CallbackQuery, state: FSMContext
         await safe_edit_text(callback,
             "<b>Enter interval in minutes (min 15, max 720):</b>",
             reply_markup=get_notification_nav_keyboard(),
-            parse_mode=ParseMode.HTML
-        )
+            parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.CUSTOM_INTERVAL)
     else:
         await state.update_data(interval_minutes=int(val))
@@ -342,7 +338,7 @@ async def process_custom_interval(message: types.Message, state: FSMContext, bot
             "❌ Invalid number. Please enter a number between 15 and 720.\n\n"
             "<b>Enter interval in minutes (min 15, max 720):</b>",
             reply_markup=get_notification_nav_keyboard(),
-            parse_mode=ParseMode.HTML)
+            parse_mode=ParseMode.HTML, state=state)
 
 async def show_chat_selection(message_or_cb, state: FSMContext, bot: Bot):
     chats = await db.get_tracked_groups()
@@ -357,10 +353,10 @@ async def show_chat_selection(message_or_cb, state: FSMContext, bot: Bot):
     text = "<b>Select Target Group</b>\n\n<blockquote>Select the group where the ad will be posted.</blockquote>"
 
     if isinstance(message_or_cb, types.CallbackQuery):
-        await safe_edit_text(message_or_cb, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(message_or_cb, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     else:
         data = await state.get_data()
-        await safe_bot_edit_text(bot, message_or_cb.chat.id, data['last_msg_id'], text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_bot_edit_text(bot, message_or_cb.chat.id, data['last_msg_id'], text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
     await state.set_state(NotificationStates.SELECTING_CHATS)
 
@@ -434,16 +430,16 @@ async def edit_notif_field(callback: types.CallbackQuery, state: FSMContext, bot
     await state.update_data(is_editing=True)
 
     if field == "title":
-        await safe_edit_text(callback, "<b>Enter new title:</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, "<b>Enter new title:</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.WAITING_FOR_TITLE)
     elif field == "text":
-        await safe_edit_text(callback, "<b>Enter new text:</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, "<b>Enter new text:</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.WAITING_FOR_TEXT)
     elif field == "buttons":
         await state.update_data(custom_buttons=[]) # Reset buttons when editing for simplicity, or we could add management
         await show_add_button_prompt(callback, state, bot)
     elif field == "interval":
-        await safe_edit_text(callback, "<b>Select new interval:</b>", reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, "<b>Select new interval:</b>", reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.WAITING_FOR_INTERVAL)
     elif field == "chats":
         await show_chat_selection(callback, state, bot)
@@ -457,18 +453,18 @@ async def process_notif_back(callback: types.CallbackQuery, state: FSMContext, b
     if current_state == NotificationStates.WAITING_FOR_TITLE:
         await start_notification_management(callback, state)
     elif current_state == NotificationStates.WAITING_FOR_TEXT:
-        await safe_edit_text(callback, "<b>Notification Title</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, "<b>Notification Title</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.WAITING_FOR_TITLE)
     elif current_state == NotificationStates.WAITING_FOR_BUTTONS:
-        await safe_edit_text(callback, "<b>Notification Text</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, "<b>Notification Text</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.WAITING_FOR_TEXT)
     elif current_state == NotificationStates.WAITING_FOR_INTERVAL:
         await show_add_button_prompt(callback, state, bot)
     elif current_state == NotificationStates.CUSTOM_INTERVAL:
-        await safe_edit_text(callback, "<b>Select interval:</b>", reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, "<b>Select interval:</b>", reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.WAITING_FOR_INTERVAL)
     elif current_state == NotificationStates.SELECTING_CHATS:
-        await safe_edit_text(callback, "<b>Select interval:</b>", reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, "<b>Select interval:</b>", reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.WAITING_FOR_INTERVAL)
     elif current_state == NotificationStates.CONFIRMATION:
         await start_notification_management(callback, state)

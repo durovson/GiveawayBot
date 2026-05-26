@@ -66,8 +66,7 @@ async def cmd_start(message: types.Message, state: FSMContext, command: CommandO
         message,
         MAIN_MENU_TEXT,
         reply_markup=await get_main_menu_keyboard(message.from_user.id),
-        parse_mode=ParseMode.HTML
-    )
+        parse_mode=ParseMode.HTML, state=state)
 
 @router.message(Command("setup"), F.chat.type.in_({"group", "supergroup"}))
 async def cmd_setup(message: types.Message):
@@ -78,10 +77,9 @@ async def cmd_setup(message: types.Message):
             message,
             f"<tg-emoji emoji-id=\"5258501105293205250\">👏</tg-emoji> Group <b>{safe_title}</b> successfully registered!\n\n"
             "<blockquote>Now you can create giveaways in it via private messages with the bot.</blockquote>",
-            parse_mode=ParseMode.HTML
-        )
+            parse_mode=ParseMode.HTML, state=state)
     else:
-        await safe_answer(message, "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>This command can only be executed by a group administrator.</b>")
+        await safe_answer(message, "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>This command can only be executed by a group administrator.</b>", state=state)
 
 @router.callback_query(F.data == "main_menu")
 async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext):
@@ -91,15 +89,14 @@ async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext):
         callback,
         MAIN_MENU_TEXT,
         reply_markup=await get_main_menu_keyboard(callback.from_user.id),
-        parse_mode=ParseMode.HTML
-    )
+        parse_mode=ParseMode.HTML, state=state)
 
 @router.callback_query(F.data == "create_giveaway")
 async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     chats = await db.get_tracked_groups()
     if not chats:
-        await safe_edit_text(callback, "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>There are no available groups. Add the bot to the group and make it an administrator.</b>")
+        await safe_edit_text(callback, "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>There are no available groups. Add the bot to the group and make it an administrator.</b>", state=state)
         return
 
     admin_chats = []
@@ -117,6 +114,6 @@ async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMConte
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
-    msg = await safe_edit_text(callback, "Select a group to hold the giveaway:", reply_markup=builder.as_markup())
+    msg = await safe_edit_text(callback, "Select a group to hold the giveaway:", reply_markup=builder.as_markup(), state=state)
     await state.update_data(last_msg_id=msg.message_id)
     await state.set_state(GiveawayCreation.SELECT_CHAT)

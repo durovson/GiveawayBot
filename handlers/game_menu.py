@@ -31,10 +31,10 @@ async def game_menu_handler(callback: types.CallbackQuery, state: FSMContext):
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
-    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
 @router.callback_query(F.data == "leaderboard")
-async def leaderboard_handler(callback: types.CallbackQuery):
+async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     user_id = callback.from_user.id
 
@@ -128,4 +128,4 @@ async def leaderboard_handler(callback: types.CallbackQuery):
     builder.button(text="Back", callback_data="game_menu")
     builder.adjust(1)
 
-    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
