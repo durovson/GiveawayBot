@@ -1,0 +1,268 @@
+import asyncio
+import json
+from urllib.parse import quote_plus
+
+from pytonconnect.crypto import SessionCrypto
+from pytonconnect.exceptions import TonConnectError
+from pytonconnect.logger import _LOGGER
+from pytonconnect.storage import IStorage
+
+from ._bridge_gateway import BridgeGateway
+from ._bridge_session import BridgeSession
+from ._bridge_storage import BridgeProviderStorage
+from ._provider import BaseProvider
+
+
+class BridgeProvider(BaseProvider):
+
+    DISCONNECT_TIMEOUT = 600
+    STANDART_UNIVERSAL_URL = 'tc://'
+
+    _wallet: dict
+
+    _storage: BridgeProviderStorage
+    _session: BridgeSession
+    _gateway: BridgeGateway
+    _pending_requests: dict[int, asyncio.Future]
+    _listeners: list
+    _api_tokens: dict[str, str]
+
+    def __init__(self, storage: IStorage, wallet: dict = None, api_tokens: dict[str, str] = None):
+        self._wallet = wallet
+
+        self._storage = BridgeProviderStorage(storage)
+        self._session = BridgeSession()
+        self._gateway = None
+        self._pending_requests = {}
+        self._listeners = []
+        self._api_tokens = api_tokens or {}
+
+    async def connect(self, request: dict):
+        self._close_gateways()
+        session_crypto = SessionCrypto()
+
+        bridge_url = self._wallet['bridge_url'] if 'bridge_url' in self._wallet else ''
+
+        self._session.session_crypto = session_crypto
+        self._session.bridge_url = bridge_url
+
+        await self._storage.setConnection({
+            'session': self._session.get_dict(),
+            'connection_source': self._wallet,
+        })
+
+        await self._open_gateways()
+
+        universal_url = self._wallet['universal_url'] \
+            if 'universal_url' in self._wallet \
+            else BridgeProvider.STANDART_UNIVERSAL_URL
+
+        return self._generate_universal_url(universal_url, request)
+
+    async def restore_connection(self, auto_listen=True):
+        self._close_gateways()
+
+        connection = await self._storage.getConnection()
+        if 'connection_source' in connection:
+            return False
+        if 'session' not in connection:
+            return False
+        self._session = BridgeSession(connection['session'])
+
+        if self._wallet is None:
+            self._wallet = {}
+        await self._open_gateways(auto_listen)
+
+        for listener in self._listeners:
+            listener(connection['connect_event'])
+
+        return True
+
+    def close_connection(self):
+        self._close_gateways()
+        self._session = BridgeSession()
+        self._gateway = None
+        self._pending_requests = {}
+        self._listeners = []
+
+    async def disconnect(self):
+        loop = asyncio.get_running_loop()
+        resolve = loop.create_future()
+
+        def on_request_sent(request_future: asyncio.Future):
+            asyncio.create_task(self._remove_session()) \
+                .add_done_callback(lambda x: resolve.set_result(True) if not resolve.done() else None)
+            request_future.set_result(None)
+
+        try:
+            await asyncio.wait_for(self.send_request({'method': 'disconnect', 'params': []},
+                                                     on_request_sent=on_request_sent),
+                                   timeout=self.DISCONNECT_TIMEOUT)
+        except Exception:
+            _LOGGER.exception('Provider disconnect')
+        finally:
+            if not resolve.done():
+                await self._remove_session()
+                resolve.set_result(True)
+
+        return await resolve
+
+    def pause(self):
+        if self._gateway is not None:
+            self._gateway.pause()
+
+    async def unpause(self):
+        if self._gateway is not None:
+            await self._gateway.unpause()
+
+    async def send_request(self, request: dict, on_request_sent=None):
+        if not self._gateway or not self._session or not self._session.wallet_public_key:
+            raise TonConnectError('Trying to send bridge request without session.')
+
+        req_id = request['id'] = await self._storage.increaseNextRpcRequestId()
+        _LOGGER.debug(f'Provider send http-bridge request: {request}')
+
+        encoded_request = self._session.session_crypto.encrypt(
+            json.dumps(request),
+            self._session.wallet_public_key,
+        )
+
+        loop = asyncio.get_running_loop()
+        resolve = loop.create_future()
+
+        self._pending_requests[req_id] = resolve
+
+        await self._gateway.send(encoded_request, self._session.wallet_public_key, request['method'])
+
+        if on_request_sent is not None:
+            on_request_sent(resolve)
+
+        return await resolve
+
+    def listen(self, callback):
+        self._listeners.append(callback)
+
+    async def _gateway_listener(self, bridge_incoming_message):
+        wallet_message = json.loads(
+            self._session.session_crypto.decrypt(bridge_incoming_message['message'],
+                                                 bridge_incoming_message['from']))
+
+        _LOGGER.debug(f'Wallet message received: {wallet_message}')
+
+        if 'event' not in wallet_message:
+            if 'id' in wallet_message:
+                event_id = wallet_message['id']
+                if event_id not in self._pending_requests:
+                    _LOGGER.debug(
+                        f"Response id {event_id} doesn't match any request's id"
+                        f"\nPending: {self._pending_requests}")
+                    return
+
+                _LOGGER.debug(f'Set result for pending request id {event_id} -> {self._pending_requests[event_id]}')
+                if self._pending_requests[event_id] and not self._pending_requests[event_id].done():
+                    self._pending_requests[event_id].set_result(wallet_message)
+                    del self._pending_requests[event_id]
+                elif self._pending_requests[event_id]:
+                    _LOGGER.debug(
+                        f'Future {event_id} error -> state {self._pending_requests[event_id]._state},'
+                        f' done {self._pending_requests[event_id].done()},'
+                        f' cancelled {self._pending_requests[event_id].cancelled()}')
+
+            return
+
+        if 'id' in wallet_message:
+            msg_id = int(wallet_message['id'])
+            last_id = await self._storage.getLastWalletEventId()
+
+            if last_id and msg_id <= last_id:
+                _LOGGER.error(
+                    f'Received event id (={msg_id}) must be greater than stored last wallet event id (={last_id})')
+                return
+
+            if 'event' in wallet_message and wallet_message['event'] != 'connect':
+                await self._storage.setLastWalletEventId(msg_id)
+
+        # self.listeners might be modified in the event handler
+        listeners = self._listeners.copy()
+
+        if wallet_message['event'] == 'connect':
+            await self._update_session(wallet_message, bridge_incoming_message['from'])
+
+        elif wallet_message['event'] == 'disconnect':
+            await self._remove_session()
+
+        for listener in listeners:
+            listener(wallet_message)
+
+    def _gateway_errors_listener(self, e=None):
+        raise TonConnectError(f'Bridge error {json.dumps(e or {})}')
+
+    async def _update_session(self, connect_event: dict, wallet_public_key: str):
+        self._session.wallet_public_key = wallet_public_key
+
+        connection = {
+            'session': self._session.get_dict(),
+            'last_wallet_event_id': connect_event['id'] if 'id' in connect_event else None,
+            'connect_event': connect_event,
+            'next_rpc_request_id': 0,
+        }
+
+        await self._storage.setConnection(connection)
+
+    async def _remove_session(self):
+        if self._gateway is not None:
+            self.close_connection()
+            await self._storage.removeConnection()
+
+    def _generate_universal_url(self, universal_url: str, request: dict):
+        is_ret_back = 'return_back' in request
+
+        if 'tg://' in universal_url or 't.me/' in universal_url:
+            return self._generate_tg_universal_url(universal_url, request, is_ret_back)
+        return self._generate_regular_universal_url(universal_url, request, is_ret_back)
+
+    def _generate_regular_universal_url(self, universal_url: str, request: dict, is_ret_back: bool = False):
+        version = 2
+        session_id = self._session.session_crypto.session_id
+        request_safe = quote_plus(json.dumps(request, separators=(',', ':'))).replace('+', '')
+
+        universal_base = universal_url.rstrip('/')
+        url = f'{universal_base}?v={version}&id={session_id}&r={request_safe}' + ('&ret=back' if is_ret_back else '')
+
+        return url
+
+    def _generate_tg_universal_url(self, universal_url: str, request: dict, is_ret_back: bool = False):
+        link = self._generate_regular_universal_url('about:blank', request, is_ret_back)
+        link_params = link.split('?')[1]
+        replaces = (
+            ('.', '%2E'),
+            ('-', '%2D'),
+            ('_', '%5F'),
+            ('&', '-'),
+            ('=', '__'),
+            ('%', '--'),
+            ('+', ''),
+        )
+        for old, new in replaces:
+            link_params = link_params.replace(old, new)
+        start_attach = 'tonconnect-' + link_params
+
+        return universal_url + '&startattach=' + start_attach
+
+    async def _open_gateways(self, auto_listen=True):
+        if isinstance(self._wallet, dict):
+            self._gateway = BridgeGateway(
+                self._storage,
+                self._session.bridge_url,
+                self._session.session_crypto.session_id,
+                self._gateway_listener,
+                self._gateway_errors_listener,
+                api_tokens=self._api_tokens,
+            )
+
+            if auto_listen:
+                await self._gateway.register_session()
+
+    def _close_gateways(self):
+        if self._gateway:
+            self._gateway.close()

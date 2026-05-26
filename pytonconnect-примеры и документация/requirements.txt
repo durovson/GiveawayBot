@@ -1,0 +1,3 @@
+PyNaCl
+httpx
+httpx-sse
