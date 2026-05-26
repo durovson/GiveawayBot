@@ -22,7 +22,7 @@ async def tonconnect_manifest(request):
 
     return web.json_response({
         "url": app_url,
-        "name": "NOTAPES SYSTEM",
+        "name": "NOTAPES | SYSTEM",
         "iconUrl": "https://i.ibb.co/CKLMgCcD/photo-2026-05-22-22-45-17.jpg",
         "privacyPolicyUrl": f"{app_url}/privacy",
     })
@@ -48,10 +48,7 @@ async def start_keep_alive_async(bot: Bot, dp: Dispatcher):
     logger.info(f"Starting aiohttp server on port {port}")
     await site.start()
 
-    try:
-        await dp.start_polling(bot, drop_pending_updates=True)
-    finally:
-        await runner.cleanup()
+    return runner
 
 
 def start_keep_alive():

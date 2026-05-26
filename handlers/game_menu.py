@@ -26,6 +26,7 @@ async def game_menu_handler(callback: types.CallbackQuery, state: FSMContext):
 
     builder = InlineKeyboardBuilder()
     builder.button(text="Leaderboard", callback_data="leaderboard", icon_custom_emoji_id="5258185631355378853")
+    builder.button(text="Open Sticker App", url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544")
     builder.button(text="Wallet", callback_data="wallet_menu", icon_custom_emoji_id="5258416629745714088")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
