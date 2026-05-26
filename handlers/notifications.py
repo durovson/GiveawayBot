@@ -154,7 +154,7 @@ async def create_notif_title(callback: types.CallbackQuery, state: FSMContext):
         "<b>Enter title:</b>",
         reply_markup=get_notification_nav_keyboard(),
         parse_mode=ParseMode.HTML, state=state)
-    await state.update_data(last_msg_id=msg.message_id, custom_buttons=[])
+    if msg: await state.update_data(last_msg_id=msg.message_id, custom_buttons=[])
     await state.set_state(NotificationStates.WAITING_FOR_TITLE)
 
 @router.callback_query(F.data.startswith("notif_sel_"))

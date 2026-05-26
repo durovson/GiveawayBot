@@ -79,6 +79,22 @@ class TonConnectService:
     TTL = 3600
 
     @classmethod
+    async def close_all(cls):
+        """Clean up all TonConnect instances and their internal sessions."""
+        user_ids = list(cls._instances.keys())
+        for user_id in user_ids:
+            connector = cls._instances.get(user_id)
+            if connector:
+                try:
+                    if connector.connected:
+                        await connector.disconnect()
+                except Exception:
+                    pass
+            cls.drop_connector(user_id)
+        if user_ids:
+            logger.info(f"Cleaned up {len(user_ids)} TonConnect instances")
+
+    @classmethod
     async def connector(cls, user_id: int) -> TonConnect:
         user_id = int(user_id)
         lock = cls._locks.setdefault(user_id, asyncio.Lock())

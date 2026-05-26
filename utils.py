@@ -115,112 +115,90 @@ async def safe_answer(message, text, **kwargs):
     actual_message = message.message if hasattr(message, 'message') and not isinstance(message, types.Message) else message
 
     async def _do_answer(content):
-        try:
-            msg = await actual_message.answer(content, **kwargs)
-            if state:
-                await state.update_data(last_msg_id=msg.message_id)
-            return msg
-        except TelegramBadRequest as e:
-            logger.warning(f"TelegramBadRequest in safe_answer: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Unexpected error in safe_answer: {e}")
-            return None
+        return await actual_message.answer(content, **kwargs)
 
+    msg = None
     try:
-        return await _do_answer(text)
+        msg = await _do_answer(text)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
-            logger.warning(f"Parsing error in safe_answer: {e}")
-            return None
+        err_str = str(e)
+        logger.warning(f"TelegramBadRequest in safe_answer: {err_str}. Retrying with sanitization...")
         try:
-            return await _do_answer(strip_custom_emojis(text))
+            msg = await _do_answer(strip_custom_emojis(text))
         except TelegramBadRequest:
-            return await _do_answer(strip_all_tags(text))
+            try:
+                msg = await _do_answer(strip_all_tags(text))
+            except Exception as e2:
+                logger.error(f"Ultimate failure in safe_answer: {e2}")
+                return None
+    except Exception as e:
+        logger.error(f"Unexpected error in safe_answer: {e}")
+        return None
+
+    if msg and state:
+        await state.update_data(last_msg_id=msg.message_id)
+    return msg
 
 async def safe_edit_text(message, text, **kwargs):
     state = kwargs.pop('state', None)
     # message can be Message or CallbackQuery
     target = message.message if hasattr(message, 'message') and not isinstance(message, types.Message) else message
 
-    async def _do_edit(content):
-        try:
-            return await target.edit_text(content, **kwargs)
-        except TelegramBadRequest as e:
-            if "message is not modified" in str(e):
-                return target
-            if "message to edit not found" in str(e) or "message can't be edited" in str(e):
-                logger.info(f"Fallback to safe_answer: {e}")
-                return await safe_answer(message, content, state=state, **kwargs)
-            logger.warning(f"TelegramBadRequest in safe_edit_text: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Unexpected error in safe_edit_text: {e}")
-            return None
-
     try:
-        return await _do_edit(text)
+        return await target.edit_text(text, **kwargs)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
-            logger.warning(f"Parsing error in safe_edit_text: {e}")
-            return None
-        try:
-            return await _do_edit(strip_custom_emojis(text))
-        except TelegramBadRequest:
-            return await _do_edit(strip_all_tags(text))
+        err_str = str(e)
+        if "message is not modified" in err_str:
+            return target
+
+        # Fallback to answer for recoverable errors
+        logger.info(f"Fallback to safe_answer in safe_edit_text due to: {err_str}")
+        return await safe_answer(message, text, state=state, **kwargs)
+    except Exception as e:
+        logger.error(f"Unexpected error in safe_edit_text: {e}")
+        return await safe_answer(message, text, state=state, **kwargs)
 
 async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
     state = kwargs.pop('state', None)
 
-    async def _do_edit(content):
-        try:
-            return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=content, **kwargs)
-        except TelegramBadRequest as e:
-            if "message is not modified" in str(e):
-                return None
-            if "message to edit not found" in str(e) or "message can't be edited" in str(e):
-                logger.info(f"Fallback to safe_bot_send_message: {e}")
-                return await safe_bot_send_message(bot, chat_id, content, state=state, **kwargs)
-            logger.warning(f"TelegramBadRequest in safe_bot_edit_text: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Unexpected error in safe_bot_edit_text: {e}")
-            return None
-
     try:
-        return await _do_edit(text)
+        return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, **kwargs)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
-            logger.warning(f"Parsing error in safe_bot_edit_text: {e}")
-            return None
-        try:
-            return await _do_edit(strip_custom_emojis(text))
-        except TelegramBadRequest:
-            return await _do_edit(strip_all_tags(text))
+        err_str = str(e)
+        if "message is not modified" in err_str:
+            return None # Still None if not modified, but that's usually fine
+
+        # Fallback to send_message for recoverable errors
+        logger.info(f"Fallback to safe_bot_send_message in safe_bot_edit_text due to: {err_str}")
+        return await safe_bot_send_message(bot, chat_id, text, state=state, **kwargs)
+    except Exception as e:
+        logger.error(f"Unexpected error in safe_bot_edit_text: {e}")
+        return await safe_bot_send_message(bot, chat_id, text, state=state, **kwargs)
 
 async def safe_bot_send_message(bot, chat_id, text, **kwargs):
     state = kwargs.pop('state', None)
 
     async def _do_send(content):
-        try:
-            msg = await bot.send_message(chat_id=chat_id, text=content, **kwargs)
-            if state:
-                await state.update_data(last_msg_id=msg.message_id)
-            return msg
-        except TelegramBadRequest as e:
-            logger.warning(f"TelegramBadRequest in safe_bot_send_message: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Unexpected error in safe_bot_send_message: {e}")
-            return None
+        return await bot.send_message(chat_id=chat_id, text=content, **kwargs)
 
+    msg = None
     try:
-        return await _do_send(text)
+        msg = await _do_send(text)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
-            logger.warning(f"Parsing error in safe_bot_send_message: {e}")
-            return None
+        err_str = str(e)
+        logger.warning(f"TelegramBadRequest in safe_bot_send_message: {err_str}. Retrying with sanitization...")
         try:
-            return await _do_send(strip_custom_emojis(text))
+            msg = await _do_send(strip_custom_emojis(text))
         except TelegramBadRequest:
-            return await _do_send(strip_all_tags(text))
+            try:
+                msg = await _do_send(strip_all_tags(text))
+            except Exception as e2:
+                logger.error(f"Ultimate failure in safe_bot_send_message: {e2}")
+                return None
+    except Exception as e:
+        logger.error(f"Unexpected error in safe_bot_send_message: {e}")
+        return None
+
+    if msg and state:
+        await state.update_data(last_msg_id=msg.message_id)
+    return msg

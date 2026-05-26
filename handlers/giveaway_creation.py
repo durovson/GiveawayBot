@@ -730,13 +730,12 @@ async def process_confirm_giveaway(callback: types.CallbackQuery, state: FSMCont
                 reply_markup=builder.as_markup(),
                 parse_mode=ParseMode.HTML
             )
-        await db.add_giveaway_message(giveaway['id'], data['chat_id'], msg.message_id)
-
-        try:
-            await bot.pin_chat_message(chat_id=data['chat_id'], message_id=msg.message_id)
-        except Exception as pin_err:
-            logger.error(f"Failed to pin message: {pin_err}")
-
+        if msg:
+            await db.add_giveaway_message(giveaway["id"], data["chat_id"], msg.message_id)
+            try:
+                await bot.pin_chat_message(chat_id=data["chat_id"], message_id=msg.message_id)
+            except Exception as pin_err:
+                logger.error(f"Failed to pin message: {pin_err}")
         success_builder = InlineKeyboardBuilder()
         success_builder.button(text="Make announcement", callback_data=f"make_announcement_{giveaway['id']}", icon_custom_emoji_id="5260268501515377807")
         success_builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
@@ -832,8 +831,9 @@ async def execute_announcement(callback: types.CallbackQuery, bot: Bot):
                 reply_markup=join_builder.as_markup(),
                 parse_mode=ParseMode.HTML
             )
-        await db.add_giveaway_message(giveaway_id, target_chat_id, ann_msg.message_id)
-        await callback.message.answer("<tg-emoji emoji-id=\"5258501105293205250\">👏</tg-emoji> The announcement has been successfully published", parse_mode=ParseMode.HTML, state=state)
+        await db.add_giveaway_message(giveaway_id, target_chat_id, ann_msg.message_id if ann_msg else None)
+        if ann_msg:
+            await db.add_giveaway_message(giveaway_id, target_chat_id, ann_msg.message_id)
     except Exception as e:
         await callback.message.answer(f"<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> Error sending announcement: {e}", parse_mode=ParseMode.HTML, state=state)
 

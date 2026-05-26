@@ -253,7 +253,7 @@ async def check_periodic_notifications(bot: Bot):
                         await db.update_notification_stats(
                             notif["id"],
                             last_sent=now,
-                            last_message_id=new_msg.message_id
+                            last_message_id=new_msg.message_id if new_msg else None
                         )
                         logger.info("notification sent: id=%s chat_id=%s", notif["id"], chat_id)
                         if last_message_id is not None:
