@@ -1,0 +1,123 @@
+from aiogram import Router, types, F
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.enums import ParseMode
+from aiogram.fsm.context import FSMContext
+import html
+
+from database import db
+from services.leaderboard import LeaderboardService
+from utils import safe_edit_text, normalize_to_raw, raw_to_user_friendly
+
+router = Router()
+
+async def show_game_menu(message: types.Message | types.CallbackQuery, state: FSMContext):
+    text = (
+        "┏┅🍑┅ / GAME MENU /\n"
+        "┋\n"
+        "┣ Welcome to the Game section!\n"
+        "┣ Here you can track your position in the leaderboard\n"
+        "┣ and manage your TON wallet.\n"
+        "┋\n"
+        "┗┅┅┅/ Select an option /"
+    )
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Leaderboard", callback_data="leaderboard", icon_custom_emoji_id="5258185631355378853")
+    builder.button(text="Open Sticker App", url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544")
+    builder.button(text="Wallet", callback_data="wallet_menu", icon_custom_emoji_id="5258416629745714088")
+    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(1)
+
+    if isinstance(message, types.CallbackQuery):
+        await message.answer()
+        await safe_edit_text(message, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
+    else:
+        await message.answer(text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+
+@router.callback_query(F.data == "game_menu")
+async def game_menu_handler(callback: types.CallbackQuery, state: FSMContext):
+    await show_game_menu(callback, state)
+
+@router.callback_query(F.data == "leaderboard")
+async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    user_id = callback.from_user.id
+
+    top = await LeaderboardService.get_top(limit=10)
+    holders = await LeaderboardService._load_holders()
+
+    linked_wallets = await db.get_all_linked_wallets()
+    wallet_to_user = {
+        normalize_to_raw(w['wallet_address']): w['telegram_id']
+        for w in linked_wallets if w.get('wallet_address')
+    }
+
+    lines = []
+    for i, h in enumerate(top, 1):
+        addr = h.get('wallet') or h.get('address') or h.get('owner')
+        if not addr:
+            continue
+        addr_raw = normalize_to_raw(addr)
+        tg_id = wallet_to_user.get(addr_raw)
+
+        friendly_addr = raw_to_user_friendly(addr)
+        display_name = friendly_addr
+
+        if tg_id:
+            try:
+                user = await callback.bot.get_chat(tg_id)
+                display_name = f"@{user.username}" if user.username else user.full_name
+            except:
+                pass
+
+        packs = h.get('packs', 0)
+        lines.append(f"┋ {i}. {html.escape(display_name)} — {packs} packs")
+
+    user_wallet = await db.get_user_wallet(user_id)
+    user_pos_line = ""
+
+    if user_wallet:
+        user_wallet_raw = normalize_to_raw(user_wallet)
+        pos = None
+        for idx, h in enumerate(holders, 1):
+            curr_addr = h.get('wallet') or h.get('address') or h.get('owner')
+            if curr_addr and normalize_to_raw(curr_addr) == user_wallet_raw:
+                pos = idx
+                break
+
+        friendly_wallet = raw_to_user_friendly(user_wallet)
+
+        if pos:
+            user_h = holders[pos-1]
+            packs = user_h.get('packsCount', user_h.get('packs', 0))
+            user_pos_line = f"┋ {pos}. {friendly_wallet} (You) — {packs} packs"
+        else:
+            user_pos_line = f"┋ —. {friendly_wallet} (You) — 0 packs"
+
+    if not lines:
+        text = (
+            "┏┅🍑┅ / PACK HOLDERS LEADERBOARD /\n"
+            "┋\n"
+            "┣ No holder statistics available yet.\n"
+            "┣ Blockchain sync in progress.\n"
+            "┋\n"
+            "┗┅┅┅/ Live Blockchain Parsing /"
+        )
+    else:
+        text = (
+            "┏┅🍑┅ / PACK HOLDERS LEADERBOARD /\n"
+            "┋\n"
+            "┣ Global ranking of tokenized collection distribution. \n"
+            "┣ Data is synchronized in real-time.\n"
+            "┋\n"
+            + "\n".join(lines) + "\n"
+            "┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n"
+            + (user_pos_line if user_pos_line else "┋ Wallet not linked\n┋") + "\n"
+            "┗┅┅┅/ Live Blockchain Parsing /"
+        )
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Back", callback_data="game_menu")
+    builder.adjust(1)
+
+    await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
