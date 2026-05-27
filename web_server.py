@@ -3,7 +3,7 @@ import threading
 import time
 import requests
 import logging
-from flask import Flask
+from flask import Flask, send_from_directory
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,10 @@ def health():
 @app.route('/')
 def index():
     return "Bot is running", 200
+
+@app.route('/tonconnect-manifest.json')
+def tonconnect_manifest():
+    return send_from_directory('.', 'tonconnect-manifest.json')
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))

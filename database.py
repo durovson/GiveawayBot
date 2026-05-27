@@ -2,7 +2,7 @@ import os
 import logging
 from typing import List, Optional, Dict, Any
 from supabase import create_async_client, AsyncClient
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -262,5 +262,59 @@ class Database:
             }).eq("id", notification_id).execute()
         except Exception as e:
             logger.error(f"Error updating notification stats: {e}")
+
+    # --- NEW METHODS ---
+
+    async def get_latest_snapshot(self) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("snapshots")                 .select("data")                 .order("created_at", desc=True)                 .limit(1)                 .execute()
+            return response.data[0]["data"] if response.data else []
+        except Exception as e:
+            logger.error(f"Error getting latest snapshot: {e}")
+            return []
+
+    async def save_snapshot(self, data: List[Dict]):
+        if not self._check_client(): return
+        try:
+            await self.client.table("snapshots").insert({"data": data}).execute()
+        except Exception as e:
+            logger.error(f"Error saving snapshot: {e}")
+
+    async def cleanup_old_snapshots(self, days: int = 14):
+        if not self._check_client(): return
+        try:
+            threshold = (datetime.now() - timedelta(days=days)).isoformat()
+            await self.client.table("snapshots").delete().lt("created_at", threshold).execute()
+        except Exception as e:
+            logger.error(f"Error cleaning up snapshots: {e}")
+
+    async def get_user_wallet(self, telegram_id: int) -> Optional[str]:
+        if not self._check_client(): return None
+        try:
+            response = await self.client.table("users").select("wallet_address").eq("telegram_id", telegram_id).execute()
+            return response.data[0]["wallet_address"] if response.data else None
+        except Exception as e:
+            logger.error(f"Error getting user wallet: {e}")
+            return None
+
+    async def update_user_wallet(self, telegram_id: int, wallet_address: Optional[str]):
+        if not self._check_client(): return
+        try:
+            await self.client.table("users").upsert({
+                "telegram_id": telegram_id,
+                "wallet_address": wallet_address
+            }).execute()
+        except Exception as e:
+            logger.error(f"Error updating user wallet: {e}")
+
+    async def get_all_linked_wallets(self) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("users").select("telegram_id, wallet_address").not_.is_("wallet_address", "null").execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting all linked wallets: {e}")
+            return []
 
 db = Database()
