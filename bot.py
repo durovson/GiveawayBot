@@ -9,6 +9,7 @@ from loader import bot, dp, bg_tasks, wallet_tasks
 from database import db
 from web_server import start_keep_alive
 from services.ton_connect_service import TonConnectService
+from services.leaderboard import LeaderboardService
 
 # Import handlers
 from handlers.main_menu import router as main_menu_router
@@ -52,12 +53,32 @@ dp.include_router(otc_market_router)
 
 logging.basicConfig(level=logging.INFO)
 
+async def initial_sync():
+    """Perform initial sync of holders before starting polling."""
+    from tasks.sync_holders import fetch_holders
+    logger = logging.getLogger(__name__)
+    logger.info("Performing initial holders sync...")
+    try:
+        cached = await fetch_holders()
+        holders = cached.get("holders", []) if isinstance(cached, dict) else []
+        if holders:
+            await db.save_snapshot(holders)
+            LeaderboardService.invalidate_cache()
+            logger.info("Initial sync complete: %s holders saved", len(holders))
+        else:
+            logger.warning("Initial sync returned no holders")
+    except Exception:
+        logger.exception("Initial sync failed")
+
 async def main():
     # Initialize shared session
     loader.http_session = aiohttp.ClientSession()
 
     start_keep_alive()
     await db.connect()
+
+    # Perform initial sync
+    await initial_sync()
 
     # Start checking timed giveaways
     from handlers.completion import check_timed_giveaways
