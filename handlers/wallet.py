@@ -39,7 +39,7 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
         wallet = await db.get_user_wallet(user_id)
 
         if wallet:
-            friendly_addr = raw_to_user_friendly(wallet)
+            friendly_addr = wallet
             text = (
                 f"<b><tg-emoji emoji-id=\"5431520110395292209\">💎</tg-emoji> Wallet Connected</b>\n\n"
                 f"<blockquote><code>{friendly_addr}</code></blockquote>\n\n"
@@ -186,7 +186,7 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
                 msg = await bot.send_message(
                     user_id,
                     f"<b><tg-emoji emoji-id=\"5431520110395292209\">💎</tg-emoji> Success!</b>\n\n"
-                    f"Your wallet has been linked: <code>{raw_to_user_friendly(raw_address)}</code>",
+                    f"Your wallet has been linked: <code>{raw_address}</code>",
                     parse_mode=ParseMode.HTML,
                 )
                 await remember_message(state, msg)

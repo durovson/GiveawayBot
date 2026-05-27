@@ -32,11 +32,7 @@ async def is_any_admin(user_id: int) -> bool:
     return False
 
 async def is_holder(user_id: int) -> bool:
-    try:
-        member = await bot.get_chat_member(chat_id=-1001944951957, user_id=user_id)
-        return member.status in ["member", "administrator", "creator"]
-    except Exception:
-        return False
+    return True
 
 # --- TON UTILS ---
 
@@ -83,7 +79,14 @@ async def safe_answer(message, text, **kwargs):
             return await message.answer(strip_all_tags(text), **kwargs)
 
 async def safe_edit_text(message, text, **kwargs):
-    target = message.message if hasattr(message, 'message') else message
+    if isinstance(message, types.CallbackQuery):
+        target = message.message
+    else:
+        target = message
+
+    if not target:
+        return None
+
     state = kwargs.pop('state', None)
 
     try:
@@ -93,11 +96,16 @@ async def safe_edit_text(message, text, **kwargs):
         return msg
     except TelegramBadRequest as e:
         err_msg = str(e).lower()
-        if any(x in err_msg for x in ["document_invalid", "message is not modified", "can't be edited", "no text in the message"]):
+
+        if "message is not modified" in err_msg:
+            return target
+
+        if any(x in err_msg for x in ["document_invalid", "there is no text in the message to edit", "message can't be edited", "message to edit not found"]):
             try:
                 await target.delete()
-            except:
+            except Exception:
                 pass
+
             msg = await target.answer(text, **kwargs)
             if msg and state:
                 await state.update_data(last_msg_id=msg.message_id)
