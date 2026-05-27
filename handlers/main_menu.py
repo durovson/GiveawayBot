@@ -29,12 +29,16 @@ async def get_main_menu_keyboard(user_id: int):
         # Row 4 (Admin only extra)
         builder.button(text="Update GIF", callback_data="admin_update_gif")
         builder.adjust(2, 2, 2, 1)
-    else:
-        # For ordinary users: GAME, OTC, Support
+    elif await is_holder(user_id):
         builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5258185631355378853")
         builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5258204546391351475")
         builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
         builder.adjust(2, 1)
+
+    else:
+        builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5258185631355378853")
+        builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
+        builder.adjust(1, 1)
 
     return builder.as_markup()
 
