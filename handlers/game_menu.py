@@ -60,7 +60,7 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
         addr_raw = normalize_to_raw(addr)
         tg_id = wallet_to_user.get(addr_raw)
 
-        friendly_addr = raw_to_user_friendly(addr)
+        friendly_addr = addr
         display_name = friendly_addr
 
         if tg_id:
@@ -85,7 +85,7 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
                 pos = idx
                 break
 
-        friendly_wallet = raw_to_user_friendly(user_wallet)
+        friendly_wallet = user_wallet
 
         if pos:
             user_h = holders[pos-1]
