@@ -7,3 +7,4 @@ pytz
 pytonconnect
 aiohttp
 pytoniq-core
+gunicorn

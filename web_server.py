@@ -3,6 +3,7 @@ import threading
 import time
 import requests
 import logging
+import subprocess
 from flask import Flask, send_from_directory
 
 logger = logging.getLogger(__name__)
@@ -21,9 +22,17 @@ def index():
 def tonconnect_manifest():
     return send_from_directory('.', 'tonconnect-manifest.json')
 
-def run_flask():
+def run_gunicorn():
     port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    cmd = [
+        "gunicorn",
+        "-w", "1",
+        "-k", "gthread",
+        "-b", f"0.0.0.0:{port}",
+        "web_server:app"
+    ]
+    logger.info("Starting gunicorn: %s", " ".join(cmd))
+    subprocess.Popen(cmd)
 
 def ping_self():
     time.sleep(20)
@@ -40,5 +49,5 @@ def ping_self():
         time.sleep(14 * 60)
 
 def start_keep_alive():
-    threading.Thread(target=run_flask, daemon=True).start()
+    run_gunicorn()
     threading.Thread(target=ping_self, daemon=True).start()

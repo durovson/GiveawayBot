@@ -49,7 +49,7 @@ def normalize_wallet(addr: str) -> str:
         return Address(addr).to_str(
             is_user_friendly=True,
             is_url_safe=True,
-            is_bounceable=True,
+            is_bounceable=False,
             is_test_only=False
         ).lower()
     except Exception:
@@ -77,7 +77,7 @@ def raw_to_user_friendly(address: str) -> str:
     if not address or not isinstance(address, str):
         return ""
     try:
-        return Address(address).to_str(is_user_friendly=True, is_url_safe=True, is_bounceable=True)
+        return Address(address).to_str(is_user_friendly=True, is_url_safe=True, is_bounceable=False)
     except Exception:
         return address
 
@@ -88,7 +88,7 @@ def short_wallet(addr: str) -> str:
 
     friendly = addr
     try:
-        friendly = Address(addr).to_str(is_user_friendly=True, is_url_safe=True, is_bounceable=True)
+        friendly = Address(addr).to_str(is_user_friendly=True, is_url_safe=True, is_bounceable=False)
     except:
         pass
 
