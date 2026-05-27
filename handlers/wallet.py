@@ -39,7 +39,7 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
         wallet = await db.get_user_wallet(user_id)
 
         if wallet:
-            friendly_addr = wallet
+            friendly_addr = raw_to_user_friendly(wallet)
             text = (
                 f"<b><tg-emoji emoji-id=\"5431520110395292209\">💎</tg-emoji> Wallet Connected</b>\n\n"
                 f"<blockquote><code>{friendly_addr}</code></blockquote>\n\n"

@@ -32,7 +32,11 @@ async def is_any_admin(user_id: int) -> bool:
     return False
 
 async def is_holder(user_id: int) -> bool:
-    return True
+    try:
+        member = await bot.get_chat_member(-1001944951957, user_id)
+        return member.status not in ["left", "kicked"]
+    except Exception:
+        return False
 
 # --- TON UTILS ---
 
@@ -97,18 +101,29 @@ async def safe_edit_text(message, text, **kwargs):
     except TelegramBadRequest as e:
         err_msg = str(e).lower()
 
-        if "message is not modified" in err_msg:
-            return target
-
-        if any(x in err_msg for x in ["document_invalid", "there is no text in the message to edit", "message can't be edited", "message to edit not found"]):
+        if any(x in err_msg for x in [
+            "document_invalid",
+            "there is no text in the message to edit",
+            "message can't be edited",
+            "message to edit not found",
+            "message is not modified"
+        ]):
             try:
                 await target.delete()
             except Exception:
                 pass
 
-            msg = await target.answer(text, **kwargs)
+            safe_kwargs = kwargs.copy()
+            safe_kwargs.pop("parse_mode", None)
+
+            msg = await target.answer(
+                strip_custom_emojis(text),
+                **safe_kwargs
+            )
+
             if msg and state:
                 await state.update_data(last_msg_id=msg.message_id)
+
             return msg
 
         if "can't parse entities" in err_msg:
