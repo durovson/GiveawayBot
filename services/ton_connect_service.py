@@ -98,6 +98,7 @@ class TonConnectService:
                     logger.exception("TON_CONNECT_RESTORE_FAILED_STALE user_id=%s", user_id)
                     cls.drop_connector(user_id)
 
+            await db.ensure_user_exists(user_id)
             storage = SupabaseStorage(db.client, user_id)
             connector = TonConnect(manifest_url=MANIFEST_URL, storage=storage)
             try:

@@ -6,7 +6,7 @@ import html
 
 from database import db
 from services.leaderboard import LeaderboardService
-from utils import safe_edit_text, normalize_to_raw, raw_to_user_friendly
+from utils import safe_edit_text, normalize_wallet, short_wallet
 
 router = Router()
 
@@ -48,7 +48,7 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
 
     linked_wallets = await db.get_all_linked_wallets()
     wallet_to_user = {
-        normalize_to_raw(w['wallet_address']): w['telegram_id']
+        normalize_wallet(w['wallet_address']): w['telegram_id']
         for w in linked_wallets if w.get('wallet_address')
     }
 
@@ -57,11 +57,10 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
         addr = h.get('wallet') or h.get('address') or h.get('owner')
         if not addr:
             continue
-        addr_raw = normalize_to_raw(addr)
-        tg_id = wallet_to_user.get(addr_raw)
+        addr_norm = normalize_wallet(addr)
+        tg_id = wallet_to_user.get(addr_norm)
 
-        friendly_addr = addr
-        display_name = friendly_addr
+        display_name = short_wallet(addr)
 
         if tg_id:
             try:
@@ -77,15 +76,15 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
     user_pos_line = ""
 
     if user_wallet:
-        user_wallet_raw = normalize_to_raw(user_wallet)
+        user_wallet_norm = normalize_wallet(user_wallet)
         pos = None
         for idx, h in enumerate(holders, 1):
             curr_addr = h.get('wallet') or h.get('address') or h.get('owner')
-            if curr_addr and normalize_to_raw(curr_addr) == user_wallet_raw:
+            if curr_addr and normalize_wallet(curr_addr) == user_wallet_norm:
                 pos = idx
                 break
 
-        friendly_wallet = raw_to_user_friendly(user_wallet)
+        friendly_wallet = short_wallet(user_wallet)
 
         if pos:
             user_h = holders[pos-1]

@@ -3,7 +3,7 @@ import time
 from typing import List, Dict, Optional
 
 from database import db
-from utils import normalize_to_raw
+from utils import normalize_wallet
 
 logger = logging.getLogger(__name__)
 
@@ -56,12 +56,12 @@ class LeaderboardService:
     @classmethod
     async def get_wallet(cls, wallet: str) -> Optional[Dict]:
         holders = await cls._load_holders()
-        target = normalize_to_raw(wallet)
+        target = normalize_wallet(wallet)
         if not target:
             return None
         for idx, row in enumerate(holders, 1):
             candidate = row.get("wallet") or row.get("address") or row.get("owner")
-            if candidate and normalize_to_raw(candidate) == target:
+            if candidate and normalize_wallet(candidate) == target:
                 packs = row.get("packs") or row.get("packsCount") or row.get("count") or 0
                 return {"rank": idx, "wallet": candidate, "packs": packs}
         return None

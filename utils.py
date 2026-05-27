@@ -3,6 +3,7 @@ import logging
 from loader import bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram import types
+from pytoniq_core import Address
 
 logger = logging.getLogger(__name__)
 
@@ -40,34 +41,60 @@ async def is_holder(user_id: int) -> bool:
 
 # --- TON UTILS ---
 
+def normalize_wallet(addr: str) -> str:
+    """Normalize TON address to a consistent user-friendly format."""
+    if not addr or not isinstance(addr, str):
+        return ""
+    try:
+        return Address(addr).to_str(
+            is_user_friendly=True,
+            is_url_safe=True,
+            is_bounceable=True,
+            is_test_only=False
+        ).lower()
+    except Exception:
+        return addr.lower().strip()
+
 def normalize_to_raw(address: str) -> str:
     """Normalize TON address to raw format (0:hex) with safety."""
     if not address or not isinstance(address, str):
         return ""
     try:
-        # Simple normalization: if it's already 0:..., keep it, else lower it
-        if ":" in address:
-            parts = address.split(":")
-            if len(parts) == 2:
-                return f"{parts[0]}:{parts[1].lower()}"
-        return address.lower().strip()
+        # If it's already in raw format or can be parsed
+        try:
+            return Address(address).to_str(is_user_friendly=False).lower()
+        except:
+            if ":" in address:
+                parts = address.split(":")
+                if len(parts) == 2:
+                    return f"{parts[0]}:{parts[1].lower()}"
+            return address.lower().strip()
     except Exception:
         return ""
 
 def raw_to_user_friendly(address: str) -> str:
-    """Convert raw address to short friendly format for UI with safety."""
+    """Convert address to user-friendly format."""
     if not address or not isinstance(address, str):
         return ""
     try:
-        if ":" in address:
-            parts = address.split(":")
-            addr = parts[1]
-            return f"UQ{addr[:4]}...{addr[-4:]}".upper()
-        if len(address) > 12:
-            return f"{address[:6]}...{address[-4:]}"
-        return address
+        return Address(address).to_str(is_user_friendly=True, is_url_safe=True, is_bounceable=True)
     except Exception:
         return address
+
+def short_wallet(addr: str) -> str:
+    """Returns a shortened version of the wallet address for UI."""
+    if not addr:
+        return "Not connected"
+
+    friendly = addr
+    try:
+        friendly = Address(addr).to_str(is_user_friendly=True, is_url_safe=True, is_bounceable=True)
+    except:
+        pass
+
+    if len(friendly) <= 12:
+        return friendly
+    return f"{friendly[:6]}...{friendly[-6:]}"
 
 # --- UI HELPERS ---
 

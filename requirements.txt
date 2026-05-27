@@ -6,3 +6,4 @@ requests
 pytz
 pytonconnect
 aiohttp
+pytoniq-core

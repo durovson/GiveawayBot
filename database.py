@@ -298,6 +298,13 @@ class Database:
             logger.error(f"Error getting user wallet: {e}")
             return None
 
+    async def ensure_user_exists(self, telegram_id: int):
+        if not self._check_client(): return
+        try:
+            await self.client.table("users").upsert({"telegram_id": telegram_id}).execute()
+        except Exception as e:
+            logger.error(f"Error ensuring user exists: {e}")
+
     async def update_user_wallet(self, telegram_id: int, wallet_address: Optional[str]):
         if not self._check_client(): return
         try:

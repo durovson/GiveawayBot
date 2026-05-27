@@ -11,7 +11,7 @@ from loader import bot, wallet_tasks
 from database import db
 from services.ton_connect_service import TonConnectService
 from services.ui_cleanup import remember_message
-from utils import normalize_to_raw, raw_to_user_friendly, safe_edit_text
+from utils import normalize_to_raw, short_wallet
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -35,14 +35,15 @@ async def cleanup_connect(user_id: int):
 @router.callback_query(F.data == "wallet_menu")
 async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
+    await db.ensure_user_exists(user_id)
     try:
         wallet = await db.get_user_wallet(user_id)
 
         if wallet:
-            friendly_addr = raw_to_user_friendly(wallet)
+            display_addr = short_wallet(wallet)
             text = (
-                f"<b><tg-emoji emoji-id=\"5431520110395292209\">💎</tg-emoji> Wallet Connected</b>\n\n"
-                f"<blockquote><code>{friendly_addr}</code></blockquote>\n\n"
+                f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Wallet Connected</b>\n\n"
+                f"<blockquote><code>{display_addr}</code></blockquote>\n\n"
                 f"<i>You can disconnect this wallet and link a new one if needed.</i>"
             )
             kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -51,8 +52,8 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
             ])
         else:
             text = (
-                f"<b><tg-emoji emoji-id=\"5431520110395292209\">💎</tg-emoji> Connect Wallet</b>\n\n"
-                f"<blockquote>Link your TON wallet to participate in the game and receive rewards.</blockquote>\n\n"
+                f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Connect Wallet</b>\n\n"
+                f"Connect your TON wallet to access holder features, OTC and giveaways.\n\n"
                 f"<i>Choose your preferred wallet below:</i>"
             )
             kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -60,7 +61,11 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
                 [InlineKeyboardButton(text="◀️ Back", callback_data="game_menu")]
             ])
 
-        await safe_edit_text(callback, text, reply_markup=kb, state=state, parse_mode=ParseMode.HTML)
+        try:
+            await callback.message.delete()
+        except:
+            pass
+        await callback.message.answer(text, reply_markup=kb, parse_mode=ParseMode.HTML)
     except Exception:
         logger.exception("WALLET_MENU_FAILED user_id=%s", user_id)
         await callback.answer("Wallet menu error.", show_alert=True)
@@ -68,6 +73,7 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "disconnect_wallet")
 async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
+    await db.ensure_user_exists(user_id)
     try:
         await db.update_user_wallet(user_id, None)
         connector = await TonConnectService.connector(user_id)
@@ -83,6 +89,7 @@ async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "connect_wallet")
 async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
+    await db.ensure_user_exists(user_id)
     try:
         connector = await TonConnectService.connector(user_id)
         wallets_list = connector.get_wallets()
@@ -103,11 +110,13 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
         kb_list.append([InlineKeyboardButton(text=w['name'], callback_data=f"select_wallet_{w['name']}")])
     kb_list.append([InlineKeyboardButton(text="◀️ Back", callback_data="wallet_menu")])
 
-    await safe_edit_text(
-        callback,
+    try:
+        await callback.message.delete()
+    except:
+        pass
+    await callback.message.answer(
         "<b>Select your wallet:</b>",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=kb_list),
-        state=state,
         parse_mode=ParseMode.HTML
     )
 
@@ -115,6 +124,7 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
 async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
     wallet_name = callback.data.replace("select_wallet_", "")
     user_id = callback.from_user.id
+    await db.ensure_user_exists(user_id)
     try:
         connector = await TonConnectService.connector(user_id)
         wallets_list = connector.get_wallets()
@@ -137,8 +147,10 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         return
 
     text = (
-        f"<b><tg-emoji emoji-id=\"5773950294719202419\">📲</tg-emoji> Connecting {wallet_name}</b>\n\n"
-        f"<blockquote>Please click the button below to open your wallet and confirm the connection.</blockquote>"
+        f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> {wallet_name} Connection</b>\n\n"
+        f"<blockquote>\n"
+        f"Tap the button below and confirm connection inside {wallet_name}.\n"
+        f"</blockquote>"
     )
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -146,7 +158,11 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         [InlineKeyboardButton(text="◀️ Cancel", callback_data="wallet_menu")]
     ])
 
-    await safe_edit_text(callback, text, reply_markup=kb, state=state, parse_mode=ParseMode.HTML)
+    try:
+        await callback.message.delete()
+    except:
+        pass
+    await callback.message.answer(text, reply_markup=kb, parse_mode=ParseMode.HTML)
 
     task = asyncio.create_task(wait_for_connection_with_timeout(user_id, connector, state))
     wallet_tasks.add(task)
@@ -183,10 +199,11 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
         if raw_address:
             try:
                 await db.update_user_wallet(user_id, raw_address)
+                display_addr = short_wallet(raw_address)
                 msg = await bot.send_message(
                     user_id,
-                    f"<b><tg-emoji emoji-id=\"5431520110395292209\">💎</tg-emoji> Success!</b>\n\n"
-                    f"Your wallet has been linked: <code>{raw_address}</code>",
+                    f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Success!</b>\n\n"
+                    f"Your wallet has been linked: <code>{display_addr}</code>",
                     parse_mode=ParseMode.HTML,
                 )
                 await remember_message(state, msg)
