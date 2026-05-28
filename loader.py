@@ -1,9 +1,6 @@
 import os
-import aiohttp
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.enums import ParseMode
-from aiogram.client.session.aiohttp import AiohttpSession
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,16 +13,7 @@ ADMIN_IDS = [786080766, 734720997]
 
 # Shared sets for background task tracking
 bg_tasks = set()
-wallet_tasks = set()
 
-# Shared http session (initialized in bot.py)
-http_session = None
-
-# aiogram bot & dispatcher
-# Configure session with TCPConnector and Timeout for better resilience
-connector = aiohttp.TCPConnector(limit=100, enable_cleanup_closed=True)
-timeout = aiohttp.ClientTimeout(total=60)
-session = AiohttpSession(connector=connector, timeout=timeout)
-
-bot = Bot(token=BOT_TOKEN, session=session)
+# Bot will be initialized in bot.py main()
+bot: Bot = None
 dp = Dispatcher(storage=MemoryStorage())
