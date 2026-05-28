@@ -110,4 +110,5 @@ async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMConte
     builder.adjust(1)
 
     msg = await safe_edit_text(callback, "Select a group to hold the giveaway:", reply_markup=builder.as_markup())
+    await state.update_data(last_msg_id=msg.message_id)
     await state.set_state(GiveawayCreation.SELECT_CHAT)

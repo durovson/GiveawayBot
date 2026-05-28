@@ -5,14 +5,33 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from pytonconnect import TonConnect
+from pytonconnect.exceptions import UserRejectsError
+from postgrest.exceptions import APIError
 
-import loader
+from loader import bot, wallet_tasks
 from database import db
 from services.ton_connect_service import TonConnectService
-from utils import normalize_to_raw, short_wallet, safe_edit_text, safe_bot_send_message
+from services.ui_cleanup import remember_message, clear_messages
+from utils import normalize_to_raw, short_wallet, safe_answer, safe_bot_send_message
 
 router = Router()
 logger = logging.getLogger(__name__)
+
+async def finish_wallet_flow(callback: types.CallbackQuery, state: FSMContext):
+    try:
+        from handlers.game_menu import show_game_menu
+        await state.clear()
+        await show_game_menu(callback, state)
+    except Exception:
+        logger.exception("FINISH_WALLET_FLOW_FAILED")
+
+async def cleanup_connect(user_id: int):
+    try:
+        connector = await TonConnectService.connector(user_id)
+        if not connector.connected:
+             TonConnectService.drop_connector(user_id)
+    except Exception:
+        logger.exception("CLEANUP_CONNECT_FAILED user_id=%s", user_id)
 
 @router.callback_query(F.data == "wallet_menu")
 async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
@@ -43,7 +62,11 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
                 [InlineKeyboardButton(text="◀️ Back", callback_data="game_menu")]
             ])
 
-        await safe_edit_text(callback, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+        try:
+            await callback.message.delete()
+        except:
+            pass
+        await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
     except Exception:
         logger.exception("WALLET_MENU_FAILED user_id=%s", user_id)
         await callback.answer("Wallet menu error.", show_alert=True)
@@ -57,6 +80,7 @@ async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext):
         connector = await TonConnectService.connector(user_id)
         if connector.connected:
             await connector.disconnect()
+        TonConnectService.drop_connector(user_id)
     except Exception:
         logger.exception("DISCONNECT_WALLET_FAILED user_id=%s", user_id)
 
@@ -75,8 +99,7 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("Connection service temporarily unavailable.", show_alert=True)
         return
 
-    # Restricted providers
-    supported = ["Tonkeeper", "MyTonWallet", "Telegram Wallet"]
+    supported = ["Tonkeeper", "MyTonWallet", "Tonhub", "Telegram Wallet"]
     available = [w for w in wallets_list if w['name'] in supported]
 
     if not available:
@@ -88,7 +111,11 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
         kb_list.append([InlineKeyboardButton(text=w['name'], callback_data=f"select_wallet_{w['name']}")])
     kb_list.append([InlineKeyboardButton(text="◀️ Back", callback_data="wallet_menu")])
 
-    await safe_edit_text(callback,
+    try:
+        await callback.message.delete()
+    except:
+        pass
+    await safe_answer(callback.message,
         "<b>Select your wallet:</b>",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=kb_list),
         parse_mode=ParseMode.HTML
@@ -132,55 +159,69 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         [InlineKeyboardButton(text="◀️ Cancel", callback_data="wallet_menu")]
     ])
 
-    await safe_edit_text(callback, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+    try:
+        await callback.message.delete()
+    except:
+        pass
+    await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
 
-    # Start temporary wait task
-    asyncio.create_task(wait_for_connection(user_id, connector))
+    task = asyncio.create_task(wait_for_connection_with_timeout(user_id, connector, state))
+    wallet_tasks.add(task)
+    task.add_done_callback(wallet_tasks.discard)
 
-async def wait_for_connection(user_id: int, connector: TonConnect):
+async def wait_for_connection_with_timeout(user_id: int, connector: TonConnect, state: FSMContext):
+    try:
+        await asyncio.wait_for(wait_for_connection(user_id, connector, state), timeout=190)
+    except asyncio.TimeoutError:
+        logger.warning("WALLET_CONNECTION_TIMEOUT user_id=%s", user_id)
+        await cleanup_connect(user_id)
+    except Exception:
+        logger.exception("WAIT_FOR_CONNECTION_WITH_TIMEOUT_CRASH user_id=%s", user_id)
+        await cleanup_connect(user_id)
+
+async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMContext):
+    def status_changed(wallet_info):
+        pass
+
+    unsubscribe = connector.on_status_change(status_changed)
+
     try:
         raw_address = None
-        # Simple polling for 5 minutes
-        for _ in range(300):
+        for _ in range(180):
             try:
                 if connector.connected:
                     if connector.account and connector.account.address:
                         raw_address = normalize_to_raw(connector.account.address)
                         break
             except Exception:
-                pass
+                logger.exception("CONNECTOR_STATUS_CHECK_FAILED user_id=%s", user_id)
             await asyncio.sleep(1)
 
         if raw_address:
             try:
                 await db.update_user_wallet(user_id, raw_address)
                 display_addr = short_wallet(raw_address)
-
-                # Send Success message
-                await safe_bot_send_message(loader.bot,
+                msg = await safe_bot_send_message(bot,
                     user_id,
                     f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Success!</b>\n\n"
                     f"Your wallet has been linked: <code>{display_addr}</code>",
                     parse_mode=ParseMode.HTML,
                 )
+                await remember_message(state, msg)
 
-                # Send Refreshed Main Menu
-                from handlers.main_menu import get_main_menu_keyboard, MAIN_MENU_TEXT
-                await safe_bot_send_message(loader.bot,
-                    user_id,
-                    MAIN_MENU_TEXT,
-                    reply_markup=await get_main_menu_keyboard(user_id),
-                    parse_mode=ParseMode.HTML
-                )
+                kb = InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="Go to Game Menu", callback_data="game_menu")]
+                ])
+                await safe_bot_send_message(bot, user_id, "Click below to return to the game:", reply_markup=kb)
             except Exception:
                 logger.exception("SUCCESS_MESSAGE_POST_SAVE_FAILED user_id=%s", user_id)
 
-        # Ensure disconnection after link or timeout
-        try:
-            if connector.connected:
-                await connector.disconnect()
-        except Exception:
-            pass
-
+        await cleanup_connect(user_id)
     except Exception:
         logger.exception("WAIT_FOR_CONNECTION_CRASH user_id=%s", user_id)
+        await cleanup_connect(user_id)
+    finally:
+        try:
+            unsubscribe()
+        except Exception:
+            pass

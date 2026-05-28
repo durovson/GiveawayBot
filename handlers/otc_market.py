@@ -7,7 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.enums import ParseMode, ChatType
 from database import db
-from utils import safe_answer, safe_edit_text, strip_custom_emojis, is_holder
+from utils import safe_bot_edit_text, safe_answer, safe_edit_text, strip_custom_emojis, is_holder
 import logging
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ async def start_otc_market(callback: types.CallbackQuery, state: FSMContext):
     )
 
     msg = await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
-
+    await state.update_data(last_msg_id=msg.message_id)
     await state.set_state(OTCMarket.SELECT_TYPE)
 
 @router.callback_query(F.data == "otc_back_to_type")
@@ -85,8 +85,12 @@ async def otc_no_link_selected(callback: types.CallbackQuery, state: FSMContext)
 @router.message(OTCMarket.ENTER_NAME_ONLY, F.text)
 async def enter_name_only(message: types.Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
+    last_msg_id = data.get("last_msg_id")
 
-
+    try:
+        await message.delete()
+    except Exception:
+        pass
 
     item_name = message.text.strip()
     await state.update_data(item_name=item_name, url=None)
@@ -106,14 +110,18 @@ async def enter_name_only(message: types.Message, state: FSMContext, bot: Bot):
         "<blockquote>Enter the price in TON or click the \"Skip (Offer)\" button.</blockquote>"
     )
 
-    await safe_answer(message, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_bot_edit_text(bot, message.chat.id, last_msg_id, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
     await state.set_state(OTCMarket.ENTER_PRICE)
 
 @router.message(OTCMarket.ENTER_ITEM, F.text)
 async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
+    last_msg_id = data.get("last_msg_id")
 
-
+    try:
+        await message.delete()
+    except Exception:
+        pass
 
     text = message.text
     url_match = re.search(r"(https?://\S+|t\.me/\S+)", text)
@@ -128,7 +136,7 @@ async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot
             "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>Invalid Input</b>\n\n"
             "<blockquote>Please include a valid URL (http:// or https://) in your message or click <b>No-link</b>.</blockquote>"
         )
-        await safe_answer(message, warning_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_bot_edit_text(bot, message.chat.id, last_msg_id, warning_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
         return
 
     url = url_match.group(0)
@@ -156,7 +164,7 @@ async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot
         "<blockquote>Enter the price in TON or click the \"Skip (Offer)\" button.</blockquote>"
     )
 
-    await safe_answer(message, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_bot_edit_text(bot, message.chat.id, last_msg_id, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
     await state.set_state(OTCMarket.ENTER_PRICE)
 
 @router.callback_query(OTCMarket.ENTER_PRICE, F.data == "otc_price_skip")
@@ -167,7 +175,10 @@ async def otc_price_skipped(callback: types.CallbackQuery, state: FSMContext, bo
 
 @router.message(OTCMarket.ENTER_PRICE, F.text)
 async def enter_price(message: types.Message, state: FSMContext, bot: Bot):
-
+    try:
+        await message.delete()
+    except Exception:
+        pass
 
     text = message.text.strip()
     if text.replace(".", "", 1).isdigit():
@@ -183,6 +194,7 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot):
     trade_type = data.get("trade_type")
     item_name = html.escape(data.get("item_name"))
     url = data.get("url")
+    last_msg_id = data.get("last_msg_id")
     user_id = event.from_user.id
 
     price_text = data.get("price_text")
@@ -258,7 +270,7 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot):
         if isinstance(event, types.CallbackQuery):
             await safe_edit_text(event.message, success_text, reply_markup=success_builder.as_markup(), parse_mode=ParseMode.HTML)
         else:
-            await safe_answer(event, success_text, reply_markup=success_builder.as_markup(), parse_mode=ParseMode.HTML)
+            await safe_bot_edit_text(bot, event.chat.id, last_msg_id, success_text, reply_markup=success_builder.as_markup(), parse_mode=ParseMode.HTML)
 
     except Exception as e:
         logger.error(f"OTC Publication error: {e}")
@@ -277,6 +289,7 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
     url = data.get("url")
     price_text = data.get("price_text")
     is_offer = data.get("is_offer")
+    last_msg_id = data.get("last_msg_id")
 
     display_price = "Offer" if is_offer else price_text
     item_display = f"<a href=\"{url}\">{item_name}</a>" if url else f"<b>{item_name}</b>"
@@ -318,7 +331,7 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
     if isinstance(event, types.CallbackQuery):
         await safe_edit_text(event.message, preview_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
     else:
-        await safe_answer(event, preview_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_bot_edit_text(bot, event.chat.id, last_msg_id, preview_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
     await state.set_state(OTCMarket.PREVIEW)
 
