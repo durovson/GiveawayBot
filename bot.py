@@ -1,9 +1,12 @@
 import asyncio
 import logging
 import aiohttp
+import time
 from aiogram import F, types
 from aiogram.types import ChatMemberUpdated
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramNetworkError
+
 import loader
 from loader import bot, dp, bg_tasks, wallet_tasks
 from database import db
@@ -20,6 +23,20 @@ from handlers.admin import router as admin_router
 from handlers.notifications import router as notifications_router
 from handlers.game_menu import router as game_menu_router
 from handlers.wallet import router as wallet_router
+
+# Logging Filter to suppress noisy network stack traces
+class NetworkErrorFilter(logging.Filter):
+    def filter(self, record):
+        msg = record.getMessage()
+        if "TelegramNetworkError" in msg or "Connection reset by peer" in msg:
+            # Suppress stack trace for these common network resets
+            record.exc_info = None
+            record.stack_info = None
+        return True
+
+logging.basicConfig(level=logging.INFO)
+# Apply filter to the main aiogram dispatcher logger
+logging.getLogger("aiogram.dispatcher").addFilter(NetworkErrorFilter())
 
 @dp.my_chat_member()
 async def on_my_chat_member_update(update: ChatMemberUpdated):
@@ -51,8 +68,6 @@ dp.include_router(creation_router)
 dp.include_router(participants_router)
 dp.include_router(otc_market_router)
 
-logging.basicConfig(level=logging.INFO)
-
 async def initial_sync():
     """Perform initial sync of holders before starting polling."""
     from tasks.sync_holders import fetch_holders
@@ -71,8 +86,10 @@ async def initial_sync():
         logger.exception("Initial sync failed")
 
 async def main():
-    # Initialize shared session
-    loader.http_session = aiohttp.ClientSession()
+    # Initialize shared session with robust settings
+    connector = aiohttp.TCPConnector(limit=100, enable_cleanup_closed=True)
+    timeout = aiohttp.ClientTimeout(total=60)
+    loader.http_session = aiohttp.ClientSession(connector=connector, timeout=timeout)
 
     start_keep_alive()
     await db.connect()
@@ -97,31 +114,48 @@ async def main():
     bg_tasks.add(t3)
     t3.add_done_callback(bg_tasks.discard)
 
-    try:
-        await dp.start_polling(bot, drop_pending_updates=True)
-    finally:
-        logging.info("Shutting down...")
+    # Polling retry loop with exponential backoff
+    backoff = 1
+    max_backoff = 60
 
-        # 1. Cancel all background tasks
-        all_tasks = bg_tasks.union(wallet_tasks)
-        for task in all_tasks:
-            task.cancel()
-        if all_tasks:
-            await asyncio.gather(*all_tasks, return_exceptions=True)
+    while True:
+        try:
+            await dp.start_polling(bot, drop_pending_updates=True)
+            break # Successful shutdown
+        except Exception as e:
+            if isinstance(e, asyncio.CancelledError):
+                break
 
-        # 2. Close shared HTTP session
-        if loader.http_session:
-            await loader.http_session.close()
+            logging.error(f"Polling error: {e}. Reconnecting in {backoff}s...")
+            await asyncio.sleep(backoff)
+            backoff = min(backoff * 2, max_backoff)
+        finally:
+            # If we exited the polling but not the loop, we might want to ensure some cleanup
+            # however aiogram usually cleans up its own polling state.
+            pass
 
-        # 3. Close TonConnect instances
-        await TonConnectService.close_all()
+    logging.info("Shutting down...")
 
-        # 4. Close bot session
-        if bot.session:
-            await bot.session.close()
+    # 1. Cancel all background tasks
+    all_tasks = bg_tasks.union(wallet_tasks)
+    for task in all_tasks:
+        task.cancel()
+    if all_tasks:
+        await asyncio.gather(*all_tasks, return_exceptions=True)
 
-        await asyncio.sleep(1.0)
-        logging.info("Shutdown complete.")
+    # 2. Close shared HTTP session
+    if loader.http_session:
+        await loader.http_session.close()
+
+    # 3. Close TonConnect instances
+    await TonConnectService.close_all()
+
+    # 4. Close bot session
+    if bot.session:
+        await bot.session.close()
+
+    await asyncio.sleep(1.0)
+    logging.info("Shutdown complete.")
 
 if __name__ == "__main__":
     try:

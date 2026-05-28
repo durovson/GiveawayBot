@@ -22,6 +22,10 @@ wallet_tasks = set()
 http_session = None
 
 # aiogram bot & dispatcher
-session = AiohttpSession()
+# Configure session with TCPConnector and Timeout for better resilience
+connector = aiohttp.TCPConnector(limit=100, enable_cleanup_closed=True)
+timeout = aiohttp.ClientTimeout(total=60)
+session = AiohttpSession(connector=connector, timeout=timeout)
+
 bot = Bot(token=BOT_TOKEN, session=session)
 dp = Dispatcher(storage=MemoryStorage())

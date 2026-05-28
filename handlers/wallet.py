@@ -66,7 +66,9 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
             await callback.message.delete()
         except:
             pass
-        await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+        msg = await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+        if msg:
+            await remember_message(state, msg)
     except Exception:
         logger.exception("WALLET_MENU_FAILED user_id=%s", user_id)
         await callback.answer("Wallet menu error.", show_alert=True)
@@ -99,7 +101,8 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("Connection service temporarily unavailable.", show_alert=True)
         return
 
-    supported = ["Tonkeeper", "MyTonWallet", "Tonhub", "Telegram Wallet"]
+    # Restricted to only 3 providers
+    supported = ["Tonkeeper", "MyTonWallet", "Telegram Wallet"]
     available = [w for w in wallets_list if w['name'] in supported]
 
     if not available:
@@ -115,11 +118,13 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.delete()
     except:
         pass
-    await safe_answer(callback.message,
+    msg = await safe_answer(callback.message,
         "<b>Select your wallet:</b>",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=kb_list),
         parse_mode=ParseMode.HTML
     )
+    if msg:
+        await remember_message(state, msg)
 
 @router.callback_query(F.data.startswith("select_wallet_"))
 async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
@@ -163,7 +168,9 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.delete()
     except:
         pass
-    await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+    msg = await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+    if msg:
+        await remember_message(state, msg)
 
     task = asyncio.create_task(wait_for_connection_with_timeout(user_id, connector, state))
     wallet_tasks.add(task)
@@ -199,20 +206,28 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
 
         if raw_address:
             try:
+                # Cleanup temporary UI before showing success
+                await clear_messages(user_id, state)
+
                 await db.update_user_wallet(user_id, raw_address)
                 display_addr = short_wallet(raw_address)
-                msg = await safe_bot_send_message(bot,
+
+                # Send Success message
+                await safe_bot_send_message(bot,
                     user_id,
                     f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Success!</b>\n\n"
                     f"Your wallet has been linked: <code>{display_addr}</code>",
                     parse_mode=ParseMode.HTML,
                 )
-                await remember_message(state, msg)
 
-                kb = InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="Go to Game Menu", callback_data="game_menu")]
-                ])
-                await safe_bot_send_message(bot, user_id, "Click below to return to the game:", reply_markup=kb)
+                # Send Refreshed Main Menu
+                from handlers.main_menu import get_main_menu_keyboard, MAIN_MENU_TEXT
+                await safe_bot_send_message(bot,
+                    user_id,
+                    MAIN_MENU_TEXT,
+                    reply_markup=await get_main_menu_keyboard(user_id),
+                    parse_mode=ParseMode.HTML
+                )
             except Exception:
                 logger.exception("SUCCESS_MESSAGE_POST_SAVE_FAILED user_id=%s", user_id)
 

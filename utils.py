@@ -102,7 +102,8 @@ async def safe_answer(message, text, **kwargs):
     try:
         return await message.answer(text, **kwargs)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
+        err_msg = str(e).lower()
+        if "can't parse entities" not in err_msg and "document_invalid" not in err_msg:
             raise e
         try:
             return await message.answer(strip_custom_emojis(text), **kwargs)
@@ -120,45 +121,52 @@ async def safe_edit_text(message, text, **kwargs):
 
     state = kwargs.pop('state', None)
 
-    try:
-        msg = await target.edit_text(text, **kwargs)
+    # Use the requested pattern: verify content type before edit
+    content_type = getattr(target, 'content_type', None)
+
+    if content_type == 'text':
+        try:
+            msg = await target.edit_text(text, **kwargs)
+            if msg and state:
+                await state.update_data(last_msg_id=msg.message_id)
+            return msg
+        except TelegramBadRequest as e:
+            err_msg = str(e).lower()
+
+            if "message is not modified" in err_msg:
+                return target
+
+            if any(x in err_msg for x in [
+                "document_invalid",
+                "there is no text in the message to edit",
+                "message can't be edited",
+                "message to edit not found"
+            ]):
+                try:
+                    await target.delete()
+                except Exception:
+                    pass
+                msg = await target.answer(text, **kwargs)
+                if msg and state:
+                    await state.update_data(last_msg_id=msg.message_id)
+                return msg
+
+            if "can't parse entities" in err_msg:
+                try:
+                    return await target.edit_text(strip_custom_emojis(text), **kwargs)
+                except TelegramBadRequest:
+                    return await target.edit_text(strip_all_tags(text), **kwargs)
+            raise e
+    else:
+        # Not a text message, delete and answer
+        try:
+            await target.delete()
+        except Exception:
+            pass
+        msg = await target.answer(text, **kwargs)
         if msg and state:
             await state.update_data(last_msg_id=msg.message_id)
         return msg
-    except TelegramBadRequest as e:
-        err_msg = str(e).lower()
-
-        if any(x in err_msg for x in [
-            "document_invalid",
-            "there is no text in the message to edit",
-            "message can't be edited",
-            "message to edit not found",
-            "message is not modified"
-        ]):
-            try:
-                await target.delete()
-            except Exception:
-                pass
-
-            safe_kwargs = kwargs.copy()
-            safe_kwargs.pop("parse_mode", None)
-
-            msg = await target.answer(
-                strip_custom_emojis(text),
-                **safe_kwargs
-            )
-
-            if msg and state:
-                await state.update_data(last_msg_id=msg.message_id)
-
-            return msg
-
-        if "can't parse entities" in err_msg:
-            try:
-                return await target.edit_text(strip_custom_emojis(text), **kwargs)
-            except TelegramBadRequest:
-                return await target.edit_text(strip_all_tags(text), **kwargs)
-        raise e
 
 async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
     try:
@@ -166,6 +174,8 @@ async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
     except TelegramBadRequest as e:
         err_msg = str(e).lower()
         if any(x in err_msg for x in ["document_invalid", "message is not modified", "can't be edited", "no text in the message"]):
+            if "message is not modified" in err_msg:
+                return None
             try:
                 await bot.delete_message(chat_id, message_id)
             except:
@@ -183,7 +193,8 @@ async def safe_bot_send_message(bot, chat_id, text, **kwargs):
     try:
         return await bot.send_message(chat_id=chat_id, text=text, **kwargs)
     except TelegramBadRequest as e:
-        if "can't parse entities" not in str(e) and "DOCUMENT_INVALID" not in str(e):
+        err_msg = str(e).lower()
+        if "can't parse entities" not in err_msg and "document_invalid" not in err_msg:
             raise e
         try:
             return await bot.send_message(chat_id=chat_id, text=strip_custom_emojis(text), **kwargs)
