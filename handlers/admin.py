@@ -18,8 +18,8 @@ class UpdateGifStates(StatesGroup):
 # Клавиатура выбора типа медиа
 def get_gif_type_kb():
     buttons = [
-        [InlineKeyboardButton(text="🎁 Giveaways", callback_data="set_type_main")],
-        [InlineKeyboardButton(text="❌ Cancel", callback_data="cancel_update")]
+        [InlineKeyboardButton(text="Giveaways", callback_data="set_type_main", icon_custom_emoji_id="6032644646587338669")],
+        [InlineKeyboardButton(text="Cancel", callback_data="cancel_update", icon_custom_emoji_id="5877629862306385808")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
