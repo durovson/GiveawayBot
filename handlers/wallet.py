@@ -99,7 +99,7 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("Connection service temporarily unavailable.", show_alert=True)
         return
 
-    supported = ["Tonkeeper", "MyTonWallet", "Tonhub", "Telegram Wallet"]
+    supported = ["Tonkeeper", "MyTonWallet", "Telegram Wallet"]
     available = [w for w in wallets_list if w['name'] in supported]
 
     if not available:
