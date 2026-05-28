@@ -1,29 +1,24 @@
 import asyncio
 import logging
 from aiogram import Router, F, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from pytonconnect import TonConnect
-from pytonconnect.exceptions import UserRejectsError
-from postgrest.exceptions import APIError
 
 from loader import bot, wallet_tasks
 from database import db
 from services.ton_connect_service import TonConnectService
-from services.ui_cleanup import remember_message, clear_messages
+from services.ui_cleanup import remember_message, clear_messages, MessageCategory
 from utils import normalize_to_raw, short_wallet, safe_answer, safe_bot_send_message
+from keyboards.wallet import (
+    wallet_menu_keyboard,
+    wallet_selection_keyboard,
+    wallet_connect_keyboard,
+    wallet_success_keyboard
+)
 
 router = Router()
 logger = logging.getLogger(__name__)
-
-async def finish_wallet_flow(callback: types.CallbackQuery, state: FSMContext):
-    try:
-        from handlers.game_menu import show_game_menu
-        await state.clear()
-        await show_game_menu(callback, state)
-    except Exception:
-        logger.exception("FINISH_WALLET_FLOW_FAILED")
 
 async def cleanup_connect(user_id: int):
     try:
@@ -39,34 +34,32 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
     await db.ensure_user_exists(user_id)
     try:
         wallet = await db.get_user_wallet(user_id)
+        is_connected = bool(wallet)
 
-        if wallet:
+        if is_connected:
             display_addr = short_wallet(wallet)
             text = (
                 f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Wallet Connected</b>\n\n"
                 f"<blockquote><code>{display_addr}</code></blockquote>\n\n"
                 f"<i>You can disconnect this wallet and link a new one if needed.</i>"
             )
-            kb = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="❌ Disconnect", callback_data="disconnect_wallet")],
-                [InlineKeyboardButton(text="◀️ Back", callback_data="game_menu")]
-            ])
         else:
             text = (
                 f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Connect Wallet</b>\n\n"
                 f"Connect your TON wallet to access holder features, OTC and giveaways.\n\n"
                 f"<i>Choose your preferred wallet below:</i>"
             )
-            kb = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🔗 Connect Wallet", callback_data="connect_wallet")],
-                [InlineKeyboardButton(text="◀️ Back", callback_data="game_menu")]
-            ])
+
+        kb = wallet_menu_keyboard(is_connected)
 
         try:
             await callback.message.delete()
         except:
             pass
-        await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+
+        msg = await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+        await remember_message(state, msg, category=MessageCategory.TEMPORARY)
+
     except Exception:
         logger.exception("WALLET_MENU_FAILED user_id=%s", user_id)
         await callback.answer("Wallet menu error.", show_alert=True)
@@ -106,20 +99,19 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("No supported wallets found.", show_alert=True)
         return
 
-    kb_list = []
-    for w in available:
-        kb_list.append([InlineKeyboardButton(text=w['name'], callback_data=f"select_wallet_{w['name']}")])
-    kb_list.append([InlineKeyboardButton(text="◀️ Back", callback_data="wallet_menu")])
+    kb = wallet_selection_keyboard(available)
 
     try:
         await callback.message.delete()
     except:
         pass
-    await safe_answer(callback.message,
+
+    msg = await safe_answer(callback.message,
         "<b>Select your wallet:</b>",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=kb_list),
+        reply_markup=kb,
         parse_mode=ParseMode.HTML
     )
+    await remember_message(state, msg, category=MessageCategory.TEMPORARY)
 
 @router.callback_query(F.data.startswith("select_wallet_"))
 async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
@@ -154,16 +146,15 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         f"</blockquote>"
     )
 
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🚀 Open Wallet", url=url)],
-        [InlineKeyboardButton(text="◀️ Cancel", callback_data="wallet_menu")]
-    ])
+    kb = wallet_connect_keyboard(url)
 
     try:
         await callback.message.delete()
     except:
         pass
-    await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+
+    msg = await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+    await remember_message(state, msg, category=MessageCategory.TEMPORARY)
 
     task = asyncio.create_task(wait_for_connection_with_timeout(user_id, connector, state))
     wallet_tasks.add(task)
@@ -199,20 +190,26 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
 
         if raw_address:
             try:
+                # 1. Clear temporary messages (connect menus)
+                await clear_messages(user_id, state, category=MessageCategory.TEMPORARY)
+
                 await db.update_user_wallet(user_id, raw_address)
                 display_addr = short_wallet(raw_address)
-                msg = await safe_bot_send_message(bot,
+
+                # 2. Send success notification (PERSISTENT)
+                msg1 = await safe_bot_send_message(bot,
                     user_id,
                     f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Success!</b>\n\n"
                     f"Your wallet has been linked: <code>{display_addr}</code>",
                     parse_mode=ParseMode.HTML,
                 )
-                await remember_message(state, msg)
+                await remember_message(state, msg1, category=MessageCategory.PERSISTENT)
 
-                kb = InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="Go to Game Menu", callback_data="game_menu")]
-                ])
-                await safe_bot_send_message(bot, user_id, "Click below to return to the game:", reply_markup=kb)
+                # 3. Send action button
+                kb = wallet_success_keyboard()
+                msg2 = await safe_bot_send_message(bot, user_id, "Click below to return to the game:", reply_markup=kb)
+                await remember_message(state, msg2, category=MessageCategory.PERSISTENT)
+
             except Exception:
                 logger.exception("SUCCESS_MESSAGE_POST_SAVE_FAILED user_id=%s", user_id)
 
