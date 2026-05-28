@@ -98,7 +98,7 @@ async def safe_answer(message, text, **kwargs):
         return await message.answer(text, **kwargs)
 
 async def safe_edit_text(message, text, **kwargs):
-    """Edits text if possible, otherwise deletes and answers."""
+    """Edits text if possible, otherwise just answers."""
     target = message.message if isinstance(message, types.CallbackQuery) else message
     if not target: return None
 
@@ -110,11 +110,7 @@ async def safe_edit_text(message, text, **kwargs):
             if "message is not modified" in str(e).lower():
                 return target
 
-    # Fallback: delete (if possible) and send new
-    try:
-        await target.delete()
-    except:
-        pass
+    # Fallback: just answer/send new
     return await target.answer(text, **kwargs)
 
 async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
@@ -123,10 +119,6 @@ async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
     except TelegramBadRequest as e:
         if "message is not modified" in str(e).lower():
             return None
-        try:
-            await bot.delete_message(chat_id, message_id)
-        except:
-            pass
         return await bot.send_message(chat_id, text, **kwargs)
 
 async def safe_bot_send_message(bot, chat_id, text, **kwargs):
