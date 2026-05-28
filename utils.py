@@ -94,52 +94,35 @@ async def safe_answer(message, text, **kwargs):
     try:
         return await message.answer(text, **kwargs)
     except Exception:
-        # Final fallback, just try to answer without special parsing if possible
         kwargs.pop('parse_mode', None)
         return await message.answer(text, **kwargs)
 
 async def safe_edit_text(message, text, **kwargs):
-    if isinstance(message, types.CallbackQuery):
-        target = message.message
-    else:
-        target = message
+    """Edits text if possible, otherwise deletes and answers."""
+    target = message.message if isinstance(message, types.CallbackQuery) else message
+    if not target: return None
 
-    if not target:
-        return None
-
-    state = kwargs.pop('state', None)
-    content_type = getattr(target, 'content_type', None)
-
-    if content_type == 'text':
+    # Check if we can edit (it must be a text message)
+    if getattr(target, 'content_type', None) == 'text':
         try:
             return await target.edit_text(text, **kwargs)
         except TelegramBadRequest as e:
-            err_msg = str(e).lower()
-            if "message is not modified" in err_msg:
+            if "message is not modified" in str(e).lower():
                 return target
 
-            # Fallback for any other edit error (including parse errors)
-            try:
-                return await target.answer(text, **kwargs)
-            except:
-                kwargs.pop('parse_mode', None)
-                return await target.answer(text, **kwargs)
-    else:
-        # Non-text message, delete and answer
-        try:
-            await target.delete()
-        except:
-            pass
-        return await target.answer(text, **kwargs)
+    # Fallback: delete (if possible) and send new
+    try:
+        await target.delete()
+    except:
+        pass
+    return await target.answer(text, **kwargs)
 
 async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
     try:
         return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, **kwargs)
     except TelegramBadRequest as e:
-        err_msg = str(e).lower()
-        if "message is not modified" in err_msg:
+        if "message is not modified" in str(e).lower():
             return None
-
         try:
             await bot.delete_message(chat_id, message_id)
         except:

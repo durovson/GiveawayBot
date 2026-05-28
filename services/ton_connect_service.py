@@ -51,35 +51,9 @@ class SupabaseStorage(IStorage):
             logger.exception("TON_CONNECT_STORAGE_REMOVE_FAILED user_id=%s key=%s", self.user_id, key)
 
 class TonConnectService:
-    _instances = {}
-
-    @classmethod
-    async def close_all(cls):
-        """Clean up all TonConnect instances."""
-        user_ids = list(cls._instances.keys())
-        for user_id in user_ids:
-            connector = cls._instances.get(user_id)
-            if connector:
-                try:
-                    if connector.connected:
-                        await connector.disconnect()
-                except Exception:
-                    pass
-            cls.drop_connector(user_id)
-        if user_ids:
-            logger.info(f"Cleaned up {len(user_ids)} TonConnect instances")
-
     @classmethod
     async def connector(cls, user_id: int) -> TonConnect:
         user_id = int(user_id)
-        if user_id in cls._instances:
-            connector = cls._instances[user_id]
-            try:
-                await connector.restore_connection()
-                return connector
-            except Exception:
-                cls.drop_connector(user_id)
-
         await db.ensure_user_exists(user_id)
         storage = SupabaseStorage(db.client, user_id)
         connector = TonConnect(manifest_url=MANIFEST_URL, storage=storage)
@@ -87,10 +61,4 @@ class TonConnectService:
             await connector.restore_connection()
         except Exception:
             pass
-
-        cls._instances[user_id] = connector
         return connector
-
-    @classmethod
-    def drop_connector(cls, user_id: int):
-        cls._instances.pop(int(user_id), None)

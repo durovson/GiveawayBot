@@ -14,14 +14,6 @@ from utils import normalize_to_raw, short_wallet, safe_edit_text, safe_bot_send_
 router = Router()
 logger = logging.getLogger(__name__)
 
-async def cleanup_connect(user_id: int):
-    try:
-        connector = await TonConnectService.connector(user_id)
-        if not connector.connected:
-             TonConnectService.drop_connector(user_id)
-    except Exception:
-        pass
-
 @router.callback_query(F.data == "wallet_menu")
 async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
@@ -65,7 +57,6 @@ async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext):
         connector = await TonConnectService.connector(user_id)
         if connector.connected:
             await connector.disconnect()
-        TonConnectService.drop_connector(user_id)
     except Exception:
         logger.exception("DISCONNECT_WALLET_FAILED user_id=%s", user_id)
 
@@ -184,7 +175,12 @@ async def wait_for_connection(user_id: int, connector: TonConnect):
             except Exception:
                 logger.exception("SUCCESS_MESSAGE_POST_SAVE_FAILED user_id=%s", user_id)
 
-        await cleanup_connect(user_id)
+        # Ensure disconnection after link or timeout
+        try:
+            if connector.connected:
+                await connector.disconnect()
+        except Exception:
+            pass
+
     except Exception:
         logger.exception("WAIT_FOR_CONNECTION_CRASH user_id=%s", user_id)
-        await cleanup_connect(user_id)
