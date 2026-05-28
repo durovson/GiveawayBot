@@ -12,19 +12,19 @@ router = Router()
 
 async def show_game_menu(message: types.Message | types.CallbackQuery, state: FSMContext):
     text = (
-        "┏┅🍑┅ / GAME MENU /\n"
+        "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>GAME MENU</b> /\n"
         "┋\n"
         "┣ Welcome to the Game section!\n"
         "┣ Here you can track your position in the leaderboard\n"
-        "┣ and manage your TON wallet.\n"
+        "┣ and link your wallet to participate.\n"
         "┋\n"
-        "┗┅┅┅/ Select an option /"
+        "┗┅┅┅/ <b>Select an option</b> /"
     )
 
     builder = InlineKeyboardBuilder()
-    builder.button(text="Leaderboard", callback_data="leaderboard", icon_custom_emoji_id="5258185631355378853")
-    builder.button(text="Open Sticker App", url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544")
-    builder.button(text="Wallet", callback_data="wallet_menu", icon_custom_emoji_id="5258416629745714088")
+    builder.button(text="Leaderboard", callback_data="leaderboard", icon_custom_emoji_id="5258330865674494479")
+    builder.button(text="Wallet", callback_data="wallet_menu", icon_custom_emoji_id="5258204546391351475")
+    builder.button(text="Buy Stickers", url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544", icon_custom_emoji_id="5258391025281408576")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
@@ -95,28 +95,28 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
 
     if not lines:
         text = (
-            "┏┅🍑┅ / PACK HOLDERS LEADERBOARD /\n"
+            "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
             "┋\n"
             "┣ No holder statistics available yet.\n"
             "┣ Blockchain sync in progress.\n"
             "┋\n"
-            "┗┅┅┅/ Live Blockchain Parsing /"
+            "┗┅┅┅/ Wating... /"
         )
     else:
         text = (
-            "┏┅🍑┅ / PACK HOLDERS LEADERBOARD /\n"
+            "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
             "┋\n"
-            "┣ Global ranking of tokenized collection distribution. \n"
+            "┣ Global holders ranking. \n"
             "┣ Data is synchronized in real-time.\n"
             "┋\n"
             + "\n".join(lines) + "\n"
             "┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n"
             + (user_pos_line if user_pos_line else "┋ Wallet not linked\n┋") + "\n"
-            "┗┅┅┅/ Live Blockchain Parsing /"
+            "┗┅┅┅/ <b>Select an option</b> /"
         )
 
     builder = InlineKeyboardBuilder()
-    builder.button(text="Back", callback_data="game_menu")
+    builder.button(text="Back", callback_data="game_menu", icon_custom_emoji_id="5877629862306385808")
     builder.adjust(1)
 
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
