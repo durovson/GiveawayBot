@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from aiogram import Bot, F, types
+from aiogram.client.default import DefaultBotProperties
 from aiogram.types import ChatMemberUpdated
 from aiogram.enums import ParseMode
 
@@ -49,8 +50,7 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
                     admin_id,
                     "<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>The bot is ready to work!</b>\n\n"
                     "<blockquote>The group has been automatically registered. Now you can create giveaways via private messages with the bot.</blockquote>\n\n"
-                    "<i>If the group does not appear in the list, use the command /setup</i>",
-                    parse_mode=ParseMode.HTML
+                    "<i>If the group does not appear in the list, use the command /setup</i>"
                 )
             except Exception:
                 pass
@@ -86,7 +86,7 @@ async def main():
     # Initialize the bot without custom session - aiogram handles it internally
     loader.bot = Bot(
         token=loader.BOT_TOKEN,
-        parse_mode=ParseMode.HTML
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
 
     start_keep_alive()
@@ -137,10 +137,7 @@ async def main():
     if all_tasks:
         await asyncio.gather(*all_tasks, return_exceptions=True)
 
-    # 2. Close TonConnect instances
-    await TonConnectService.close_all()
-
-    # 3. Close bot session
+    # 2. Close bot session
     if loader.bot.session:
         await loader.bot.session.close()
 
