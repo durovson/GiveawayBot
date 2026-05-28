@@ -985,9 +985,9 @@ async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bo
     elif current_state in [GiveawayCreation.CONFIRMATION, GiveawayCreation.EDIT_PARAMS]:
         # Возвращаемся обратно на шаг ввода призов
         text = (
-            "<tg-emoji emoji-id="6032644646587338669">🎁</tg-emoji> <b>Prizes</b>\n\n"
-            "<blockquote>Specify the prizes for the giveaway. Each prize on a new line.</blockquote>\n\n"
-            "<b>Enter prizes text:</b>"
+            '<tg-emoji emoji-id="6032644646587338669">🎁</tg-emoji> <b>Prizes</b>\n\n'
+            '<blockquote>Specify the prizes for the giveaway. Each prize on a new line.</blockquote>\n\n'
+            '<b>Enter prizes text:</b>'
         )
         await safe_edit_text(callback, text, reply_markup=get_nav_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.ENTER_PRIZES)
