@@ -1,0 +1,7 @@
+Files changed:
+- loader.py: Configured AiohttpSession with TCPConnector and Timeout for resilience.
+- bot.py: Added NetworkErrorFilter to suppress noisy stack traces, implemented polling retry loop with exponential backoff, and added robust shared http_session settings.
+- utils.py: Updated safe_edit_text to check content_type and handle DOCUMENT_INVALID by falling back to delete+answer.
+- handlers/wallet.py: Restricted wallet providers to Tonkeeper, MyTonWallet, and Telegram Wallet. Integrated ui_cleanup for temporary connection messages. Improved success flow to cleanup UI and show refreshed main menu.
+
+All changes follow the strict constraints of not touching unrelated logic or styling.
