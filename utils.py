@@ -1,22 +1,15 @@
 import re
 import logging
-from loader import bot
+import loader
 from aiogram.exceptions import TelegramBadRequest
 from aiogram import types
 from pytoniq_core import Address
 
 logger = logging.getLogger(__name__)
 
-def strip_custom_emojis(text: str) -> str:
-    return re.sub(r'<tg-emoji emoji-id=["\'].*?["\']>(.*?)</tg-emoji>', r'\1', text)
-
-def strip_all_tags(text: str) -> str:
-    """Removes all HTML tags."""
-    return re.sub(r'<[^>]+>', '', text)
-
 async def is_admin(chat_id: int, user_id: int) -> bool:
     try:
-        member = await bot.get_chat_member(chat_id, user_id)
+        member = await loader.bot.get_chat_member(chat_id, user_id)
         return member.status in ["administrator", "creator"]
     except Exception:
         return False
@@ -34,7 +27,7 @@ async def is_any_admin(user_id: int) -> bool:
 
 async def is_holder(user_id: int) -> bool:
     try:
-        member = await bot.get_chat_member(-1001944951957, user_id)
+        member = await loader.bot.get_chat_member(-1001944951957, user_id)
         return member.status not in ["left", "kicked"]
     except Exception:
         return False
@@ -60,7 +53,6 @@ def normalize_to_raw(address: str) -> str:
     if not address or not isinstance(address, str):
         return ""
     try:
-        # If it's already in raw format or can be parsed
         try:
             return Address(address).to_str(is_user_friendly=False).lower()
         except:
@@ -101,14 +93,10 @@ def short_wallet(addr: str) -> str:
 async def safe_answer(message, text, **kwargs):
     try:
         return await message.answer(text, **kwargs)
-    except TelegramBadRequest as e:
-        err_msg = str(e).lower()
-        if "can't parse entities" not in err_msg and "document_invalid" not in err_msg:
-            raise e
-        try:
-            return await message.answer(strip_custom_emojis(text), **kwargs)
-        except TelegramBadRequest:
-            return await message.answer(strip_all_tags(text), **kwargs)
+    except Exception:
+        # Final fallback, just try to answer without special parsing if possible
+        kwargs.pop('parse_mode', None)
+        return await message.answer(text, **kwargs)
 
 async def safe_edit_text(message, text, **kwargs):
     if isinstance(message, types.CallbackQuery):
@@ -120,83 +108,54 @@ async def safe_edit_text(message, text, **kwargs):
         return None
 
     state = kwargs.pop('state', None)
-
-    # Use the requested pattern: verify content type before edit
     content_type = getattr(target, 'content_type', None)
 
     if content_type == 'text':
         try:
-            msg = await target.edit_text(text, **kwargs)
-            if msg and state:
-                await state.update_data(last_msg_id=msg.message_id)
-            return msg
+            return await target.edit_text(text, **kwargs)
         except TelegramBadRequest as e:
             err_msg = str(e).lower()
-
             if "message is not modified" in err_msg:
                 return target
 
-            if any(x in err_msg for x in [
-                "document_invalid",
-                "there is no text in the message to edit",
-                "message can't be edited",
-                "message to edit not found"
-            ]):
-                try:
-                    await target.delete()
-                except Exception:
-                    pass
-                msg = await target.answer(text, **kwargs)
-                if msg and state:
-                    await state.update_data(last_msg_id=msg.message_id)
-                return msg
-
-            if "can't parse entities" in err_msg:
-                try:
-                    return await target.edit_text(strip_custom_emojis(text), **kwargs)
-                except TelegramBadRequest:
-                    return await target.edit_text(strip_all_tags(text), **kwargs)
-            raise e
+            # Fallback for any other edit error (including parse errors)
+            try:
+                return await target.answer(text, **kwargs)
+            except:
+                kwargs.pop('parse_mode', None)
+                return await target.answer(text, **kwargs)
     else:
-        # Not a text message, delete and answer
+        # Non-text message, delete and answer
         try:
             await target.delete()
-        except Exception:
+        except:
             pass
-        msg = await target.answer(text, **kwargs)
-        if msg and state:
-            await state.update_data(last_msg_id=msg.message_id)
-        return msg
+        return await target.answer(text, **kwargs)
 
 async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
     try:
         return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, **kwargs)
     except TelegramBadRequest as e:
         err_msg = str(e).lower()
-        if any(x in err_msg for x in ["document_invalid", "message is not modified", "can't be edited", "no text in the message"]):
-            if "message is not modified" in err_msg:
-                return None
-            try:
-                await bot.delete_message(chat_id, message_id)
-            except:
-                pass
-            return await bot.send_message(chat_id, text, **kwargs)
+        if "message is not modified" in err_msg:
+            return None
 
-        if "can't parse entities" in err_msg:
-            try:
-                return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=strip_custom_emojis(text), **kwargs)
-            except TelegramBadRequest:
-                return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=strip_all_tags(text), **kwargs)
-        raise e
+        try:
+            await bot.delete_message(chat_id, message_id)
+        except:
+            pass
+        return await bot.send_message(chat_id, text, **kwargs)
 
 async def safe_bot_send_message(bot, chat_id, text, **kwargs):
     try:
         return await bot.send_message(chat_id=chat_id, text=text, **kwargs)
-    except TelegramBadRequest as e:
-        err_msg = str(e).lower()
-        if "can't parse entities" not in err_msg and "document_invalid" not in err_msg:
-            raise e
-        try:
-            return await bot.send_message(chat_id=chat_id, text=strip_custom_emojis(text), **kwargs)
-        except TelegramBadRequest:
-            return await bot.send_message(chat_id=chat_id, text=strip_all_tags(text), **kwargs)
+    except Exception:
+        kwargs.pop('parse_mode', None)
+        return await bot.send_message(chat_id=chat_id, text=text, **kwargs)
+
+def strip_custom_emojis(text: str) -> str:
+    return re.sub(r'<tg-emoji emoji-id=["\'].*?["\']>(.*?)</tg-emoji>', r'\1', text)
+
+def strip_all_tags(text: str) -> str:
+    """Removes all HTML tags."""
+    return re.sub(r'<[^>]+>', '', text)
