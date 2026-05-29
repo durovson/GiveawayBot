@@ -54,7 +54,7 @@ MAIN_MENU_TEXT = (
     "┋\n"
     "┣ Increase your status in the ecosystem to unlock closed menu sections!\n"
     "┋\n"
-    "┗┅┅┅/ <b>Ready to get started? Select an option</b> /"
+    "┗┅┅┅/ <b>Ready to get started? Select an option:</b> /"
 )
 
 @router.message(Command("start"))
