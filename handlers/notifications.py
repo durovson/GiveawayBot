@@ -19,7 +19,7 @@ router = Router()
 class NotificationStates(StatesGroup):
     WAITING_FOR_TITLE = State()
     WAITING_FOR_TEXT = State()
-    WAITING_FOR_URL = State()
+    WAITING_FOR_BUTTONS = State()
     WAITING_FOR_INTERVAL = State()
     CUSTOM_INTERVAL = State()
     SELECTING_CHATS = State()
@@ -34,20 +34,26 @@ def get_notification_nav_keyboard():
 
 def get_interval_keyboard():
     builder = InlineKeyboardBuilder()
-    intervals = [1, 2, 3]
-    for h in intervals:
-        builder.button(text=f"{h}h", callback_data=f"notif_int_{h}")
+    # Updated intervals: 3h, 8h, 12h -> 180, 480, 720 minutes
+    intervals = {
+        "3h": 180,
+        "8h": 480,
+        "12h": 720
+    }
+    for label, mins in intervals.items():
+        builder.button(text=label, callback_data=f"notif_int_{mins}")
+
     builder.button(text="Custom", callback_data="notif_int_custom", icon_custom_emoji_id="5274008024585871702")
     builder.button(text="Back", callback_data="notif_back", icon_custom_emoji_id="5260687119092817530")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(3, 2, 2)
+    builder.adjust(3, 1, 2)
     return builder.as_markup()
 
 def get_edit_notification_keyboard(is_active: bool):
     builder = InlineKeyboardBuilder()
     builder.button(text="Edit Title", callback_data="notif_edit_title", icon_custom_emoji_id="5778299625370817409")
     builder.button(text="Edit Text", callback_data="notif_edit_text", icon_custom_emoji_id="5891105528356018797")
-    builder.button(text="Change Button", callback_data="notif_edit_url", icon_custom_emoji_id="5258185631355378853")
+    builder.button(text="Edit Buttons", callback_data="notif_edit_buttons", icon_custom_emoji_id="5258185631355378853")
     builder.button(text="Interval", callback_data="notif_edit_interval", icon_custom_emoji_id="5850317551090800862")
     builder.button(text="Select Chats", callback_data="notif_edit_chats", icon_custom_emoji_id="5258486128742244085")
 
@@ -59,10 +65,10 @@ def get_edit_notification_keyboard(is_active: bool):
     builder.adjust(2, 2, 1, 1, 1, 1)
     return builder.as_markup()
 
-def format_notification_preview(title: str, text: str) -> str:
+def format_notification_preview(title: str, text: str, buttons: List[Dict] = None) -> str:
     safe_title = html.escape(title or "...")
     safe_text = html.escape(text or "...")
-    return (
+    preview = (
         f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ / {safe_title} /\n"
         f"┋\n"
         f"┣{safe_text}\n"
@@ -70,11 +76,21 @@ def format_notification_preview(title: str, text: str) -> str:
         f"┗┅┅┅/ #NOTAPES /"
     )
 
+    if buttons:
+        btn_lines = []
+        for btn in buttons:
+            btn_lines.append(f"[{btn['text']}]")
+        if btn_lines:
+            preview += "\n\n" + " | ".join(btn_lines)
+
+    return preview
+
 async def show_notification_params(message_or_cb, state: FSMContext, bot: Bot):
     data = await state.get_data()
-    preview = format_notification_preview(data.get('title'), data.get('text'))
+    buttons = data.get('custom_buttons', [])
+    preview = format_notification_preview(data.get('title'), data.get('text'), buttons)
 
-    interval = data.get('interval_hours', 0)
+    interval = data.get('interval_minutes', 0)
     is_active = data.get('is_active', True)
     chat_id = data.get('chat_id')
     chat_title = "None"
@@ -89,10 +105,11 @@ async def show_notification_params(message_or_cb, state: FSMContext, bot: Bot):
         f"┋\n"
         f"┣ <b>Interval:</b> {int(interval)}m\n"
         f"┣ <b>Chat:</b> {chat_title}\n"
-        f"┣ <b>Status:</b> {'Active' if is_active else 'Inactive'}"
+        f"┣ <b>Buttons:</b> {len(buttons)}\n"
+        f"┣ <b>Status:</b> {'Active' if is_active else 'Inactive'}\n"
         f"┋\n"
         f"┗┅┅┅/ <b>Preview:</b> /\n"
-        f"{preview}"
+        f"{status_text_render(preview)}"
     )
 
     reply_markup = get_edit_notification_keyboard(is_active)
@@ -102,6 +119,10 @@ async def show_notification_params(message_or_cb, state: FSMContext, bot: Bot):
     else:
         last_msg_id = data.get('last_msg_id')
         await safe_bot_edit_text(bot, message_or_cb.chat.id, last_msg_id, status_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
+def status_text_render(preview: str) -> str:
+    # Small helper to keep show_notification_params cleaner
+    return preview
 
 @router.callback_query(F.data == "manage_notifications")
 async def start_notification_management(callback: types.CallbackQuery, state: FSMContext):
@@ -125,7 +146,7 @@ async def start_notification_management(callback: types.CallbackQuery, state: FS
 @router.callback_query(F.data == "notif_create")
 async def create_notification(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    await state.set_data({"is_editing": False, "is_active": True, "last_msg_id": callback.message.message_id})
+    await state.set_data({"is_editing": False, "is_active": True, "last_msg_id": callback.message.message_id, "custom_buttons": []})
 
     await safe_edit_text(callback,
         "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji>┅ / <b>Notification Title</b> /\n"
@@ -146,20 +167,22 @@ async def select_notification(callback: types.CallbackQuery, state: FSMContext, 
     notif = next((n for n in notifs if n['id'] == notif_id), None)
 
     if notif:
-        interval = notif['interval_hours']
-        if interval < 15: interval *= 60
-        await state.update_data(
-            id=notif['id'],
-            title=notif['title'],
-            text=notif['text'],
-            button_url=notif['button_url'],
-            button_text=notif.get('button_text', 'OPEN'),
-            interval_hours=interval,
-            is_active=notif['is_active'],
-            chat_id=notif['chat_id'],
-            is_editing=True,
-            last_msg_id=callback.message.message_id
-        )
+        interval_mins = notif.get('interval_minutes', 60)
+        custom_buttons = notif.get('custom_buttons', [])
+        if not isinstance(custom_buttons, list):
+            custom_buttons = []
+
+        await state.set_data({
+            "id": notif['id'],
+            "title": notif['title'],
+            "text": notif['text'],
+            "custom_buttons": custom_buttons,
+            "interval_minutes": interval_mins,
+            "chat_id": notif['chat_id'],
+            "is_active": notif['is_active'],
+            "last_msg_id": callback.message.message_id,
+            "is_editing": True
+        })
         await show_notification_params(callback, state, bot)
         await state.set_state(NotificationStates.CONFIRMATION)
 
@@ -178,7 +201,7 @@ async def enter_notif_title(message: types.Message, state: FSMContext, bot: Bot)
         await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
             "┏┅<tg-emoji emoji-id=\"5891105528356018797\">📝</tg-emoji>┅ / <b>Notification Text</b> /\n"
             "┋\n"
-            "┣ Enter the main text of the notification.\n"
+            "┣ Enter the main message content.\n"
             "┋\n"
             "┗┅┅┅/ <b>Enter text:</b> /",
             reply_markup=get_notification_nav_keyboard(),
@@ -198,26 +221,80 @@ async def enter_notif_text(message: types.Message, state: FSMContext, bot: Bot):
         await show_notification_params(message, state, bot)
         await state.set_state(NotificationStates.CONFIRMATION)
     else:
-        await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
-            "┏┅<tg-emoji emoji-id=\"5258185631355378853\">🔗</tg-emoji>┅ / <b>Button URL</b> /\n"
-            "┋\n"
-            "┣ Enter the URL for the button. One button allowed.\n"
-            "┋\n"
-            "┗┅┅┅/ <b>Enter URL (or type /skip):</b> /",
-            reply_markup=get_notification_nav_keyboard(),
-            parse_mode=ParseMode.HTML
-        )
-        await state.set_state(NotificationStates.WAITING_FOR_URL)
+        await prompt_for_buttons(message, state, bot)
 
-@router.message(NotificationStates.WAITING_FOR_URL)
-async def enter_notif_url(message: types.Message, state: FSMContext, bot: Bot):
+async def prompt_for_buttons(message_or_cb, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    buttons = data.get('custom_buttons', [])
+
+    btns_list = ""
+    if buttons:
+        btns_list = "<b>Current buttons:</b>\n"
+        for i, btn in enumerate(buttons, 1):
+            btns_list += f"{i}. {btn['text']} - {btn['url']}\n"
+        btns_list += "\n"
+
+    text = (
+        "┏┅<tg-emoji emoji-id=\"5258185631355378853\">🔗</tg-emoji>┅ / <b>Notification Buttons</b> /\n"
+        "┋\n"
+        "┣ Enter buttons in format: <code>Name - https://url.com</code>\n"
+        "┣ You can send multiple buttons one by one.\n"
+        "┣ Type <b>/done</b> when finished or <b>/skip</b> to have no buttons.\n"
+        "┋\n"
+        f"{btns_list}"
+        "┗┅┅┅/ <b>Enter button (or /done /skip):</b> /"
+    )
+
+    if isinstance(message_or_cb, types.CallbackQuery):
+        await safe_edit_text(message_or_cb, text, reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
+    else:
+        await safe_bot_edit_text(bot, message_or_cb.chat.id, data['last_msg_id'], text, reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
+
+    await state.set_state(NotificationStates.WAITING_FOR_BUTTONS)
+
+@router.message(NotificationStates.WAITING_FOR_BUTTONS)
+async def enter_notif_buttons(message: types.Message, state: FSMContext, bot: Bot):
     try: await message.delete()
     except: pass
 
-    url = message.text if message.text != "/skip" else None
-    await state.update_data(button_url=url)
-    data = await state.get_data()
+    if message.text == "/skip":
+        await state.update_data(custom_buttons=[])
+        await proceed_from_buttons(message, state, bot)
+        return
 
+    if message.text == "/done":
+        await proceed_from_buttons(message, state, bot)
+        return
+
+    # Parse button: Name - URL
+    pattern = r"(.+)\s*-\s*(https?://\S+|t.me/\S+)"
+    match = re.match(pattern, message.text)
+
+    if match:
+        name = match.group(1).strip()
+        url = match.group(2).strip()
+        if url.startswith("t.me/"):
+            url = "https://" + url
+
+        data = await state.get_data()
+        buttons = data.get('custom_buttons', [])
+        buttons.append({"text": name, "url": url})
+        await state.update_data(custom_buttons=buttons)
+
+        await prompt_for_buttons(message, state, bot)
+    else:
+        data = await state.get_data()
+        await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
+            "❌ <b>Invalid format!</b>\n\n"
+            "Please use: <code>Name - https://url.com</code>\n"
+            "Example: <code>Join Channel - https://t.me/notapes</code>\n\n"
+            "Type <b>/done</b> to finish or <b>/skip</b> to clear buttons.",
+            reply_markup=get_notification_nav_keyboard(),
+            parse_mode=ParseMode.HTML
+        )
+
+async def proceed_from_buttons(message: types.Message, state: FSMContext, bot: Bot):
+    data = await state.get_data()
     if data.get('is_editing'):
         await show_notification_params(message, state, bot)
         await state.set_state(NotificationStates.CONFIRMATION)
@@ -238,13 +315,13 @@ async def select_notif_interval(callback: types.CallbackQuery, state: FSMContext
 
     if val == "custom":
         await safe_edit_text(callback,
-            "<b>Enter interval in minutes (min 15, max 60):</b>",
+            "<b>Enter interval in minutes (min 15):</b>",
             reply_markup=get_notification_nav_keyboard(),
             parse_mode=ParseMode.HTML
         )
         await state.set_state(NotificationStates.CUSTOM_INTERVAL)
     else:
-        await state.update_data(interval_hours=float(val) * 60)
+        await state.update_data(interval_minutes=float(val))
         data = await state.get_data()
 
         if data.get('is_editing'):
@@ -261,10 +338,10 @@ async def process_custom_interval(message: types.Message, state: FSMContext, bot
     data = await state.get_data()
     try:
         val = int(message.text)
-        if not (15 <= val <= 60):
-            raise ValueError("Out of range")
+        if val < 15:
+            raise ValueError("Too small")
 
-        await state.update_data(interval_hours=float(val))
+        await state.update_data(interval_minutes=float(val))
         data = await state.get_data()
 
         if data.get('is_editing'):
@@ -274,8 +351,8 @@ async def process_custom_interval(message: types.Message, state: FSMContext, bot
             await show_chat_selection(message, state, bot)
     except ValueError:
         await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
-            "❌ Invalid number. Please enter a number between 15 and 60.\n\n"
-            "<b>Enter interval in minutes (min 15, max 60):</b>",
+            "❌ Invalid number. Please enter a number at least 15.\n\n"
+            "<b>Enter interval in minutes:</b>",
             reply_markup=get_notification_nav_keyboard(),
             parse_mode=ParseMode.HTML)
 
@@ -309,16 +386,21 @@ async def select_notif_chat(callback: types.CallbackQuery, state: FSMContext, bo
 
 @router.callback_query(F.data == "notif_save", NotificationStates.CONFIRMATION)
 async def save_notification(callback: types.CallbackQuery, state: FSMContext):
+    try:
+        await callback.answer()
+    except Exception:
+        pass
+
     data = await state.get_data()
-    if not data.get('chat_id') or not data.get('title') or not data.get('text') or not data.get('interval_hours'):
+    if not data.get('chat_id') or not data.get('title') or not data.get('text') or data.get('interval_minutes') is None:
         await callback.answer("❌ Please fill all fields", show_alert=True)
         return
 
     notif_data = {
         "title": data['title'],
         "text": data['text'],
-        "button_url": data.get('button_url'),
-        "interval_hours": data['interval_hours'],
+        "custom_buttons": data.get('custom_buttons', []),
+        "interval_minutes": float(data['interval_minutes']),
         "chat_id": data['chat_id'],
         "is_active": data.get('is_active', True)
     }
@@ -348,9 +430,8 @@ async def edit_notif_field(callback: types.CallbackQuery, state: FSMContext, bot
     elif field == "text":
         await safe_edit_text(callback, "<b>Enter new text:</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(NotificationStates.WAITING_FOR_TEXT)
-    elif field == "url":
-        await safe_edit_text(callback, "<b>Enter new URL (or /skip):</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
-        await state.set_state(NotificationStates.WAITING_FOR_URL)
+    elif field == "buttons":
+        await prompt_for_buttons(callback, state, bot)
     elif field == "interval":
         await safe_edit_text(callback, "<b>Select new interval:</b>", reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(NotificationStates.WAITING_FOR_INTERVAL)
@@ -368,12 +449,11 @@ async def process_notif_back(callback: types.CallbackQuery, state: FSMContext, b
     elif current_state == NotificationStates.WAITING_FOR_TEXT:
         await safe_edit_text(callback, "<b>Notification Title</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(NotificationStates.WAITING_FOR_TITLE)
-    elif current_state == NotificationStates.WAITING_FOR_URL:
+    elif current_state == NotificationStates.WAITING_FOR_BUTTONS:
         await safe_edit_text(callback, "<b>Notification Text</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(NotificationStates.WAITING_FOR_TEXT)
     elif current_state == NotificationStates.WAITING_FOR_INTERVAL:
-        await safe_edit_text(callback, "<b>Button URL</b>", reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
-        await state.set_state(NotificationStates.WAITING_FOR_URL)
+        await prompt_for_buttons(callback, state, bot)
     elif current_state == NotificationStates.CUSTOM_INTERVAL:
         await safe_edit_text(callback, "<b>Select interval:</b>", reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(NotificationStates.WAITING_FOR_INTERVAL)
