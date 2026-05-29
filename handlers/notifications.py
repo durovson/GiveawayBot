@@ -36,7 +36,7 @@ def get_interval_keyboard():
     builder = InlineKeyboardBuilder()
     intervals = [1, 2, 3]
     for h in intervals:
-        builder.button(text=f"{h}h", callback_data=f"notif_int_{h}")
+    builder.button(text=f"{h}h", callback_data=f"notif_int_{h}")
     builder.button(text="Custom", callback_data="notif_int_custom", icon_custom_emoji_id="5274008024585871702")
     builder.button(text="Back", callback_data="notif_back", icon_custom_emoji_id="5260687119092817530")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
@@ -85,13 +85,13 @@ async def show_notification_params(message_or_cb, state: FSMContext, bot: Bot):
             chat_title = target_chat['title']
 
     status_text = (
-        f"<b>Notification Parameters:</b>\n\n"
-        f"<blockquote>"
-        f"<b>Interval:</b> {int(interval)}m\n"
-        f"<b>Chat:</b> {chat_title}\n"
-        f"<b>Status:</b> {'Active' if is_active else 'Inactive'}"
-        f"</blockquote>\n\n"
-        f"<b>Preview:</b>\n\n"
+        f"┏┅<tg-emoji emoji-id=\"5260268501515377807\">📣</tg-emoji>┅ / <b>Notification Parameters:</b> /\n"
+        f"┋\n"
+        f"┣ <b>Interval:</b> {int(interval)}m\n"
+        f"┣ <b>Chat:</b> {chat_title}\n"
+        f"┣ <b>Status:</b> {'Active' if is_active else 'Inactive'}"
+        f"┋\n"
+        f"┗┅┅┅/ <b>Preview:</b> /\n"
         f"{preview}"
     )
 
@@ -117,7 +117,7 @@ async def start_notification_management(callback: types.CallbackQuery, state: FS
         builder.button(text=n['title'], callback_data=f"notif_select_{n['id']}")
 
     builder.button(text="Create New", callback_data="notif_create", icon_custom_emoji_id="5258185631355378853")
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
     await safe_edit_text(callback, "<b>Notification Management</b>\n\n<blockquote>Select a notification to edit or create a new one.</blockquote>", reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
@@ -128,9 +128,11 @@ async def create_notification(callback: types.CallbackQuery, state: FSMContext):
     await state.set_data({"is_editing": False, "is_active": True, "last_msg_id": callback.message.message_id})
 
     await safe_edit_text(callback,
-        "<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>Notification Title</b>\n\n"
-        "<blockquote>Enter a title for the notification (used in the header).</blockquote>\n\n"
-        "<b>Enter title:</b>",
+        "┏┅<<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji>┅ / <b>Notification Title</b> /\n"
+        "┋\n"
+        "┣ Enter a title for the notification (used in the header).\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Enter title:</b> /",
         reply_markup=get_notification_nav_keyboard(),
         parse_mode=ParseMode.HTML
     )
@@ -174,9 +176,11 @@ async def enter_notif_title(message: types.Message, state: FSMContext, bot: Bot)
         await state.set_state(NotificationStates.CONFIRMATION)
     else:
         await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
-            "<tg-emoji emoji-id=\"5891105528356018797\">📝</tg-emoji> <b>Notification Text</b>\n\n"
-            "<blockquote>Enter the main text of the notification.</blockquote>\n\n"
-            "<b>Enter text:</b>",
+            "┏┅<tg-emoji emoji-id=\"5891105528356018797\">📝</tg-emoji>┅ / <b>Notification Text</b> /\n"
+            "┋\n"
+            "┣ Enter the main text of the notification.\n"
+            "┋\n"
+            "┗┅┅┅/ <b>Enter text:</b> /",
             reply_markup=get_notification_nav_keyboard(),
             parse_mode=ParseMode.HTML
         )
@@ -195,9 +199,11 @@ async def enter_notif_text(message: types.Message, state: FSMContext, bot: Bot):
         await state.set_state(NotificationStates.CONFIRMATION)
     else:
         await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
-            "<tg-emoji emoji-id=\"5258185631355378853\">🔗</tg-emoji> <b>Button URL</b>\n\n"
-            "<blockquote>Enter the URL for the button. One button allowed.</blockquote>\n\n"
-            "<b>Enter URL (or type /skip):</b>",
+            "┏┅<tg-emoji emoji-id=\"5258185631355378853\">🔗</tg-emoji>┅ / <b>Button URL</b> /\n"
+            "┋\n"
+            "┣ Enter the URL for the button. One button allowed.\n"
+            "┋\n"
+            "┗┅┅┅/ <b>Enter URL (or type /skip):</b> /",
             reply_markup=get_notification_nav_keyboard(),
             parse_mode=ParseMode.HTML
         )
@@ -217,8 +223,9 @@ async def enter_notif_url(message: types.Message, state: FSMContext, bot: Bot):
         await state.set_state(NotificationStates.CONFIRMATION)
     else:
         await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
-            "<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>Sending Interval</b>\n\n"
-            "<blockquote>Select how often the notification should be sent.</blockquote>",
+            "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅ / <b>Sending Interval</b> /\n"
+            "┋\n"
+            "┗┅┅┅/ Select how often the notification should be sent. /",
             reply_markup=get_interval_keyboard(),
             parse_mode=ParseMode.HTML
         )
