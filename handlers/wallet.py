@@ -39,7 +39,7 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
         if is_connected:
             display_addr = short_wallet(wallet)
             text = (
-                f"┏┅<tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji>┅ / <b>Wallet Connected</b> /\n"
+                f"┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Wallet Connected</b> /\n"
                 "┋\n"
                 f"┣ <code>{display_addr}</code>\n"
                 "┋\n"
@@ -47,7 +47,7 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
             )
         else:
             text = (
-                f"┏┅<tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> <b>Connect Wallet</b> /\n"
+                f"┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji> <b>Connect Wallet</b> /\n"
                 "┋\n"
                 f"┣ Connect your TON wallet to access holder features and giveaways.\n"
                 "┋\n"
@@ -144,7 +144,7 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         return
 
     text = (
-        f"┏┅<tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji>┅ / {wallet_name} <b>Connection</b> /\n"
+        f"┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / {wallet_name} <b>Connection</b> /\n"
         f"┋\n"
         f"┗┅┅┅/ <b>Tap the button below and confirm connection inside</b> {wallet_name}"
     )
@@ -202,7 +202,7 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
                 # 2. Send success notification (PERSISTENT)
                 msg1 = await safe_bot_send_message(bot,
                     user_id,
-                    f"┏┅<tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji>┅ / <b>Success!</b> /\n"
+                    f"┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Success!</b> /\n"
                     f"┋\n"
                     f"┗┅┅┅/ <b>Your wallet has been linked:</b> <code>{display_addr}</code>",
                     parse_mode=ParseMode.HTML,
