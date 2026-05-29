@@ -120,7 +120,7 @@ async def start_notification_management(callback: types.CallbackQuery, state: FS
     builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
-    await safe_edit_text(callback, "<b>Notification Management</b>\n\n<blockquote>Select a notification to edit or create a new one.</blockquote>", reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    await safe_edit_text(callback, "<b>┏┅<tg-emoji emoji-id=\"5260268501515377807\">📣</tg-emoji>┅ / Notification Management</b> /\n┋\n\n┗┅┅┅/ Select a notification to edit or create a new one. /", reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data == "notif_create")
 async def create_notification(callback: types.CallbackQuery, state: FSMContext):
