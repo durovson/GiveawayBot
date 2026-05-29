@@ -235,8 +235,8 @@ async def check_periodic_notifications(bot: Bot):
             for notif in active_notifications:
                 try:
                     last_sent = notif.get("last_sent")
-                    interval = notif["interval_hours"]
-                    if interval < 15: interval *= 60
+                    interval = notif.get("interval_minutes", 60)
+
 
                     if last_sent is None:
                         # For new notifications, send immediately
@@ -289,13 +289,26 @@ async def check_periodic_notifications(bot: Bot):
                             pass
 
                         builder = InlineKeyboardBuilder()
-                        if notif.get("button_url"):
+                        custom_buttons = notif.get("custom_buttons", [])
+                        if not isinstance(custom_buttons, list):
+                            custom_buttons = []
+
+                        # Fallback for legacy button_url
+                        has_buttons = False
+                        if custom_buttons:
+                            for btn in custom_buttons:
+                                builder.button(text=btn["text"], url=btn["url"])
+                            has_buttons = True
+                        elif notif.get("button_url"):
                             builder.button(text=notif.get("button_text", "OPEN"), url=notif["button_url"])
+                            has_buttons = True
+
+                        builder.adjust(1)
 
                         new_msg = await bot.send_message(
                             chat_id=chat_id,
                             text=ad_text,
-                            reply_markup=builder.as_markup() if notif.get("button_url") else None,
+                            reply_markup=builder.as_markup() if has_buttons else None,
                             parse_mode=ParseMode.HTML
                         )
 
