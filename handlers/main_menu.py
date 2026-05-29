@@ -43,16 +43,16 @@ async def get_main_menu_keyboard(user_id: int):
     return builder.as_markup()
 
 MAIN_MENU_TEXT = (
-    "┏┅<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ / <b>NOTAPES | HUB</b> /\n"
+    "┏┅⋐[ ◍ _◍ ]っ/ <b>NOTAPES | HUB</b> / \n"
     "┋\n"
-    "┣ Welcome! The HUB menu changes dynamically depending on your status in the ecosystem.\n"
+    "┣ Welcome to NOTAPES Hub!\n"
     "┋\n"
-    "┣ Your access to the HUB:\n"
-    "┣ Lvl 1: Game (Available To Everyone)\n"
-    "┣ Lvl 2: OTC Trading (Chat Holders)\n"
-    "┣ Lvl 3: Admin Panel\n"
+    "┣ Menu Levels:\n"
+    "┣ [1] Game (Public)\n"
+    "┣ [2] OTC Trade (Holders)\n"
+    "┣ [3] Admin Panel\n"
     "┋\n"
-    "┣ Increase your status in the ecosystem to unlock closed menu sections!\n"
+    "┣ Upgrade your status to see more.!\n"
     "┋\n"
     "┗┅┅┅/ <b>Ready to get started? Select an option:</b> /"
 )
