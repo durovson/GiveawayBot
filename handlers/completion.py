@@ -228,6 +228,8 @@ async def check_periodic_notifications(bot: Bot):
                         elif notif.get("button_url"):
                             builder.button(text=notif.get("button_text", "OPEN"), url=notif["button_url"])
 
+                        builder.adjust(1)
+
                         reply_markup = builder.as_markup() if (c_btns or notif.get("button_url")) else None
 
                         new_msg = await bot.send_message(
