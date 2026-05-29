@@ -32,6 +32,15 @@ def get_notification_nav_keyboard():
     builder.adjust(2)
     return builder.as_markup()
 
+def get_notification_buttons_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Done", callback_data="notif_btns_done", icon_custom_emoji_id="5260726538302660868", style="success")
+    builder.button(text="Skip / Clear", callback_data="notif_btns_skip", icon_custom_emoji_id="5258362429389152256")
+    builder.button(text="Back", callback_data="notif_back", icon_custom_emoji_id="5260687119092817530")
+    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(2, 2)
+    return builder.as_markup()
+
 def get_interval_keyboard():
     builder = InlineKeyboardBuilder()
     # Updated intervals: 3h, 8h, 12h -> 180, 480, 720 minutes
@@ -230,82 +239,105 @@ async def prompt_for_buttons(message_or_cb, state: FSMContext, bot: Bot):
     btns_list = ""
     if buttons:
         btns_list = "<b>Current buttons:</b>\n"
-        for i, btn in enumerate(buttons, 1):
-            btns_list += f"{i}. {btn['text']} - {btn['url']}\n"
+        for i_btn, btn in enumerate(buttons, 1):
+            btns_list += f"{i_btn}. {btn['text']} - {btn['url']}\n"
         btns_list += "\n"
 
     text = (
         "┏┅<tg-emoji emoji-id=\"5258185631355378853\">🔗</tg-emoji>┅ / <b>Notification Buttons</b> /\n"
         "┋\n"
-        "┣ Enter buttons in format: <code>Name - https://url.com</code>\n"
+        "┣ Enter buttons in format: <code>Name - Link</code>\n"
         "┣ You can send multiple buttons one by one.\n"
-        "┣ Type <b>/done</b> when finished or <b>/skip</b> to have no buttons.\n"
+        "┣ Use the buttons below to finish or clear.\n"
         "┋\n"
         f"{btns_list}"
-        "┗┅┅┅/ <b>Enter button (or /done /skip):</b> /"
+        "┗┅┅┅/ <b>Enter button:</b> /"
     )
 
+    reply_markup = get_notification_buttons_keyboard()
+
     if isinstance(message_or_cb, types.CallbackQuery):
-        await safe_edit_text(message_or_cb, text, reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(message_or_cb, text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     else:
-        await safe_bot_edit_text(bot, message_or_cb.chat.id, data['last_msg_id'], text, reply_markup=get_notification_nav_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_bot_edit_text(bot, message_or_cb.chat.id, data['last_msg_id'], text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
     await state.set_state(NotificationStates.WAITING_FOR_BUTTONS)
+
+@router.callback_query(F.data == "notif_btns_done", NotificationStates.WAITING_FOR_BUTTONS)
+async def process_notif_btns_done(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
+    await proceed_from_buttons(callback, state, bot)
+
+@router.callback_query(F.data == "notif_btns_skip", NotificationStates.WAITING_FOR_BUTTONS)
+async def process_notif_btns_skip(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
+    await state.update_data(custom_buttons=[])
+    await proceed_from_buttons(callback, state, bot)
 
 @router.message(NotificationStates.WAITING_FOR_BUTTONS)
 async def enter_notif_buttons(message: types.Message, state: FSMContext, bot: Bot):
     try: await message.delete()
     except: pass
 
-    if message.text == "/skip":
-        await state.update_data(custom_buttons=[])
-        await proceed_from_buttons(message, state, bot)
-        return
-
-    if message.text == "/done":
-        await proceed_from_buttons(message, state, bot)
-        return
-
-    # Parse button: Name - URL
-    pattern = r"(.+)\s*-\s*(https?://\S+|t.me/\S+)"
-    match = re.match(pattern, message.text)
-
-    if match:
-        name = match.group(1).strip()
-        url = match.group(2).strip()
-        if url.startswith("t.me/"):
-            url = "https://" + url
-
-        data = await state.get_data()
-        buttons = data.get('custom_buttons', [])
-        buttons.append({"text": name, "url": url})
-        await state.update_data(custom_buttons=buttons)
-
-        await prompt_for_buttons(message, state, bot)
-    else:
+    if not message.text or " - " not in message.text:
         data = await state.get_data()
         await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
             "❌ <b>Invalid format!</b>\n\n"
-            "Please use: <code>Name - https://url.com</code>\n"
-            "Example: <code>Join Channel - https://t.me/notapes</code>\n\n"
-            "Type <b>/done</b> to finish or <b>/skip</b> to clear buttons.",
-            reply_markup=get_notification_nav_keyboard(),
+            "Use:\n<code>Name - link</code>",
+            reply_markup=get_notification_buttons_keyboard(),
             parse_mode=ParseMode.HTML
         )
+        return
 
-async def proceed_from_buttons(message: types.Message, state: FSMContext, bot: Bot):
+    # Split by last " - " to allow dashes in name
+    parts = message.text.rsplit(" - ", 1)
+    name = parts[0].strip()
+    url = parts[1].strip()
+
+    if not name or not url:
+        data = await state.get_data()
+        await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
+            "❌ <b>Invalid format!</b>\n\n"
+            "Use:\n<code>Name - link</code>",
+            reply_markup=get_notification_buttons_keyboard(),
+            parse_mode=ParseMode.HTML
+        )
+        return
+
+    # URL Processing
+    if url.startswith("@"):
+        url = "https://t.me/" + url[1:]
+    elif "://" not in url:
+        url = "https://" + url
+
+    data = await state.get_data()
+    buttons = data.get('custom_buttons', [])
+
+    # Avoid duplicate exact buttons
+    if not any(b['text'] == name and b['url'] == url for b in buttons):
+        buttons.append({"text": name, "url": url})
+        await state.update_data(custom_buttons=buttons)
+
+    await prompt_for_buttons(message, state, bot)
+
+async def proceed_from_buttons(message_or_cb, state: FSMContext, bot: Bot):
     data = await state.get_data()
     if data.get('is_editing'):
-        await show_notification_params(message, state, bot)
+        await show_notification_params(message_or_cb, state, bot)
         await state.set_state(NotificationStates.CONFIRMATION)
     else:
-        await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'],
+        text = (
             "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅ / <b>Sending Interval</b> /\n"
             "┋\n"
-            "┗┅┅┅/ Select how often the notification should be sent. /",
-            reply_markup=get_interval_keyboard(),
-            parse_mode=ParseMode.HTML
+            "┗┅┅┅/ Select how often the notification should be sent. /"
         )
+        reply_markup = get_interval_keyboard()
+
+        if isinstance(message_or_cb, types.CallbackQuery):
+            await safe_edit_text(message_or_cb, text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+        else:
+            await safe_bot_edit_text(bot, message_or_cb.chat.id, data['last_msg_id'], text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
         await state.set_state(NotificationStates.WAITING_FOR_INTERVAL)
 
 @router.callback_query(F.data.startswith("notif_int_"), NotificationStates.WAITING_FOR_INTERVAL)
