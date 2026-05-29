@@ -397,7 +397,7 @@ async def select_mode_value(callback: types.CallbackQuery, state: FSMContext, bo
         data = await state.get_data()
         prompt = "Enter the time in DD.MM.YYYY HH:MM format" if data['gtype'] == "timed" else "enter the number of participants as a number"
         await safe_edit_text(callback,
-            f"<b>Enter your value:</b>\n\n"
+            f"┏┅<tg-emoji emoji-id=\"5258389041006518073\">📂</tg-emoji>┅ /<b>Enter your value:</b> /\n"
             f"<blockquote>{prompt}</blockquote>",
             parse_mode=ParseMode.HTML
         )
@@ -542,11 +542,11 @@ async def enter_prizes(message: types.Message, state: FSMContext, bot: Bot):
 
     prizes_text = "\n".join([f"• {p}" for p in prizes]) if prizes else "None"
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-        "┏┅<tg-emoji emoji-id=\"5891105528356018797\">💎</tg-emoji>┅ / <b>Prizes</b> /\n"
-        "┋\n"
+        f"┏┅<tg-emoji emoji-id=\"5891105528356018797\">💎</tg-emoji>┅ / <b>Prizes</b> /\n"
+        f"┋\n"
         f"┣ Current list:\n{prizes_text}\n"
-        "┋\n"
-        "┗┅┅┅/ <b>Enter the names of the prizes. Entering an existing prize will remove it.</b> /",
+        f"┋\n"
+        f"┗┅┅┅/ <b>Enter the names of the prizes. Entering an existing prize will remove it.</b> /",
         reply_markup=get_prizes_keyboard(prizes),
         parse_mode=ParseMode.HTML
     )
@@ -575,8 +575,8 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
     prizes = ", ".join([html.escape(str(p)) for p in raw_prizes]) or "None"
 
     text = (
-        "┏┅<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji>┅ / <b>Giveaway Parameters</b> /\n"
-        "┋\n"
+        f"┏┅<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji>┅ / <b>Giveaway Parameters</b> /\n"
+        f"┋\n"
         f"┣ <b>Name:</b> {title}\n"
         f"┣ <b>Kind:</b> {gkind}\n"
         f"┣ <b>Channels:</b> {channels}\n"
@@ -584,7 +584,7 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
         f"┣ <b>Mode:</b> {mode_val}\n"
         f"┣ <b>Winners:</b> {winners}\n"
         f"┣ <b>Prizes:</b> {prizes}\n"
-        "┋\n"
+        f"┋\n"
         f"┗┅┅┅/ <b>Select a parameter to edit or launch the giveaway:</b> /"
     )
 
@@ -899,7 +899,7 @@ async def execute_announcement(callback: types.CallbackQuery, bot: Bot):
                 parse_mode=ParseMode.HTML
             )
         await db.add_giveaway_message(giveaway_id, target_chat_id, ann_msg.message_id)
-        await callback.message.answer("<tg-emoji emoji-id=\"5258501105293205250\">👏</tg-emoji> The announcement has been successfully published", parse_mode=ParseMode.HTML)
+        await callback.message.answer(f"<tg-emoji emoji-id=\"5258501105293205250\">👏</tg-emoji> The announcement has been successfully published", parse_mode=ParseMode.HTML)
     except Exception as e:
         await callback.message.answer(f"<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> Error sending announcement: {e}", parse_mode=ParseMode.HTML)
 
