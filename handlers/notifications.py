@@ -128,7 +128,7 @@ async def start_notification_management(callback: types.CallbackQuery, state: FS
     builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
-    text = "┅<tg-emoji emoji-id=\"5260268501515377807\">📣</tg-emoji>┅ / <b>Notification Management</b> /\n┋\n<b>Configure periodic ads for your groups.</b> /"
+    text = "┏┅<tg-emoji emoji-id=\"5260268501515377807\">📣</tg-emoji>┅ / <b>Notification Management</b> /\n┋\n┗┅┅┅/ <b>Configure periodic ads for your groups.</b> /"
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     # Don't state.clear() immediately if we want to preserve last_msg_id from previous menu,
     # but start_notification_management is usually called from main menu where last_msg_id might not be set in state yet.
