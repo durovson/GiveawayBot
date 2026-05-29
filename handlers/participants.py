@@ -20,25 +20,27 @@ async def history_created(callback: types.CallbackQuery):
 
     if not giveaways:
         text = (
-            "<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>Created giveaways</b>\n\n"
-            "<blockquote>You haven't created any giveaways yet.</blockquote>\n\n"
-            "<tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> Select action:"
+            "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>Created Giveaways</b> /\n"
+            "┋\n"
+            "┣ You haven't created any giveaways yet.\n"
+            "┋\n"
+            "┗┅┅┅/<tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> <b>Select action:</b> /"
         )
     else:
         # Sort by id descending and take 5
         giveaways.sort(key=lambda x: x.get('id', 0), reverse=True)
         top_giveaways = giveaways[:5]
 
-        header = "<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>Created giveaways</b>\n\n"
+        header = "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>Created Giveaways</b> /\n"
         blocks = []
 
         for g in top_giveaways:
-            status = "Not completed" if g['status'] == 'active' else "Completed"
+            status = "Not Completed" if g['status'] == 'active' else "Completed"
             title = html.escape(g.get('title') or 'Untitled')
 
             # Start entry content
-            entry = f"<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>Event:</b> {title}\n"
-            entry += f"<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>Status:</b> {status}"
+            entry = f"┣ <tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>Event:</b> {title}\n"
+            entry += f"┣ <tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>Status:</b> {status}"
 
             if g['status'] == 'active':
                 builder.button(text=f"Announcement: {title}", callback_data=f"make_announcement_{g['id']}", icon_custom_emoji_id="5260268501515377807")
@@ -47,7 +49,7 @@ async def history_created(callback: types.CallbackQuery):
             if g['status'] != 'active':
                 winners = await db.get_giveaway_winners(g['id'])
                 if winners:
-                    entry += f"\n\n<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Winners:</b>"
+                    entry += f"\n\n┣ <tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Winners:</b>"
                     for w in winners:
                         w_name = html.escape(w.get('username') or f"ID:{w.get('user_id')}")
                         w_prize = html.escape(w.get('prize', 'Prize'))
