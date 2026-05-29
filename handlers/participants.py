@@ -39,8 +39,8 @@ async def history_created(callback: types.CallbackQuery):
             title = html.escape(g.get('title') or 'Untitled')
 
             # Start entry content
-            entry = f"┣ <tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>Event:</b> {title}\n"
-            entry += f"┣ <tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>Status:</b> {status}"
+            entry = f"<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>Event:</b> {title}\n"
+            entry += f"<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>Status:</b> {status}"
 
             if g['status'] == 'active':
                 builder.button(text=f"Announcement: {title}", callback_data=f"make_announcement_{g['id']}", icon_custom_emoji_id="5260268501515377807")
@@ -49,7 +49,7 @@ async def history_created(callback: types.CallbackQuery):
             if g['status'] != 'active':
                 winners = await db.get_giveaway_winners(g['id'])
                 if winners:
-                    entry += f"\n\n┣ <tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Winners:</b>"
+                    entry += f"\n\n<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>Winners:</b>"
                     for w in winners:
                         w_name = html.escape(w.get('username') or f"ID:{w.get('user_id')}")
                         w_prize = html.escape(w.get('prize', 'Prize'))
@@ -60,7 +60,7 @@ async def history_created(callback: types.CallbackQuery):
 
         # Combine all parts
         text = header + "\n".join(blocks)
-        text += "\n\n<tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> Select action:"
+        text += "\n\n┗┅┅┅/ <tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> <b>Select action:</b> /"
 
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
