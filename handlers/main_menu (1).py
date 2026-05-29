@@ -15,11 +15,11 @@ async def get_main_menu_keyboard(user_id: int):
     
     if user_id == 786080766:
         # Row 1
-        builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5258185631355378853")
-        builder.button(text="Giveaway", callback_data="create_giveaway", icon_custom_emoji_id="5258185631355378853")
+        builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
+        builder.button(text="Giveaway", callback_data="create_giveaway", icon_custom_emoji_id="5296348778012361146")
 
         # Row 2
-        builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5258204546391351475")
+        builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5260687681733533075")
         builder.button(text="Notifications", callback_data="manage_notifications", icon_custom_emoji_id="5260325873688518261")
 
         # Row 3
@@ -30,26 +30,31 @@ async def get_main_menu_keyboard(user_id: int):
         builder.button(text="Update GIF", callback_data="admin_update_gif")
         builder.adjust(2, 2, 2, 1)
     elif await is_holder(user_id):
-        builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5258185631355378853")
-        builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5258204546391351475")
+        builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
+        builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5260687681733533075")
         builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
         builder.adjust(2, 1)
 
     else:
-        builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5258185631355378853")
+        builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
         builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
         builder.adjust(1, 1)
 
     return builder.as_markup()
 
 MAIN_MENU_TEXT = (
-    "<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji><b>NOTAPES | SYSTEM</b><tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>\n\n"
-    "<blockquote>Here you can:\n\n"
-    "• Play and earn rewards\n"
-    "• Conduct quick giveaway\n"
-    "• Track history of raffle\n"
-    "• Create OTC ads</blockquote>\n\n"
-    "<b>Ready to get started? Select the desired section from the menu:</b>"
+    "┏┅⋐[ ◍ _◍ ]っ/ <b>NOTAPES | HUB</b> / \n"
+    "┋\n"
+    "┣ Welcome to NOTAPES Hub!\n"
+    "┋\n"
+    "┣ Menu Levels:\n"
+    "┣ [1] Game (Public)\n"
+    "┣ [2] OTC Trade (Holders)\n"
+    "┣ [3] Admin Panel\n"
+    "┋\n"
+    "┣ Upgrade your status to see more.!\n"
+    "┋\n"
+    "┗┅┅┅/ <b>Ready to get started? Select an option:</b> /"
 )
 
 @router.message(Command("start"))
