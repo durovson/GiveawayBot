@@ -36,7 +36,7 @@ def get_interval_keyboard():
     builder = InlineKeyboardBuilder()
     intervals = [1, 2, 3]
     for h in intervals:
-    builder.button(text=f"{h}h", callback_data=f"notif_int_{h}")
+        builder.button(text=f"{h}h", callback_data=f"notif_int_{h}")
     builder.button(text="Custom", callback_data="notif_int_custom", icon_custom_emoji_id="5274008024585871702")
     builder.button(text="Back", callback_data="notif_back", icon_custom_emoji_id="5260687119092817530")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
