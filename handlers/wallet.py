@@ -39,15 +39,19 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
         if is_connected:
             display_addr = short_wallet(wallet)
             text = (
-                f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Wallet Connected</b>\n\n"
-                f"<blockquote><code>{display_addr}</code></blockquote>\n\n"
-                f"<i>You can disconnect this wallet and link a new one if needed.</i>"
+                f"┏┅<tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji>┅ / <b>Wallet Connected</b> /\n"
+                "┋\n"
+                f"┣ <code>{display_addr}</code>\n"
+                "┋\n"
+                f"┗┅┅┅/ <b>You can disconnect this wallet and link a new one if needed.</b> /"
             )
         else:
             text = (
-                f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Connect Wallet</b>\n\n"
-                f"Connect your TON wallet to access holder features, OTC and giveaways.\n\n"
-                f"<i>Choose your preferred wallet below:</i>"
+                f"┏┅<tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> <b>Connect Wallet</b> /\n"
+                "┋\n"
+                f"┣ Connect your TON wallet to access holder features and giveaways.\n"
+                "┋\n"
+                f"┗┅┅┅/ <b>Choose your preferred wallet below:</b> /"
             )
 
         kb = wallet_menu_keyboard(is_connected)
@@ -140,10 +144,9 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         return
 
     text = (
-        f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> {wallet_name} Connection</b>\n\n"
-        f"<blockquote>\n"
-        f"Tap the button below and confirm connection inside {wallet_name}.\n"
-        f"</blockquote>"
+        f"┏┅<tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji>┅ / {wallet_name} <b>Connection</b> /\n"
+        f"┋\n"
+        f"┗┅┅┅/ <b>Tap the button below and confirm connection inside</b> {wallet_name}"
     )
 
     kb = wallet_connect_keyboard(url)
@@ -199,15 +202,16 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
                 # 2. Send success notification (PERSISTENT)
                 msg1 = await safe_bot_send_message(bot,
                     user_id,
-                    f"<b><tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji> Success!</b>\n\n"
-                    f"Your wallet has been linked: <code>{display_addr}</code>",
+                    f"┏┅<tg-emoji emoji-id=\"5431520110395292209\">👛</tg-emoji>┅ / <b>Success!</b> /\n"
+                    f"┋\n"
+                    f"┗┅┅┅/ <b>Your wallet has been linked:</b> <code>{display_addr}</code>",
                     parse_mode=ParseMode.HTML,
                 )
                 await remember_message(state, msg1, category=MessageCategory.PERSISTENT)
 
                 # 3. Send action button
                 kb = wallet_success_keyboard()
-                msg2 = await safe_bot_send_message(bot, user_id, "Click below to return to the game:", reply_markup=kb)
+                msg2 = await safe_bot_send_message(bot, user_id, "Return to the game:", reply_markup=kb)
                 await remember_message(state, msg2, category=MessageCategory.PERSISTENT)
 
             except Exception:
