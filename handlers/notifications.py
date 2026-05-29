@@ -29,21 +29,19 @@ class NotificationStates(StatesGroup):
 def get_notification_nav_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="Back", callback_data="notif_back", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2)
     return builder.as_markup()
 
 def get_interval_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.button(text="15 min", callback_data="notif_int_15")
-    builder.button(text="30 min", callback_data="notif_int_30")
-    builder.button(text="1 hour", callback_data="notif_int_60")
     builder.button(text="3 hours", callback_data="notif_int_180")
     builder.button(text="6 hours", callback_data="notif_int_360")
-    builder.button(text="12 hours", callback_data="notif_int_720")
+    builder.button(text="8 hours", callback_data="notif_int_480")
     builder.button(text="Custom", callback_data="notif_int_custom", icon_custom_emoji_id="5258204546391351475")
     builder.button(text="Back", callback_data="notif_back", icon_custom_emoji_id="5260687119092817530")
-    builder.adjust(2, 2, 2, 1, 1)
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(3, 1, 2)
     return builder.as_markup()
 
 def format_notification_preview(title: str, text: str, buttons: List[Dict]) -> str:
@@ -82,7 +80,7 @@ async def show_notification_preview(event, state: FSMContext, bot: Bot):
         "┋\n"
         f"┣ <b>Interval:</b> {int(interval)}m\n"
         f"┣ <b>Target Chat:</b> {html.escape(chat_title)}\n"
-        f"┣ <b>Status:</b> {'Active ✅' if is_active else 'Inactive ❌'}\n"
+        f"┣ <b>Status:</b> {'Active' if is_active else 'Inactive'}\n"
         "┋\n"
         f"┣ {post_text}\n"
         "┋\n"
@@ -130,7 +128,7 @@ async def start_notification_management(callback: types.CallbackQuery, state: FS
     builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
-    text = "<b>Notification Management</b>\n\n<blockquote>Configure periodic ads for your groups.</blockquote>"
+    text = "┅<tg-emoji emoji-id=\"5260268501515377807\">📣</tg-emoji>┅ / <b>Notification Management</b> /\n┋\n<b>Configure periodic ads for your groups.</b> /"
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     # Don't state.clear() immediately if we want to preserve last_msg_id from previous menu,
     # but start_notification_management is usually called from main menu where last_msg_id might not be set in state yet.
@@ -227,7 +225,7 @@ async def show_btn_input_screen(event, state: FSMContext, bot: Bot):
         f"┣ Example: <i>My Channel @channel</i> or <i>Click here t.me/link</i>\n"
         f"┋ You can send multiple buttons one by one.\n"
         f"┋\n"
-        f"┗┅┅┅/ <b>Preview:</b> /\n{preview}"
+        f"┗┅┅┅/ <b>Preview:</b> /\n\n{preview}"
     )
 
     chat_id = event.chat.id if isinstance(event, types.Message) else event.message.chat.id
@@ -333,7 +331,7 @@ async def process_custom_interval(message: types.Message, state: FSMContext, bot
         text = (
             "┏┅<tg-emoji emoji-id=\"5258204546391351475\">⏳</tg-emoji>┅ / <b>Custom Interval</b> /\n"
             "┋\n"
-            "┣ ❌ <b>Invalid number.</b>\n"
+            "┣ <b>Invalid number.</b>\n"
             "┋ Please enter a number between 15 and 1440.\n"
             "┋\n"
             "┗┅┅┅/ <b>Enter interval in minutes:</b> /"
@@ -412,7 +410,7 @@ async def edit_interval(callback: types.CallbackQuery, state: FSMContext):
     text = (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅ / <b>Edit Interval</b> /\n"
         "┋\n"
-        "┗┅┅┅/ Select a new sending interval. /"
+        "┗┅┅┅/ <b>Select a new sending interval.</b> /"
     )
     await safe_edit_text(callback, text, reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(NotificationStates.ENTER_INTERVAL)
@@ -459,8 +457,9 @@ async def confirm_save(callback: types.CallbackQuery, state: FSMContext, bot: Bo
     await db.upsert_notification(notif_data)
 
     success_text = (
-        "<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji> <b>Notification saved successfully!</b>\n\n"
-        "<blockquote>Your advertisement schedule has been updated and is now active.</blockquote>"
+        "┏<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji>┅ / <b>Notification saved successfully!</b> /\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Your advertisement schedule has been updated and is now active.</b> /"
     )
 
     builder = InlineKeyboardBuilder()
