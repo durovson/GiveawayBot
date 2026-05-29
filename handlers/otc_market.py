@@ -303,27 +303,27 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
 
     if is_offer:
         post_text = (
-            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
+            f"<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
             f"┣ <b>Item:</b> {item_display}\n"
             "┋\n"
             "┣ <b>Offer</b>\n"
             "┋\n"
-            "┗┅ / #NOTAPES /"
+            "┣┅ / #NOTAPES /"
         )
     else:
         post_text = (
-            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
+            f"<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
             f"┣ <b>Item:</b> {item_display}\n"
             "┋\n"
             f"┣ <b>Price:</b> {html.escape(str(display_price))}\n"
             "┋\n"
-            "┗┅ / #NOTAPES /"
+            "┣┅ / #NOTAPES /"
         )
 
     preview_text = (
-        "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji┅ / <b>Preview</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>Preview</b> /\n"
         "┋\n"
         f"┣ {post_text}\n"
         "┋\n"
