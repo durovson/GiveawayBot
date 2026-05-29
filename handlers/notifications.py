@@ -128,7 +128,7 @@ async def create_notification(callback: types.CallbackQuery, state: FSMContext):
     await state.set_data({"is_editing": False, "is_active": True, "last_msg_id": callback.message.message_id})
 
     await safe_edit_text(callback,
-        "┏┅<<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji>┅ / <b>Notification Title</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji>┅ / <b>Notification Title</b> /\n"
         "┋\n"
         "┣ Enter a title for the notification (used in the header).\n"
         "┋\n"
