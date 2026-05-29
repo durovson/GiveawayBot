@@ -20,20 +20,22 @@ async def history_created(callback: types.CallbackQuery):
 
     if not giveaways:
         text = (
-            "<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>Created giveaways</b>\n\n"
-            "<blockquote>You haven't created any giveaways yet.</blockquote>\n\n"
-            "<tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> Select action:"
+            "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>Created Giveaways</b> /\n"
+            "┋\n"
+            "┣ You haven't created any giveaways yet.\n"
+            "┋\n"
+            "┗┅┅┅/<tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> <b>Select action:</b> /"
         )
     else:
         # Sort by id descending and take 5
         giveaways.sort(key=lambda x: x.get('id', 0), reverse=True)
         top_giveaways = giveaways[:5]
 
-        header = "<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>Created giveaways</b>\n\n"
+        header = "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>Created Giveaways</b> /\n"
         blocks = []
 
         for g in top_giveaways:
-            status = "Not completed" if g['status'] == 'active' else "Completed"
+            status = "Not Completed" if g['status'] == 'active' else "Completed"
             title = html.escape(g.get('title') or 'Untitled')
 
             # Start entry content
@@ -58,7 +60,7 @@ async def history_created(callback: types.CallbackQuery):
 
         # Combine all parts
         text = header + "\n".join(blocks)
-        text += "\n\n<tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> Select action:"
+        text += "\n\n┗┅┅┅/ <tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> <b>Select action:</b> /"
 
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)

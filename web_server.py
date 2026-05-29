@@ -1,41 +1,45 @@
 import os
-import threading
-import time
-import requests
+import asyncio
 import logging
-import subprocess
-from flask import Flask, send_from_directory
+import aiohttp
+from fastapi import FastAPI, Response
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+import loader
 
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = FastAPI(title="Giveaway Bot Web Server")
 
-@app.route('/health')
-def health():
-    return "OK", 200
+@app.get("/health")
+async def health():
+    """Basic health check."""
+    return {"status": "ok"}
 
-@app.route('/')
-def index():
-    return "Bot is running", 200
+@app.get("/ready")
+async def readiness():
+    """Detailed readiness check."""
+    from database import db
+    checks = {
+        "bot_initialized": loader.bot is not None,
+        "database_connected": db.client is not None,
+    }
+    status = "ok" if all(checks.values()) else "error"
+    return {"status": status, "checks": checks}
 
-@app.route('/tonconnect-manifest.json')
-def tonconnect_manifest():
-    return send_from_directory('.', 'tonconnect-manifest.json')
+@app.get("/")
+async def index():
+    return {"message": "Bot is running"}
 
-def run_gunicorn():
-    port = int(os.environ.get("PORT", 10000))
-    cmd = [
-        "gunicorn",
-        "-w", "1",
-        "-k", "gthread",
-        "-b", f"0.0.0.0:{port}",
-        "web_server:app"
-    ]
-    logger.info("Starting gunicorn: %s", " ".join(cmd))
-    subprocess.Popen(cmd)
+@app.get("/tonconnect-manifest.json")
+async def tonconnect_manifest():
+    return FileResponse('tonconnect-manifest.json')
 
-def ping_self():
-    time.sleep(20)
+async def ping_self():
+    """Self-ping task to keep the instance alive on Render."""
+    await asyncio.sleep(20)
+    logger.info("Starting self-ping background task")
+
     while True:
         url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("CUSTOM_URL")
         if url:
@@ -43,11 +47,20 @@ def ping_self():
                 if not url.startswith("http"):
                     url = "https://" + url
                 health_url = f"{url.rstrip('/')}/health"
-                requests.get(health_url, timeout=10)
-            except Exception as e:
-                logger.error(f"Error pinging self: {e}")
-        time.sleep(14 * 60)
 
-def start_keep_alive():
-    run_gunicorn()
-    threading.Thread(target=ping_self, daemon=True).start()
+                # Use shared session if available, otherwise temporary one
+                session = loader.http_session
+                if session and not session.closed:
+                    async with session.get(health_url, timeout=10) as resp:
+                        if resp.status == 200:
+                            logger.debug("Self-ping successful")
+                        else:
+                            logger.warning("Self-ping returned status %s", resp.status)
+                else:
+                    async with aiohttp.ClientSession() as temp_session:
+                        async with temp_session.get(health_url, timeout=10) as resp:
+                            pass
+            except Exception as e:
+                logger.error("Error during self-ping: %s", e)
+
+        await asyncio.sleep(14 * 60) # Ping every 14 minutes

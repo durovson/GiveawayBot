@@ -1,10 +1,9 @@
 aiogram>=3.27.0
 supabase
 python-dotenv
-flask
-requests
+fastapi
+uvicorn
 pytz
 pytonconnect
 aiohttp
 pytoniq-core
-gunicorn

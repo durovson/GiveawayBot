@@ -32,12 +32,13 @@ async def start_otc_market(callback: types.CallbackQuery, state: FSMContext):
     builder = InlineKeyboardBuilder()
     builder.button(text="WTS", callback_data="otc_type_WTS")
     builder.button(text="WTB", callback_data="otc_type_WTB")
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2, 1)
 
     text = (
-        "<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji> <b>OTC Market</b>\n\n"
-        "<blockquote>Select the type of trade:</blockquote>"
+        "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>OTC Market</b> /\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Select the type of trade:</b> /"
     )
 
     msg = await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
@@ -56,13 +57,15 @@ async def select_trade_type(callback: types.CallbackQuery, state: FSMContext):
 
     builder = InlineKeyboardBuilder()
     builder.button(text="No-link", callback_data="otc_no_link", icon_custom_emoji_id="5258362429389152256")
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(1)
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(1, 1)
 
     text = (
-        "<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji> <b>Item Details</b>\n\n"
-        "<blockquote>Please send the name of the item and a link to it.\n\n"
-        "Example: Rare NFT https://t.me/nft_link</blockquote>"
+        "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅ / <b>Item Details</b> /\n"
+        "┋\n"
+        "┣ Please send the name of the item and a link to it.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Example:</b> Rare NFT https://t.me/nft_link /"
     )
 
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
@@ -73,11 +76,12 @@ async def otc_no_link_selected(callback: types.CallbackQuery, state: FSMContext)
     await callback.answer()
 
     builder = InlineKeyboardBuilder()
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
 
     text = (
-        "<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji> <b>Item Name</b>\n\n"
-        "<blockquote>Please send only the name of the item.</blockquote>"
+        "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅ / <b>Item Name</b> /\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Please send only the name of the item.</b> /"
     )
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
     await state.set_state(OTCMarket.ENTER_NAME_ONLY)
@@ -102,12 +106,13 @@ async def enter_name_only(message: types.Message, state: FSMContext, bot: Bot):
     builder = InlineKeyboardBuilder()
     builder.button(text="Skip (Offer)", callback_data="otc_price_skip", icon_custom_emoji_id="5260687681733533075")
     builder.button(text="Back", callback_data="otc_back_to_type", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(1, 1, 1)
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(1, 2)
 
     price_text = (
-        "<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji> <b>Price</b>\n\n"
-        "<blockquote>Enter the price in TON or click the \"Skip (Offer)\" button.</blockquote>"
+        "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Price</b> /\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Enter the price in TON or click the \"Skip (Offer)\" button.</b> /"
     )
 
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
@@ -129,12 +134,13 @@ async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot
         builder = InlineKeyboardBuilder()
         builder.button(text="No-link", callback_data="otc_no_link", icon_custom_emoji_id="5258362429389152256")
         builder.button(text="Back", callback_data="otc_back_to_type", icon_custom_emoji_id="5260687119092817530")
-        builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-        builder.adjust(1, 1, 1)
+        builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+        builder.adjust(1, 2)
 
         warning_text = (
-            "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>Invalid Input</b>\n\n"
-            "<blockquote>Please include a valid URL (http:// or https://) in your message or click <b>No-link</b>.</blockquote>"
+            "┏┅<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji>┅ / <b>Invalid Input</b> /\n"
+            "┋\n"
+            "┗┅┅┅/ <b>Please include a valid URL in your message or click \"No-link\".</b> /"
         )
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id, warning_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
         return
@@ -156,12 +162,13 @@ async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot
     builder = InlineKeyboardBuilder()
     builder.button(text="Skip (Offer)", callback_data="otc_price_skip", icon_custom_emoji_id="5260687681733533075")
     builder.button(text="Back", callback_data="otc_back_to_type", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(1, 1, 1)
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(1, 2)
 
     price_text = (
-        "<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji> <b>Price</b>\n\n"
-        "<blockquote>Enter the price in TON or click the \"Skip (Offer)\" button.</blockquote>"
+        "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Price</b> /\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Enter the price in TON or click the \"Skip (Offer)\" button.</b> /"
     )
 
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
@@ -263,9 +270,9 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot):
         await bot.send_message(text=post_text, **send_kwargs)
         # Промежуточное сообщение вместо резкого перехода в меню
         success_builder = InlineKeyboardBuilder()
-        success_builder.button(text="Back to Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531")
+        success_builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531")
 
-        success_text = "✅ <b>Post published successfully!</b>\n\n<blockquote>Your order has been sent to the OTC channel.</blockquote>"
+        success_text = "<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji> <b>Post published successfully!</b>\n\n<blockquote>Your order has been sent to the OTC channel.</blockquote>"
 
         if isinstance(event, types.CallbackQuery):
             await safe_edit_text(event.message, success_text, reply_markup=success_builder.as_markup(), parse_mode=ParseMode.HTML)
@@ -296,36 +303,38 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
 
     if is_offer:
         post_text = (
-            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
+            f"<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
             f"┣ <b>Item:</b> {item_display}\n"
             "┋\n"
             "┣ <b>Offer</b>\n"
             "┋\n"
-            "┗┅ / #NOTAPES /"
+            "┣┅ / #NOTAPES /"
         )
     else:
         post_text = (
-            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
+            f"<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅/ {html.escape(str(trade_type))} /\n"
             "┋\n"
             f"┣ <b>Item:</b> {item_display}\n"
             "┋\n"
             f"┣ <b>Price:</b> {html.escape(str(display_price))}\n"
             "┋\n"
-            "┗┅ / #NOTAPES /"
+            "┣┅ / #NOTAPES /"
         )
 
     preview_text = (
-        "<b><tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji> Preview</b>\n\n"
-        f"<blockquote>{post_text}</blockquote>\n\n"
-        "<b>Confirm or edit your post:</b>"
+        "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>Preview</b> /\n"
+        "┋\n"
+        f"┣ {post_text}\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Confirm or edit your post:</b> /"
     )
 
     builder = InlineKeyboardBuilder()
     builder.button(text="Edit Item", callback_data="otc_edit_item", icon_custom_emoji_id="5257965174979042426")
     builder.button(text="Edit Price", callback_data="otc_edit_price", icon_custom_emoji_id="5258204546391351475")
     builder.button(text="Confirm & Post", callback_data="otc_confirm_post", icon_custom_emoji_id="5260416304224936047", style="success")
-    builder.button(text="Cancel", callback_data="main_menu", icon_custom_emoji_id="5260342697075416641", style="danger")
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="5260342697075416641", style="danger")
     builder.adjust(2, 1, 1)
 
     if isinstance(event, types.CallbackQuery):
@@ -346,25 +355,28 @@ async def otc_edit_item(callback: types.CallbackQuery, state: FSMContext):
         builder = InlineKeyboardBuilder()
         builder.button(text="No-link", callback_data="otc_no_link", icon_custom_emoji_id="5258362429389152256")
         builder.button(text="Back", callback_data="otc_back_to_type", icon_custom_emoji_id="5260687119092817530")
-        builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-        builder.adjust(1, 1, 1)
+        builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+        builder.adjust(1, 2)
 
         text = (
-            "<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji> <b>Item Details</b>\n\n"
-            "<blockquote>Please send the name of the item and a link to it.\n\n"
-            "Example: Rare NFT https://t.me/nft_link</blockquote>"
+            "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅ / <b>Item Details</b> /\n"
+            "┋\n"
+            "┣ Please send the name of the item and a link to it.\n"
+            "┋\n"
+            "┗┅┅┅/ <b>Example:</b> Rare NFT https://t.me/nft_link /"
         )
         await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
         await state.set_state(OTCMarket.ENTER_ITEM)
     else:
         builder = InlineKeyboardBuilder()
         builder.button(text="Back", callback_data="otc_back_to_type", icon_custom_emoji_id="5260687119092817530")
-        builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-        builder.adjust(1, 1)
+        builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+        builder.adjust(2)
 
         text = (
-            "<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji> <b>Item Name</b>\n\n"
-            "<blockquote>Please send only the name of the item.</blockquote>"
+            "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅ / <b>Item Name</b> /\n"
+            "┋\n"
+            "┗┅┅┅/ <b>Please send only the name of the item.</b> /"
         )
         await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
         await state.set_state(OTCMarket.ENTER_NAME_ONLY)
@@ -377,12 +389,13 @@ async def otc_edit_price(callback: types.CallbackQuery, state: FSMContext):
     builder = InlineKeyboardBuilder()
     builder.button(text="Skip (Offer)", callback_data="otc_price_skip", icon_custom_emoji_id="5260687681733533075")
     builder.button(text="Back", callback_data="otc_back_to_type", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(1, 1, 1)
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(1, 2)
 
     price_text = (
-        "<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji> <b>Price</b>\n\n"
-        "<blockquote>Enter the price in TON or click the \"Skip (Offer)\" button.</blockquote>"
+        "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Price</b> /\n"
+        "┋\n"
+        "┗┅┅┅/ </b>Enter the price in TON or click the \"Skip (Offer)\" button.</b> /"
     )
 
     await safe_edit_text(callback, price_text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
