@@ -34,8 +34,8 @@ def get_notification_nav_keyboard():
 
 def get_notification_buttons_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.button(text="Done", callback_data="notif_btns_done", icon_custom_emoji_id="5260726538302660868", style="success")
-    builder.button(text="Skip / Clear", callback_data="notif_btns_skip", icon_custom_emoji_id="5258362429389152256")
+    builder.button(text="Done", callback_data="notif_btns_done", icon_custom_emoji_id="5260726538302660868")
+    builder.button(text="Skip", callback_data="notif_btns_skip", icon_custom_emoji_id="5258362429389152256")
     builder.button(text="Back", callback_data="notif_back", icon_custom_emoji_id="5260687119092817530")
     builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2, 2)
