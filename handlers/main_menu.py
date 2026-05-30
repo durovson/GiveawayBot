@@ -43,18 +43,17 @@ async def get_main_menu_keyboard(user_id: int):
     return builder.as_markup()
 
 MAIN_MENU_TEXT = (
-    "┏┅⋐[ ◍ _◍ ]っ/ <b>NOTAPES | HUB</b> / \n"
+    "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5257969839313526622\">📂</tg-emoji>┅ / <b>NOTAPES | HUB</b> / \n"
     "┋\n"
-    "┣ Welcome to NOTAPES Hub!\n"
+    "┣ Hub Online.\n"
     "┋\n"
-    "┣ Menu Levels:\n"
+    "┣ Select Mode:\n"
     "┣ [1] Game (Public)\n"
-    "┣ [2] OTC Trade (Holders)\n"
-    "┣ [3] Admin Panel\n"
+    "┣ [2] OTC Market (Holders)\n"
     "┋\n"
-    "┣ Upgrade your status to see more.!\n"
+    "┣ Status upgrade unlocks more!\n"
     "┋\n"
-    "┗┅┅┅/ <b>Ready to get started? Select an option:</b> /"
+    "┗┅┅┅/ <b>Select an option:</b> /"
 )
 
 @router.message(Command("start"))
