@@ -12,11 +12,13 @@ router = Router()
 
 async def show_game_menu(message: types.Message | types.CallbackQuery, state: FSMContext):
     text = (
-        "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>GAME MENU</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>GAME MENU</b> /\n"
         "┋\n"
-        "┣ Welcome to the Game section!\n"
-        "┣ Here you can track your position in the leaderboard\n"
-        "┣ and link your wallet to participate.\n"
+        "┣ Ready to play?\n"
+        "┋\n"
+        "┣ [<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>] HIGHSCORE: View Leaderboard\n"
+        "┣ [<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>] LOGIN: Connect Ton Wallet\n"
+        "┣ [<tg-emoji emoji-id=\"5258391025281408576\">📈</tg-emoji>] BUY Stickers: Boost your Power\n"
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     )
