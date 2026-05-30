@@ -16,18 +16,18 @@ async def get_main_menu_keyboard(user_id: int):
     if user_id == 786080766:
         # Row 1
         builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
-        builder.button(text="Giveaway", callback_data="create_giveaway", icon_custom_emoji_id="5296348778012361146")
+        builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5260687681733533075")
 
         # Row 2
-        builder.button(text="OTC", callback_data="otc_market", icon_custom_emoji_id="5260687681733533075")
-        builder.button(text="Notifications", callback_data="manage_notifications", icon_custom_emoji_id="5260325873688518261")
+        builder.button(text="Giveaway", callback_data="create_giveaway", icon_custom_emoji_id="5296348778012361146")
+        builder.button(text="History", callback_data="history_created", icon_custom_emoji_id="5257969839313526622")
 
         # Row 3
-        builder.button(text="History", callback_data="history_created", icon_custom_emoji_id="5257969839313526622")
-        builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
+        builder.button(text="Notifications", callback_data="manage_notifications", icon_custom_emoji_id="5260325873688518261")
+        builder.button(text="Update GIF", callback_data="admin_update_gif", icon_custom_emoji_id="5257974976094412956")
 
         # Row 4 (Admin only extra)
-        builder.button(text="Update GIF", callback_data="admin_update_gif")
+        builder.button(text="Support", url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
         builder.adjust(2, 2, 2, 1)
     elif await is_holder(user_id):
         builder.button(text="Game", callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
