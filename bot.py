@@ -69,7 +69,7 @@ async def initial_sync():
         cached = await fetch_holders()
         holders = cached.get("holders", []) if isinstance(cached, dict) else []
         if holders:
-            await db.save_snapshot(holders)
+            await db.save_snapshot(data=holders, snapshot_type="daily", total_held=cached.get("totalHeld", 0))
             LeaderboardService.invalidate_cache()
             logger.info("Initial sync complete: %s holders saved", len(holders))
         else:
@@ -103,7 +103,7 @@ async def main():
 
     # 3. Start background tasks
     from handlers.completion import check_timed_giveaways, check_periodic_notifications
-    from tasks.sync_holders import daily_sync_task
+    from tasks.sync_holders import daily_sync_task, milestone_monitor_task
 
     t1 = asyncio.create_task(check_timed_giveaways(bot))
     bg_tasks.add(t1)
@@ -113,6 +113,9 @@ async def main():
 
     t3 = asyncio.create_task(daily_sync_task(bot))
     bg_tasks.add(t3)
+
+    t5 = asyncio.create_task(milestone_monitor_task(bot))
+    bg_tasks.add(t5)
 
     # 4. Start self-ping task
     t4 = asyncio.create_task(ping_self())

@@ -100,7 +100,7 @@ async def daily_sync_task(bot):
 
             if holders:
                 try:
-                    await db.save_snapshot(holders)
+                    await db.save_snapshot(data=holders, snapshot_type="daily", total_held=cached.get("totalHeld", 0))
                     await db.cleanup_old_snapshots(days=14)
                 except Exception:
                     logger.exception("Snapshot save failed")
@@ -117,3 +117,54 @@ async def daily_sync_task(bot):
 
         # Sleep for 24 hours
         await asyncio.sleep(24 * 3600)
+
+MILESTONES = (333, 666, 1000)
+
+async def milestone_monitor_task(bot):
+    """Background task to monitor collection growth milestones every 60 seconds."""
+    logger.info("Starting milestone monitor task")
+    while True:
+        try:
+            # 1. Fetch current data
+            cached = await fetch_holders()
+            holders = cached.get("holders", [])
+            current_total = cached.get("totalHeld", 0)
+
+            if not holders:
+                logger.warning("Milestone monitor: API returned empty dataset")
+                await asyncio.sleep(60)
+                continue
+
+            # 2. Get baseline
+            previous_total = await db.get_last_total_held()
+
+            if previous_total is None:
+                # First run after migration: initialize baseline and skip milestone detection
+                logger.info("Initializing milestone baseline: %s", current_total)
+                await db.save_snapshot(
+                    data=holders,
+                    snapshot_type="daily",
+                    total_held=current_total
+                )
+            else:
+                # 3. Detect milestone crossings
+                for target in MILESTONES:
+                    if previous_total < target <= current_total:
+                        # Double check if milestone already exists in DB to prevent duplicates on restart
+                        if not await db.milestone_exists(target):
+                            logger.info("Milestone %s reached! (Total: %s)", target, current_total)
+                            await db.save_snapshot(
+                                data=holders,
+                                snapshot_type="milestone",
+                                total_held=current_total,
+                                milestone=target
+                            )
+                        else:
+                            logger.info("Milestone %s already exists in database, skipping", target)
+
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.error(f"Error in milestone_monitor_task: {e}", exc_info=True)
+
+        await asyncio.sleep(60)
