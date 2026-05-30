@@ -116,7 +116,7 @@ async def daily_sync_task(bot):
             logger.error(f"Error in daily_sync_task: {e}", exc_info=True)
 
         # Sleep for 24 hours
-        await asyncio.sleep(24 * 3600)
+        await asyncio.sleep(8 * 3600)
 
 MILESTONES = (333, 666, 1000)
 
