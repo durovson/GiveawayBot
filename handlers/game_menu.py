@@ -24,9 +24,9 @@ async def show_game_menu(message: types.Message | types.CallbackQuery, state: FS
     builder = InlineKeyboardBuilder()
     builder.button(text="Leaderboard", callback_data="leaderboard", icon_custom_emoji_id="5258330865674494479")
     builder.button(text="Wallet", callback_data="wallet_menu", icon_custom_emoji_id="5258204546391351475")
-    builder.button(text="Buy Stickers", url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544", icon_custom_emoji_id="5258391025281408576")
-    builder.button(text="Main menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(1)
+    builder.button(text="Stickers", url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544", icon_custom_emoji_id="5258391025281408576")
+    builder.button(text="Main Menu", callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(1, 2, 1)
 
     if isinstance(message, types.CallbackQuery):
         await message.answer()
