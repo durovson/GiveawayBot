@@ -43,7 +43,7 @@ async def get_main_menu_keyboard(user_id: int):
     return builder.as_markup()
 
 MAIN_MENU_TEXT = (
-    "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5257969839313526622\">📂</tg-emoji>┅ / <b>NOTAPES | HUB</b> / \n"
+    "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258260149037965799\">💼</tg-emoji>┅ / <b>NOTAPES | HUB</b> / \n"
     "┋\n"
     "┣ Hub Online.\n"
     "┋\n"
