@@ -274,12 +274,46 @@ class Database:
             logger.error(f"Error getting latest snapshot: {e}")
             return []
 
-    async def save_snapshot(self, data: List[Dict]):
+    async def save_snapshot(self, data: List[Dict], snapshot_type: str = "daily", total_held: Optional[int] = None, milestone: Optional[int] = None):
         if not self._check_client(): return
         try:
-            await self.client.table("snapshots").insert({"data": data}).execute()
+            payload = {
+                "data": data,
+                "snapshot_type": snapshot_type,
+                "total_held": total_held,
+                "milestone": milestone
+            }
+            await self.client.table("snapshots").insert(payload).execute()
         except Exception as e:
             logger.error(f"Error saving snapshot: {e}")
+
+    async def milestone_exists(self, milestone: int) -> bool:
+        if not self._check_client(): return False
+        try:
+            response = await self.client.table("snapshots") \
+                .select("id") \
+                .eq("snapshot_type", "milestone") \
+                .eq("milestone", milestone) \
+                .limit(1) \
+                .execute()
+            return len(response.data) > 0
+        except Exception as e:
+            logger.error(f"Error checking milestone existence: {e}")
+            return False
+
+    async def get_last_total_held(self) -> Optional[int]:
+        if not self._check_client(): return None
+        try:
+            response = await self.client.table("snapshots") \
+                .select("total_held") \
+                .not_.is_("total_held", "null") \
+                .order("created_at", desc=True) \
+                .limit(1) \
+                .execute()
+            return response.data[0]["total_held"] if response.data else None
+        except Exception as e:
+            logger.error(f"Error getting last total held: {e}")
+            return None
 
     async def cleanup_old_snapshots(self, days: int = 14):
         if not self._check_client(): return
