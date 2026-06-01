@@ -189,3 +189,18 @@ async def safe_bot_send_message(bot, chat_id, text, **kwargs):
             return await bot.send_message(chat_id=chat_id, text=strip_custom_emojis(text), **kwargs)
         except TelegramBadRequest:
             return await bot.send_message(chat_id=chat_id, text=strip_all_tags(text), **kwargs)
+
+def get_message_link(chat, message_id: int) -> str:
+    """Generates a link to a Telegram message."""
+    if chat.username:
+        return f"https://t.me/{chat.username}/{message_id}"
+    
+    # For private groups/channels, use the c/ID format
+    # The ID must be without the -100 prefix
+    chat_id = str(chat.id)
+    if chat_id.startswith("-100"):
+        chat_id = chat_id[4:]
+    elif chat_id.startswith("-"):
+        chat_id = chat_id[1:]
+        
+    return f"https://t.me/c/{chat_id}/{message_id}"
