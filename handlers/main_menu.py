@@ -28,41 +28,13 @@ async def get_main_menu_keyboard(user_id: int, texts: dict):
         builder.button(text=texts["update_gif_btn"], callback_data="admin_update_gif", icon_custom_emoji_id="5257974976094412956")
 
         # Row 4
-        builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="def get_message_link(chat, message_id: int) -> str:
-    """Generates a link to a Telegram message."""
-    if chat.username:
-        return f"https://t.me/{chat.username}/{message_id}"
-    
-    # For private groups/channels, use the c/ID format
-    # The ID must be without the -100 prefix
-    chat_id = str(chat.id)
-    if chat_id.startswith("-100"):
-        chat_id = chat_id[4:]
-    elif chat_id.startswith("-"):
-        chat_id = chat_id[1:]
-        
-    return f"https://t.me/c/{chat_id}/{message_id}"
-")
+        builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
         builder.adjust(2, 2, 2, 2)
     elif await is_holder(user_id):
         builder.button(text=texts["game_btn"], callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
         builder.button(text=texts["otc_btn"], callback_data="otc_market", icon_custom_emoji_id="5260687681733533075")
-        builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="def get_message_link(chat, message_id: int) -> str:
-    """Generates a link to a Telegram message."""
-    if chat.username:
-        return f"https://t.me/{chat.username}/{message_id}"
-    
-    # For private groups/channels, use the c/ID format
-    # The ID must be without the -100 prefix
-    chat_id = str(chat.id)
-    if chat_id.startswith("-100"):
-        chat_id = chat_id[4:]
-    elif chat_id.startswith("-"):
-        chat_id = chat_id[1:]
-        
-    return f"https://t.me/c/{chat_id}/{message_id}"
-")
+        builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
         builder.adjust(2, 2)
 
