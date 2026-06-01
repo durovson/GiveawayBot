@@ -358,4 +358,25 @@ class Database:
             logger.error(f"Error getting all linked wallets: {e}")
             return []
 
+    async def get_user_language(self, telegram_id: int) -> str:
+        if not self._check_client(): return 'en'
+        try:
+            response = await self.client.table("users").select("language").eq("telegram_id", telegram_id).execute()
+            if response.data and response.data[0].get("language"):
+                return response.data[0]["language"]
+            return 'en'
+        except Exception as e:
+            logger.error(f"Error getting user language: {e}")
+            return 'en'
+
+    async def update_user_language(self, telegram_id: int, language: str):
+        if not self._check_client(): return
+        try:
+            await self.client.table("users").upsert({
+                "telegram_id": telegram_id,
+                "language": language
+            }).execute()
+        except Exception as e:
+            logger.error(f"Error updating user language: {e}")
+
 db = Database()

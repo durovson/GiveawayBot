@@ -1,8 +1,8 @@
 import asyncio
-import logging
 import html
-import pytz
+import logging
 import secrets
+import pytz
 import json
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
@@ -14,6 +14,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database import db
 from utils import strip_custom_emojis
+from services.localization import get_locale, get_locale_by_lang
 
 logger = logging.getLogger(__name__)
 
@@ -28,15 +29,11 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
         participants = await db.get_participants(giveaway_id)
         safe_title = html.escape(giveaway["title"])
 
+        # Public results strictly in English as requested
+        texts = get_locale_by_lang("en")
+
         if not participants:
-            results_text = (
-                f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {safe_title} /</b>\n"
-                f"┋ <b>Unfortunately, there were no humans...</b>\n"
-                f"┋\n"
-                f"┣<b>GIVEAWAY</b>\n"
-                f"┣[ HUMANS.. NOT APES ]\n"
-                f"┗┅┅┅/ #NOTAPES /"
-            )
+            results_text = texts["no_participants_results"].format(title=safe_title)
         else:
             secrets.SystemRandom().shuffle(participants)
             winners_count_target = min(len(participants), giveaway["winners_count"])
@@ -71,15 +68,9 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
 
             await db.save_winners(giveaway_id, winners_to_save)
 
-            results_text = (
-                f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {safe_title} /</b>\n"
-                f"┋<tg-emoji emoji-id=\"5422626434331990897\">🤩</tg-emoji> <b>GAME OVER!</b>\n"
-                f"┋\n"
-                f"{winners_list_str}"
-                f"┋\n"
-                f"┣<b>GIVEAWAY</b>\n"
-                f"┣[ HUMANS.. NOT APES ]\n"
-                f"┗┅┅┅/ #NOTAPES /"
+            results_text = texts["winners_results"].format(
+                title=safe_title,
+                winners_list=winners_list_str
             )
 
         messages = await db.get_giveaway_messages(giveaway_id)
@@ -129,10 +120,11 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
         if messages:
             await asyncio.gather(*(update_msg(m) for m in messages))
 
-        notify_text = (
-            f"<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji> <b>Розыгрыш «{safe_title}» завершен!</b>\n\n"
-            f"Результаты опубликованы в группе."
-        )
+        # Personal notifications can remain in user's language
+        creator_id = giveaway["creator_id"]
+        creator_texts = await get_locale(creator_id)
+        notify_text = creator_texts["giveaway_finished_notify"].format(title=safe_title)
+
         recipients = {giveaway["creator_id"], ADMIN_ID}
         for r_id in recipients:
             try:
@@ -199,6 +191,8 @@ async def check_periodic_notifications(bot: Bot):
                     if now >= next_send_time:
                         title = notif["title"]
                         text = notif["text"]
+
+                        en_texts = get_locale_by_lang("en")
 
                         ad_text = (
                             f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ / {html.escape(title)} /\n"

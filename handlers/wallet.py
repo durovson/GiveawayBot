@@ -16,6 +16,7 @@ from keyboards.wallet import (
     wallet_connect_keyboard,
     wallet_success_keyboard
 )
+from services.localization import get_locale
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ async def cleanup_connect(user_id: int):
 @router.callback_query(F.data == "wallet_menu")
 async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
+    texts = await get_locale(user_id)
     await db.ensure_user_exists(user_id)
     try:
         wallet = await db.get_user_wallet(user_id)
@@ -38,23 +40,11 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
 
         if is_connected:
             display_addr = short_wallet(wallet)
-            text = (
-                f"┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Wallet Connected</b> /\n"
-                "┋\n"
-                f"┣ <code>{display_addr}</code>\n"
-                "┋\n"
-                f"┗┅┅┅/ <b>You can disconnect this wallet and link a new one if needed.</b> /"
-            )
+            text = texts["wallet_connected"].format(address=display_addr)
         else:
-            text = (
-                f"┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji> <b>Connect Wallet</b> /\n"
-                "┋\n"
-                f"┣ Connect your TON wallet to access holder features and giveaways.\n"
-                "┋\n"
-                f"┗┅┅┅/ <b>Choose your preferred wallet below:</b> /"
-            )
+            text = texts["wallet_connect"]
 
-        kb = wallet_menu_keyboard(is_connected)
+        kb = wallet_menu_keyboard(is_connected, texts)
 
         try:
             await callback.message.delete()
@@ -66,11 +56,12 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
 
     except Exception:
         logger.exception("WALLET_MENU_FAILED user_id=%s", user_id)
-        await callback.answer("Wallet menu error.", show_alert=True)
+        await callback.answer(texts["wallet_menu_error"], show_alert=True)
 
 @router.callback_query(F.data == "disconnect_wallet")
 async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
+    texts = await get_locale(user_id)
     await db.ensure_user_exists(user_id)
     try:
         await db.update_user_wallet(user_id, None)
@@ -81,29 +72,30 @@ async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext):
     except Exception:
         logger.exception("DISCONNECT_WALLET_FAILED user_id=%s", user_id)
 
-    await callback.answer("Wallet disconnected", show_alert=True)
+    await callback.answer(texts["wallet_disconnected_alert"], show_alert=True)
     await wallet_menu(callback, state)
 
 @router.callback_query(F.data == "connect_wallet")
 async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
+    texts = await get_locale(user_id)
     await db.ensure_user_exists(user_id)
     try:
         connector = await TonConnectService.connector(user_id)
         wallets_list = connector.get_wallets()
     except Exception:
         logger.exception("CONNECT_WALLET_GET_CONNECTOR_FAILED user_id=%s", user_id)
-        await callback.answer("Connection service temporarily unavailable.", show_alert=True)
+        await callback.answer(texts["service_unavailable"], show_alert=True)
         return
 
     supported = ["Tonkeeper", "MyTonWallet", "Wallet"]
     available = [w for w in wallets_list if w['name'] in supported]
 
     if not available:
-        await callback.answer("No supported wallets found.", show_alert=True)
+        await callback.answer(texts["no_supported_wallets"], show_alert=True)
         return
 
-    kb = wallet_selection_keyboard(available)
+    kb = wallet_selection_keyboard(available, texts)
 
     try:
         await callback.message.delete()
@@ -111,7 +103,7 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
         pass
 
     msg = await safe_answer(callback.message,
-        "<b>Select your wallet:</b>",
+        texts["select_wallet"],
         reply_markup=kb,
         parse_mode=ParseMode.HTML
     )
@@ -121,6 +113,7 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
 async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
     wallet_name = callback.data.replace("select_wallet_", "")
     user_id = callback.from_user.id
+    texts = await get_locale(user_id)
     await db.ensure_user_exists(user_id)
     try:
         connector = await TonConnectService.connector(user_id)
@@ -128,7 +121,7 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         wallet_config = next((w for w in wallets_list if w['name'] == wallet_name), None)
 
         if not wallet_config:
-            await callback.answer("Wallet configuration not found.", show_alert=True)
+            await callback.answer(texts["config_not_found"], show_alert=True)
             return
 
         if connector.connected:
@@ -140,16 +133,12 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         url = await connector.connect(wallet_config)
     except Exception:
         logger.exception("SELECT_WALLET_FAILED user_id=%s wallet=%s", user_id, wallet_name)
-        await callback.answer("Failed to initiate connection.", show_alert=True)
+        await callback.answer(texts["init_failed"], show_alert=True)
         return
 
-    text = (
-        f"┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / {wallet_name} <b>Connection</b> /\n"
-        f"┋\n"
-        f"┗┅┅┅/ <b>Tap the button below and confirm connection inside</b> {wallet_name}"
-    )
+    text = texts["wallet_connection_title"].format(wallet_name=wallet_name)
 
-    kb = wallet_connect_keyboard(url)
+    kb = wallet_connect_keyboard(url, texts)
 
     try:
         await callback.message.delete()
@@ -193,6 +182,7 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
 
         if raw_address:
             try:
+                texts = await get_locale(user_id)
                 # 1. Clear temporary messages (connect menus)
                 await clear_messages(user_id, state, category=MessageCategory.TEMPORARY)
 
@@ -202,16 +192,14 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
                 # 2. Send success notification (PERSISTENT)
                 msg1 = await safe_bot_send_message(bot,
                     user_id,
-                    f"┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Success!</b> /\n"
-                    f"┋\n"
-                    f"┗┅┅┅/ <b>Your wallet has been linked:</b> <code>{display_addr}</code>",
+                    texts["success_title"].format(address=display_addr),
                     parse_mode=ParseMode.HTML,
                 )
                 await remember_message(state, msg1, category=MessageCategory.PERSISTENT)
 
                 # 3. Send action button
-                kb = wallet_success_keyboard()
-                msg2 = await safe_bot_send_message(bot, user_id, "Return to the game:", reply_markup=kb)
+                kb = wallet_success_keyboard(texts)
+                msg2 = await safe_bot_send_message(bot, user_id, texts["return_to_game"], reply_markup=kb)
                 await remember_message(state, msg2, category=MessageCategory.PERSISTENT)
 
             except Exception:

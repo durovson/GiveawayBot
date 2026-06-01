@@ -1,0 +1,176 @@
+TEXTS = {
+    "giveaway_title": (
+        "┏┅<tg-emoji emoji-id=\"5296348778012361146\">🎁</tg-emoji>┅ / <b>New Giveaway</b> /\n"
+        "┋\n"
+        "┣ Select the type of giveaway.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Choose an option:</b> /"
+    ),
+    "fast_btn": "Fast (No channels)",
+    "partner_btn": "Partner (Required channels)",
+    "back_btn": "Back",
+    "main_menu_btn": "Main menu",
+    "enter_title": (
+        "┏┅<tg-emoji emoji-id=\"5778299625370817409\">📝</tg-emoji>┅ / <b>Giveaway Title</b> /\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Enter the name of your giveaway.</b> /"
+    ),
+    "enter_channels": (
+        "┏┅<tg-emoji emoji-id=\"5258185631355378853\">📢</tg-emoji>┅ / <b>Channels</b> /\n"
+        "┋\n"
+        "┣ Send links to the channels users must subscribe to.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Example:</b> @channel1 https://t.me/channel2 /"
+    ),
+    "bot_not_admin": (
+        "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>The bot is not an administrator in the following channels:</b>\n\n"
+        "{channels}\n\n"
+        "<blockquote>Please add the bot to these channels and grant administrator rights, then click the button below.</blockquote>"
+    ),
+    "i_added_btn": "I added!",
+    "select_type": (
+        "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅ / <b>Giveaway Type</b> /\n"
+        "┋\n"
+        "┣ Select how the winner will be determined.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Choose an option:</b> /"
+    ),
+    "timed_btn": "Certain time",
+    "limited_btn": "By participants",
+    "enter_time": (
+        "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏰</tg-emoji>┅ / <b>Finish Time</b> /\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Format:</b> 18:00 (Today) /"
+    ),
+    "enter_participants": (
+        "┏┅<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>┅ / <b>Participant Limit</b> /\n"
+        "┋\n"
+        "┣ How many participants are needed to finish?\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Select or enter a number:</b> /"
+    ),
+    "custom_option_btn": "Your own option",
+    "enter_winners_count": (
+        "┏┅<tg-emoji emoji-id=\"5805553606635559688\">🏆</tg-emoji>┅ / <b>Number of Winners</b> /\n"
+        "┋\n"
+        "┣ How many winners will there be?\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Select or enter a number:</b> /"
+    ),
+    "enter_prizes": (
+        "┏┅<tg-emoji emoji-id=\"5891105528356018797\">🎁</tg-emoji>┅ / <b>Prizes</b> /\n"
+        "┋\n"
+        "┣ Enter the prizes for the winners.\n"
+        "┣ Each prize on a new line.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Example:</b> 100 TON /"
+    ),
+    "confirm_prizes_btn": "Confirm prizes",
+    "select_access": (
+        "┏┅<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji>┅ / <b>Access Mode</b> /\n"
+        "┋\n"
+        "┣ Who can participate in the giveaway?\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Choose an option:</b> /"
+    ),
+    "access_all_btn": "Public",
+    "access_whitelist_btn": "Whitelist (Users/IDs)",
+    "enter_whitelist": (
+        "┏┅<tg-emoji emoji-id=\"5258476306152038031\">📝</tg-emoji>┅ / <b>Whitelist</b> /\n"
+        "┋\n"
+        "┣ Send the list of allowed User IDs or @usernames.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Example:</b> @user1 12345678 /"
+    ),
+    "preview_title": (
+        "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>PREVIEW</b> /\n"
+        "┋\n"
+        "{preview}\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Check everything and confirm:</b> /"
+    ),
+    "edit_name_btn": "Name",
+    "edit_channels_btn": "Channels",
+    "edit_type_btn": "Type",
+    "edit_mode_btn": "Mode",
+    "edit_winners_btn": "Winners",
+    "edit_prizes_btn": "Prizes",
+    "confirm_btn": "Confirm",
+    "start_btn": "START",
+    "join_btn": "JOIN",
+    "giveaway_created": (
+        "<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji> <b>Giveaway successfully created!</b>\n\n"
+        "<blockquote>It will be automatically published in the group.</blockquote>"
+    ),
+    "make_announcement_btn": "Make announcement",
+    "select_announcement_chat": "Select a group for the announcement:",
+    "prizes": "Prizes",
+    "winners": "Winners",
+    "condition": "Condition",
+    "subscribe_to": "Subscribe to",
+    "ends_at": "Ends at",
+    "ends_when": "Ends at",
+    "participants_suffix": "participants",
+    "winners_are": "Winners are",
+    "congratulations": "Congratulations to the winners!",
+    "no_winners": "No participants in the giveaway.",
+    "whitelist_only": "Whitelist only",
+    "already_joined": "You are already participating!",
+    "not_subscribed": "You are not subscribed to all channels!",
+    "not_whitelisted": "You are not on the whitelist for this giveaway.",
+    "success_join": "You have successfully joined the giveaway!",
+    "giveaway_finished": "The giveaway has already ended.",
+    "no_participants_results": (
+        "┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
+        "┋ <b>Unfortunately, there were no humans...</b>\n"
+        "┋\n"
+        "┣<b>GIVEAWAY</b>\n"
+        "┣[ HUMANS.. NOT APES ]\n"
+        "┗┅┅┅/ #NOTAPES /"
+    ),
+    "winners_results": (
+        "┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
+        "┋<tg-emoji emoji-id=\"5422626434331990897\">🤩</tg-emoji> <b>GAME OVER!</b>\n"
+        "┋\n"
+        "{winners_list}"
+        "┋\n"
+        "┣<b>GIVEAWAY</b>\n"
+        "┣[ HUMANS.. NOT APES ]\n"
+        "┗┅┅┅/ #NOTAPES /"
+    ),
+    "giveaway_finished_notify": (
+        "<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji> <b>Giveaway \"{title}\" finished!</b>\n\n"
+        "Results are published in the group."
+    ),
+    "history_title": (
+        "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>Created Giveaways</b> /\n"
+        "┋\n"
+        "{content}\n"
+        "┗┅┅┅/<tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> <b>Select action:</b> /"
+    ),
+    "no_giveaways": "You haven't created any giveaways yet.",
+    "event_label": "Event",
+    "status_label": "Status",
+    "not_completed": "Not Completed",
+    "completed": "Completed",
+    "announcement_btn": "Announcement: {title}",
+    "participation_prohibited_admin": "❌ Participation is prohibited, you are the leader.",
+    "giveaway_removed": "❌ The giveaway has been removed.",
+    "current_prizes": "Current prizes",
+    "title_label": "Title",
+    "kind_label": "Kind",
+    "channels_label": "Channels",
+    "type_label": "Type",
+    "value_label": "Value",
+    "winners_label": "Winners",
+    "prizes_label": "Prizes",
+    "access_label": "Access",
+    "giveaway_launched_alert": "🚀 Giveaway launched!",
+    "channels_verified_alert": "✅ All channels verified!",
+    "giveaway_public_alert": "✅ Giveaway is now Public.",
+    "whitelist_saved_alert": "✅ Whitelist saved: {count} entries.",
+    "giveaway_launched_success": "<tg-emoji emoji-id=\"5258501105293205250\">👏</tg-emoji> <b>The giveaway has been successfully launched!</b>",
+    "no_chats_available": "<b>There are no chats available for announcement.</b>",
+    "success_msg": "✅ Success",
+    "error_msg": "❌ Error"
+}

@@ -13,6 +13,7 @@ from database import db
 from web_server import app, ping_self
 from services.ton_connect_service import TonConnectService
 from services.leaderboard import LeaderboardService
+from services.localization import get_locale
 
 # Import handlers
 from handlers.main_menu import router as main_menu_router
@@ -41,11 +42,10 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
         if not is_tracked and update.new_chat_member.status == "administrator":
             try:
                 admin_id = update.from_user.id
+                texts = await get_locale(admin_id)
                 await bot.send_message(
                     admin_id,
-                    "<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>The bot is ready to work!</b>\n\n"
-                    "<blockquote>The group has been automatically registered. Now you can create giveaways via private messages with the bot.</blockquote>\n\n"
-                    "<i>If the group does not appear in the list, use the command /setup</i>",
+                    texts["bot_ready"],
                     parse_mode=ParseMode.HTML
                 )
             except Exception:
