@@ -13,7 +13,7 @@ TEXTS = {
     "enter_title": (
         "┏┅<tg-emoji emoji-id=\"5778299625370817409\">📝</tg-emoji>┅ / <b>Название розыгрыша</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>Введите название вашего розыгрыша.</b> /"
+        "┗┅┅┅/ <b>Введите название вашего розыгрыша</b> /"
     ),
     "enter_channels": (
         "┏┅<tg-emoji emoji-id=\"5258185631355378853\">📢</tg-emoji>┅ / <b>Каналы</b> /\n"
@@ -23,9 +23,11 @@ TEXTS = {
         "┗┅┅┅/ <b>Пример:</b> @channel1 https://t.me/channel2 /"
     ),
     "bot_not_admin": (
-        "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>Бот не является администратором в следующих каналах:</b>\n\n"
-        "{channels}\n\n"
-        "<blockquote>Пожалуйста, добавьте бота в эти каналы и дайте права администратора, затем нажмите кнопку ниже.</blockquote>"
+        "┏┅<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji>┅ / <b>Бот не является администратором в следующих каналах:</b> /\n"
+        "┋\n"
+        "{channels}\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Пожалуйста, добавьте бота в эти каналы и дайте права администратора, затем нажмите кнопку ниже</b> /"
     ),
     "i_added_btn": "Я добавил!",
     "select_type": (
@@ -40,7 +42,7 @@ TEXTS = {
     "enter_time": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏰</tg-emoji>┅ / <b>Время завершения</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>Формат:</b> 18:00 (Сегодня) /"
+        "┗┅┅┅/ <b>Формат:</b> 18:00 /"
     ),
     "enter_participants": (
         "┏┅<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>┅ / <b>Лимит участников</b> /\n"
@@ -63,7 +65,7 @@ TEXTS = {
         "┣ Введите призы для победителей.\n"
         "┣ Каждый приз с новой строки.\n"
         "┋\n"
-        "┗┅┅┅/ <b>Пример:</b> 100 TON /"
+        "┗┅┅┅/ <b>Пример:</b> 100 GRAM /"
     ),
     "confirm_prizes_btn": "Подтвердить призы",
     "select_access": (
@@ -96,11 +98,12 @@ TEXTS = {
     "edit_winners_btn": "Победители",
     "edit_prizes_btn": "Призы",
     "confirm_btn": "Подтвердить",
-    "start_btn": "СТАРТ",
+    "start_btn": "START",
     "join_btn": "ПОДПИСАТЬСЯ",
     "giveaway_created": (
-        "<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji> <b>Розыгрыш успешно создан!</b>\n\n"
-        "<blockquote>Он будет автоматически опубликован в группе.</blockquote>"
+        "┏┅<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji>┅ / <b>Розыгрыш успешно создан!</b> /\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Он будет автоматически опубликован в группе</b> /"
     ),
     "make_announcement_btn": "Сделать анонс",
     "select_announcement_chat": "Выберите группу для анонса:",
@@ -121,31 +124,33 @@ TEXTS = {
     "success_join": "Вы успешно присоединились к розыгрышу!",
     "giveaway_finished": "Розыгрыш уже завершен.",
     "no_participants_results": (
-        "┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
+        "┏┅<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
         "┋ <b>Unfortunately, there were no humans...</b>\n"
         "┋\n"
-        "┣<b>GIVEAWAY</b>\n"
-        "┣[ HUMANS.. NOT APES ]\n"
+        "┣ <b>GIVEAWAY</b>\n"
+        "┣ [ HUMANS.. NOT APES ]\n"
         "┗┅┅┅/ #NOTAPES /"
     ),
     "winners_results": (
-        "┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
+        "┏┅<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
         "┋<tg-emoji emoji-id=\"5422626434331990897\">🤩</tg-emoji> <b>GAME OVER!</b>\n"
         "┋\n"
         "{winners_list}"
         "┋\n"
-        "┣<b>GIVEAWAY</b>\n"
-        "┣[ HUMANS.. NOT APES ]\n"
+        "┣ <b>GIVEAWAY</b>\n"
+        "┣ [ HUMANS.. NOT APES ]\n"
         "┗┅┅┅/ #NOTAPES /"
     ),
     "giveaway_finished_notify": (
-        "<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji> <b>Розыгрыш «{title}» завершен!</b>\n\n"
-        "Результаты опубликованы в группе."
+        "┏┅<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji>┅ / <b>Розыгрыш {title} завершен!</b> /\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Результаты опубликованы в группе</b> /"
     ),
     "history_title": (
         "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>Созданные розыгрыши</b> /\n"
         "┋\n"
         "{content}\n"
+        "┋\n"
         "┗┅┅┅/<tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> <b>Выберите действие:</b> /"
     ),
     "no_giveaways": "Вы еще не создали ни одного розыгрыша.",
