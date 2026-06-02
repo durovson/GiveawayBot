@@ -25,12 +25,12 @@ TEXTS = {
     "item_name_title": (
         "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅ / <b>Item Name</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>Please send only the name of the item.</b> /"
+        "┗┅┅┅/ <b>Please send only the name of the item</b> /"
     ),
     "price_title": (
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Price</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>Enter the price in TON or click the \"Skip (Offer)\" button.</b> /"
+        "┗┅┅┅/ <b>Enter the price in GRAM or click the \"Skip (Offer)\" button</b> /"
     ),
     "skip_offer_btn": "Skip (Offer)",
     "offer": "Offer",
