@@ -469,19 +469,18 @@ async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bo
     texts = await get_locale(user_id)
     data = await state.get_data()
 
-    giveaway_id = await db.create_giveaway({
-        "creator_id": user_id,
-        "chat_id": data['chat_id'],
-        "title": data['title'],
-        "kind": data['kind'],
-        "mandatory_channels": data.get('mandatory_channels'),
-        "gtype": data['gtype'],
-        "value": data['mode_value'],
-        "winners_count": data['winners_count'],
-        "prizes": data['prizes'],
-        "allowed_users": data.get('allowed_users'),
-        "status": "active"
-    })
+giveaway = await db.create_giveaway(
+    creator_id=user_id,
+    chat_id=data["chat_id"],
+    title=data["title"],
+    mode=data["mode"],
+    value=data["value"],
+    winners_count=data["winners_count"],
+    prizes=data["prizes"],
+    end_at=data.get("end_at"),
+    mandatory_channels=data.get("mandatory_channels", []),
+    allowed_users=data.get("allowed_users")
+)
 
     await callback.answer(texts["giveaway_launched_alert"])
 
