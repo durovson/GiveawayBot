@@ -11,12 +11,12 @@ TEXTS = {
     "enter_title": (
         "┏┅<tg-emoji emoji-id=\"5778299625370817409\">📝</tg-emoji>┅ / <b>Notification Title</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>Enter a name for this notification.</b> /"
+        "┗┅┅┅/ <b>Enter a name for this notification</b> /"
     ),
     "enter_text": (
         "┏┅<tg-emoji emoji-id=\"5891105528356018797\">💬</tg-emoji>┅ / <b>Notification Text</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>Enter the main text of the message.</b> /"
+        "┗┅┅┅/ <b>Enter the main text of the message</b> /"
     ),
     "enter_buttons": (
         "┏┅<tg-emoji emoji-id=\"5258391025281408576\">🔗</tg-emoji>┅ / <b>Inline Buttons</b> /\n"
@@ -33,7 +33,7 @@ TEXTS = {
     "enter_interval": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅ / <b>Sending Interval</b> /\n"
         "┋\n"
-        "┗┅┅┅/ Select how often the notification should be sent. /"
+        "┗┅┅┅/ <b>Select how often the notification should be sent</b> /"
     ),
     "custom_interval_title": (
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">⏳</tg-emoji>┅ / <b>Custom Interval</b> /\n"
@@ -44,14 +44,14 @@ TEXTS = {
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">⏳</tg-emoji>┅ / <b>Custom Interval</b> /\n"
         "┋\n"
         "┣ <b>Invalid number.</b>\n"
-        "┋ Please enter a number between 15 and 1440.\n"
+        "┋ Please enter a number between 15 and 1440\n"
         "┋\n"
         "┗┅┅┅/ <b>Enter interval in minutes:</b> /"
     ),
     "select_chat_title": (
         "┏┅<tg-emoji emoji-id=\"5258486128742244085\">🤝</tg-emoji>┅ / <b>Select Target Chat</b> /\n"
         "┋\n"
-        "┗┅┅┅/ Select the group where the ad will be posted. /"
+        "┗┅┅┅/ <b>Select the group where the ad will be posted</b> /"
     ),
     "preview_header": "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>Preview</b> /\n┋\n",
     "preview_footer": "\n┋\n┗┅┅┅/ <b>Confirm or edit your notification:</b> /",
@@ -67,7 +67,7 @@ TEXTS = {
     "save_success": (
         "┏<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji>┅ / <b>Notification saved successfully!</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>Your advertisement schedule has been updated and is now active.</b> /"
+        "┗┅┅┅/ <b>Your advertisement schedule has been updated and is now active</b> /"
     ),
     "fill_all_fields": "❌ Please fill all fields before saving!",
     "no_notifs": "No notifications created yet."
