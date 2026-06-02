@@ -70,15 +70,15 @@ async def get_type_keyboard(texts):
 async def get_mode_keyboard(gtype, texts):
     builder = InlineKeyboardBuilder()
     if gtype == "timed":
-        builder.button(text="12:00", style="success", callback_data="val_12:00")
-        builder.button(text="15:00", style="success", callback_data="val_15:00")
-        builder.button(text="18:00", style="success", callback_data="val_18:00")
-        builder.button(text="21:00", style="success", callback_data="val_21:00")
+        builder.button(text="12:00", callback_data="val_12:00")
+        builder.button(text="15:00", callback_data="val_15:00")
+        builder.button(text="18:00", callback_data="val_18:00")
+        builder.button(text="21:00", callback_data="val_21:00")
     else:
-        builder.button(text="1", style="success", callback_data="val_1")
-        builder.button(text="3", style="success", callback_data="val_3")
-        builder.button(text="5", style="success", callback_data="val_5")
-        builder.button(text="10", style="success", callback_data="val_10")
+        builder.button(text="1", callback_data="val_1")
+        builder.button(text="3", callback_data="val_3")
+        builder.button(text="5", callback_data="val_5")
+        builder.button(text="10", callback_data="val_10")
 
     builder.button(text=texts["custom_option_btn"], callback_data="val_custom", icon_custom_emoji_id="5274008024585871702")
     builder.button(text=texts["back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
