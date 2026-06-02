@@ -420,7 +420,11 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
     
     preview_text = await generate_preview(data, texts)
     
+try:
     text = texts["preview_title"].format(preview=preview_text)
+except Exception as e:
+    logger.error(f"preview_title = {texts['preview_title']}")
+    raise
     
     kb = await get_edit_params_keyboard(texts)
     
