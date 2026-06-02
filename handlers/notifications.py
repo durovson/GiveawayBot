@@ -341,9 +341,6 @@ async def toggle_status(callback: types.CallbackQuery, state: FSMContext, bot: B
 async def confirm_save(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    try: await callback.answer()
-    except: pass
-
     data = await state.get_data()
     title = data.get('title')
     text = data.get('text')
@@ -353,6 +350,8 @@ async def confirm_save(callback: types.CallbackQuery, state: FSMContext, bot: Bo
     if not all([title, text, interval, chat_id]):
         await callback.answer(texts["fill_all_fields"], show_alert=True)
         return
+
+    await callback.answer()
 
     notif_data = {
         "title": title,
@@ -380,25 +379,25 @@ async def handle_notif_back(callback: types.CallbackQuery, state: FSMContext, bo
     data = await state.get_data()
     is_editing = data.get('is_editing')
 
-    if is_editing or current_state == NotificationStates.PREVIEW:
+    if is_editing or current_state == NotificationStates.PREVIEW.state:
         await state.update_data(is_editing=False)
         await show_notification_preview(callback, state, bot)
         return
 
-    if current_state == NotificationStates.ENTER_TITLE:
+    if current_state == NotificationStates.ENTER_TITLE.state:
         await start_notification_management(callback, state)
-    elif current_state == NotificationStates.ENTER_TEXT:
+    elif current_state == NotificationStates.ENTER_TEXT.state:
         await add_new_notification(callback, state)
-    elif current_state == NotificationStates.ENTER_BUTTONS:
+    elif current_state == NotificationStates.ENTER_BUTTONS.state:
         user_id = callback.from_user.id
         texts = await get_locale(user_id)
         await safe_edit_text(callback, texts["enter_text"], reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.ENTER_TEXT)
-    elif current_state == NotificationStates.ENTER_INTERVAL:
+    elif current_state == NotificationStates.ENTER_INTERVAL.state:
         await show_btn_input_screen(callback, state, bot)
-    elif current_state == NotificationStates.ENTER_CUSTOM_INTERVAL:
+    elif current_state == NotificationStates.ENTER_CUSTOM_INTERVAL.state:
         await show_interval_selector(callback, state, bot)
-    elif current_state == NotificationStates.SELECT_CHAT:
+    elif current_state == NotificationStates.SELECT_CHAT.state:
         await show_interval_selector(callback, state, bot)
     else:
         await start_notification_management(callback, state)

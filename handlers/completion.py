@@ -37,9 +37,13 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
         else:
             secrets.SystemRandom().shuffle(participants)
             winners_count_target = min(len(participants), giveaway["winners_count"])
-            winners = participants[:winners_count_target]
-
-            prizes = giveaway["prizes"]
+            if winners_count_target <= 0:
+                results_text = texts["no_participants_results"].format(title=safe_title)
+                winners = []
+                prizes = []
+            else:
+                winners = participants[:winners_count_target]
+                prizes = giveaway["prizes"]
             winners_prizes = [[] for _ in range(len(winners))]
 
             for idx, prize in enumerate(prizes):
@@ -66,12 +70,13 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
                     mention = f"<b><a href=\"tg://user?id={w['user_id']}\">{safe_username}</a></b>"
                 winners_list_str += f"┋<tg-emoji emoji-id=\"5274159185959872191\">👑</tg-emoji> {mention} — {html.escape(prizes_str)}\n"
 
-            await db.save_winners(giveaway_id, winners_to_save)
+            if winners_to_save:
+                await db.save_winners(giveaway_id, winners_to_save)
 
-            results_text = texts["winners_results"].format(
-                title=safe_title,
-                winners_list=winners_list_str
-            )
+                results_text = texts["winners_results"].format(
+                    title=safe_title,
+                    winners_list=winners_list_str
+                )
 
         messages = await db.get_giveaway_messages(giveaway_id)
 
