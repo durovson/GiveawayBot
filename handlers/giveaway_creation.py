@@ -417,21 +417,34 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
     user_id = event.from_user.id if isinstance(event, types.CallbackQuery) else event.chat.id
     texts = await get_locale(user_id)
     data = await state.get_data()
-    
+
     preview_text = await generate_preview(data, texts)
-    
-try:
-    text = texts["preview_title"].format(preview=preview_text)
-except Exception as e:
-    logger.error(f"preview_title = {texts['preview_title']}")
-    raise
-    
+
+    try:
+        text = texts["preview_title"].format(preview=preview_text)
+    except Exception as e:
+        logger.error(f"preview_title = {texts.get('preview_title')}")
+        raise
+
     kb = await get_edit_params_keyboard(texts)
-    
+
     if isinstance(event, types.CallbackQuery):
-        await safe_edit_text(event, text, reply_markup=kb, parse_mode=ParseMode.HTML)
+        await safe_edit_text(
+            event,
+            text,
+            reply_markup=kb,
+            parse_mode=ParseMode.HTML
+        )
     else:
-        await safe_bot_edit_text(bot, event.chat.id, data['last_msg_id'], text, reply_markup=kb, parse_mode=ParseMode.HTML)
+        await safe_bot_edit_text(
+            bot,
+            event.chat.id,
+            data['last_msg_id'],
+            text,
+            reply_markup=kb,
+            parse_mode=ParseMode.HTML
+        )
+
     await state.set_state(GiveawayCreation.CONFIRMATION)
 
 async def generate_preview(data, texts):
