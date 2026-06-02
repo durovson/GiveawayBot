@@ -4,7 +4,7 @@ TEXTS = {
         "┋\n"
         "┣ <code>{address}</code>\n"
         "┋\n"
-        "┗┅┅┅/ <b>You can disconnect this wallet and link a new one if needed.</b> /"
+        "┗┅┅┅/ <b>You can disconnect this wallet and link a new one if needed</b> /"
     ),
     "wallet_connect": (
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji> <b>Connect Wallet</b> /\n"
