@@ -278,7 +278,10 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
             "┣┅ / #NOTAPES /"
         )
 
-    preview_text = texts["preview_title"].format(post_text=post_text)
+preview_text = texts["preview_title"].format(
+    post_text=post_text,
+    preview=post_text
+)
 
     builder = InlineKeyboardBuilder()
     builder.button(text=texts["edit_item_btn"], callback_data="otc_edit_item", icon_custom_emoji_id="5257965174979042426")
