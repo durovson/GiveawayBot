@@ -21,7 +21,7 @@ async def history_created(callback: types.CallbackQuery):
     builder = InlineKeyboardBuilder()
 
     if not giveaways:
-        text = texts["history_title"].format(content=texts["no_giveaways"])
+        text = texts["giveaway_history_title"].format(content=texts["giveaway_no_giveaways"])
     else:
         # Sort by id descending and take 5
         giveaways.sort(key=lambda x: x.get('id', 0), reverse=True)
@@ -30,21 +30,21 @@ async def history_created(callback: types.CallbackQuery):
         blocks = []
 
         for g in top_giveaways:
-            status = texts["not_completed"] if g['status'] == 'active' else texts["completed"]
+            status = texts["giveaway_not_completed"] if g['status'] == 'active' else texts["giveaway_completed"]
             title = html.escape(g.get('title') or 'Untitled')
 
             # Start entry content
-            entry = f"<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>{texts['event_label']}:</b> {title}\n"
-            entry += f"<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>{texts['status_label']}:</b> {status}"
+            entry = f"<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>{texts['giveaway_event_label']}:</b> {title}\n"
+            entry += f"<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>{texts['giveaway_status_label']}:</b> {status}"
 
             if g['status'] == 'active':
-                builder.button(text=texts["announcement_btn"].format(title=title), callback_data=f"make_announcement_{g['id']}", icon_custom_emoji_id="5260268501515377807")
+                builder.button(text=texts["giveaway_announcement_btn"].format(title=title), callback_data=f"make_announcement_{g['id']}", icon_custom_emoji_id="5260268501515377807")
 
             # If completed, add winners list on new lines
             if g['status'] != 'active':
                 winners = await db.get_giveaway_winners(g['id'])
                 if winners:
-                    entry += f"\n\n<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>{texts['winners']}:</b>"
+                    entry += f"\n\n<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>{texts['giveaway_winners']}:</b>"
                     for w in winners:
                         w_name = html.escape(w.get('username') or f"ID:{w.get('user_id')}")
                         w_prize = html.escape(w.get('prize', 'Prize'))
@@ -54,9 +54,9 @@ async def history_created(callback: types.CallbackQuery):
             blocks.append(f"<blockquote>{entry.strip()}</blockquote>")
 
         # Combine all parts
-        text = texts["history_title"].format(content="\n".join(blocks))
+        text = texts["giveaway_history_title"].format(content="\n".join(blocks))
 
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
@@ -80,7 +80,7 @@ async def join_giveaway(callback: types.CallbackQuery):
         return
 
     if callback.from_user.username and callback.from_user.username.lower() == "klassikaone":
-        await callback.answer(texts["participation_prohibited_admin"], show_alert=True)
+        await callback.answer(texts["giveaway_participation_prohibited_admin"], show_alert=True)
         return
 
     whitelist = giveaway.get('allowed_users')
@@ -92,7 +92,7 @@ async def join_giveaway(callback: types.CallbackQuery):
 
         if not is_allowed:
             await callback.answer(
-                texts["not_whitelisted"],
+                texts["giveaway_not_whitelisted"],
                 show_alert=True
             )
             return
@@ -113,12 +113,12 @@ async def join_giveaway(callback: types.CallbackQuery):
     if unsubscribed_from:
         # Note: We keep channel IDs as is, but could potentially try to get titles
         channels_str = ", ".join(unsubscribed_from)
-        await callback.answer(f"{texts['not_subscribed']} ({channels_str})", show_alert=True)
+        await callback.answer(f"{texts['giveaway_not_subscribed']} ({channels_str})", show_alert=True)
         return
 
     success = await db.add_participant(giveaway_id, user_id, username)
     if success:
-        await callback.answer(texts["success_join"], show_alert=True)
+        await callback.answer(texts["giveaway_success_join"], show_alert=True)
         if giveaway['mode'] == 'limited':
             participants = await db.get_participants(giveaway_id)
             try:
@@ -129,4 +129,4 @@ async def join_giveaway(callback: types.CallbackQuery):
             except ValueError:
                 pass
     else:
-        await callback.answer(texts["already_joined"], show_alert=True)
+        await callback.answer(texts["giveaway_already_joined"], show_alert=True)

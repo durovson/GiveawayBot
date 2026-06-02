@@ -6,19 +6,19 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию:</b> /"
     ),
-    "add_new_btn": "Добавить",
-    "main_menu_btn": "Главное меню",
-    "enter_title": (
+    "notif_add_new_btn": "Добавить",
+    "notif_main_menu_btn": "Главное меню",
+    "notif_enter_title": (
         "┏┅<tg-emoji emoji-id=\"5778299625370817409\">📝</tg-emoji>┅ / <b>Название уведомления</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>Введите название для этого уведомления</b> /"
     ),
-    "enter_text": (
+    "notif_enter_text": (
         "┏┅<tg-emoji emoji-id=\"5891105528356018797\">💬</tg-emoji>┅ / <b>Текст уведомления</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>Введите основной текст сообщения</b> /"
     ),
-    "enter_buttons": (
+    "notif_enter_buttons": (
         "┏┅<tg-emoji emoji-id=\"5258391025281408576\">🔗</tg-emoji>┅ / <b>Inline-кнопки</b> /\n"
         "┋\n"
         "┣ Отправьте названия кнопок и ссылки.\n"
@@ -28,19 +28,19 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Пример:</b> Купить - https://t.me/shop /"
     ),
-    "skip_btn": "Пропустить",
-    "back_btn": "Назад",
-    "enter_interval": (
+    "notif_skip_btn": "Пропустить",
+    "notif_back_btn": "Назад",
+    "notif_enter_interval": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅ / <b>Интервал отправки</b> /\n"
         "┋\n"
         "┗┅┅┅/ Выберите, как часто должно отправляться уведомление /"
     ),
-    "custom_interval_title": (
+    "notif_custom_interval_title": (
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">⏳</tg-emoji>┅ / <b>Свой интервал</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>Введите интервал в минутах (мин 15, макс 1440):</b> /"
     ),
-    "invalid_interval": (
+    "notif_invalid_interval": (
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">⏳</tg-emoji>┅ / <b>Свой интервал</b> /\n"
         "┋\n"
         "┣ <b>Некорректное число.</b>\n"
@@ -48,27 +48,27 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Введите интервал в минутах:</b> /"
     ),
-    "select_chat_title": (
+    "notif_select_chat_title": (
         "┏┅<tg-emoji emoji-id=\"5258486128742244085\">🤝</tg-emoji>┅ / <b>Выберите чат</b> /\n"
         "┋\n"
         "┗┅┅┅/ Выберите группу, в которой будет опубликовано объявление /"
     ),
-    "preview_header": "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>Предпросмотр</b> /\n┋\n",
-    "preview_footer": "\n┋\n┗┅┅┅/ <b>Подтвердите или отредактируйте уведомление:</b> /",
-    "edit_title_btn": "Изм. название",
-    "edit_text_btn": "Изм. текст",
-    "edit_buttons_btn": "Изм. кнопки",
-    "edit_interval_btn": "Изм. интервал",
-    "edit_chat_btn": "Изм. чат",
-    "toggle_status_btn": "Статус: {status}",
-    "save_btn": "Сохранить",
-    "active": "Активно",
-    "paused": "Приостановлено",
-    "save_success": (
+    "notif_preview_header": "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>Предпросмотр</b> /\n┋\n",
+    "notif_preview_footer": "\n┋\n┗┅┅┅/ <b>Подтвердите или отредактируйте уведомление:</b> /",
+    "notif_edit_title_btn": "Изм. название",
+    "notif_edit_text_btn": "Изм. текст",
+    "notif_edit_buttons_btn": "Изм. кнопки",
+    "notif_edit_interval_btn": "Изм. интервал",
+    "notif_edit_chat_btn": "Изм. чат",
+    "notif_toggle_status_btn": "Статус: {status}",
+    "notif_save_btn": "Сохранить",
+    "notif_active": "Активно",
+    "notif_paused": "Приостановлено",
+    "notif_save_success": (
         "┏<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji>┅ / <b>Уведомление успешно сохранено!</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>График ваших объявлений был обновлен и теперь активен</b> /"
     ),
-    "fill_all_fields": "❌ Пожалуйста, заполните все поля перед сохранением!",
-    "no_notifs": "Уведомления еще не созданы."
+    "notif_fill_all_fields": "❌ Пожалуйста, заполните все поля перед сохранением!",
+    "notif_no_notifs": "Уведомления еще не созданы."
 }

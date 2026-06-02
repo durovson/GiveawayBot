@@ -85,14 +85,14 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
         wallets_list = connector.get_wallets()
     except Exception:
         logger.exception("CONNECT_WALLET_GET_CONNECTOR_FAILED user_id=%s", user_id)
-        await callback.answer(texts["service_unavailable"], show_alert=True)
+        await callback.answer(texts["wallet_service_unavailable"], show_alert=True)
         return
 
     supported = ["Tonkeeper", "MyTonWallet", "Wallet"]
     available = [w for w in wallets_list if w['name'] in supported]
 
     if not available:
-        await callback.answer(texts["no_supported_wallets"], show_alert=True)
+        await callback.answer(texts["wallet_no_supported_wallets"], show_alert=True)
         return
 
     kb = wallet_selection_keyboard(available, texts)
@@ -103,7 +103,7 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
         pass
 
     msg = await safe_answer(callback.message,
-        texts["select_wallet"],
+        texts["wallet_select_wallet"],
         reply_markup=kb,
         parse_mode=ParseMode.HTML
     )
@@ -121,7 +121,7 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         wallet_config = next((w for w in wallets_list if w['name'] == wallet_name), None)
 
         if not wallet_config:
-            await callback.answer(texts["config_not_found"], show_alert=True)
+            await callback.answer(texts["wallet_config_not_found"], show_alert=True)
             return
 
         if connector.connected:
@@ -133,7 +133,7 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
         url = await connector.connect(wallet_config)
     except Exception:
         logger.exception("SELECT_WALLET_FAILED user_id=%s wallet=%s", user_id, wallet_name)
-        await callback.answer(texts["init_failed"], show_alert=True)
+        await callback.answer(texts["wallet_init_failed"], show_alert=True)
         return
 
     text = texts["wallet_connection_title"].format(wallet_name=wallet_name)
@@ -192,14 +192,14 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
                 # 2. Send success notification (PERSISTENT)
                 msg1 = await safe_bot_send_message(bot,
                     user_id,
-                    texts["success_title"].format(address=display_addr),
+                    texts["wallet_success_title"].format(address=display_addr),
                     parse_mode=ParseMode.HTML,
                 )
                 await remember_message(state, msg1, category=MessageCategory.PERSISTENT)
 
                 # 3. Send action button
                 kb = wallet_success_keyboard(texts)
-                msg2 = await safe_bot_send_message(bot, user_id, texts["return_to_game"], reply_markup=kb)
+                msg2 = await safe_bot_send_message(bot, user_id, texts["wallet_return_to_game"], reply_markup=kb)
                 await remember_message(state, msg2, category=MessageCategory.PERSISTENT)
 
             except Exception:

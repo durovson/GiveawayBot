@@ -13,28 +13,28 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите предпочтительный кошелек ниже:</b> /"
     ),
-    "disconnect_btn": "Отключить",
-    "connect_btn": "Подключить кошелек",
-    "back_btn": "Назад",
-    "select_wallet": "<b>Выберите кошелек:</b>",
+    "wallet_disconnect_btn": "Отключить",
+    "wallet_connect_btn": "Подключить кошелек",
+    "wallet_back_btn": "Назад",
+    "wallet_select_wallet": "<b>Выберите кошелек:</b>",
     "wallet_connection_title": (
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / Подключение <b>{wallet_name}</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>Нажмите кнопку ниже и подтвердите подключение внутри</b> {wallet_name}"
     ),
-    "open_wallet_btn": "Открыть кошелек",
-    "cancel_btn": "Отмена",
-    "success_title": (
+    "wallet_open_wallet_btn": "Открыть кошелек",
+    "wallet_cancel_btn": "Отмена",
+    "wallet_success_title": (
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Успешно!</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>Ваш кошелек привязан:</b> <code>{address}</code>"
     ),
-    "return_to_game": "Вернуться в игру:",
-    "game_menu_btn": "Игровое меню",
+    "wallet_return_to_game": "Вернуться в игру:",
+    "wallet_game_menu_btn": "Игровое меню",
     "wallet_menu_error": "Ошибка меню кошелька.",
     "wallet_disconnected_alert": "Кошелек отключен",
-    "service_unavailable": "Сервис подключения временно недоступен.",
-    "no_supported_wallets": "Поддерживаемые кошельки не найдены.",
-    "config_not_found": "Конфигурация кошелька не найдена.",
-    "init_failed": "Не удалось инициировать подключение."
+    "wallet_service_unavailable": "Сервис подключения временно недоступен.",
+    "wallet_no_supported_wallets": "Поддерживаемые кошельки не найдены.",
+    "wallet_config_not_found": "Конфигурация кошелька не найдена.",
+    "wallet_init_failed": "Не удалось инициировать подключение."
 }

@@ -103,7 +103,7 @@ async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMConte
     builder = InlineKeyboardBuilder()
     for chat in admin_chats:
         builder.button(text=chat['title'], callback_data=f"chat_{chat['chat_id']}")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
     msg = await safe_edit_text(callback, texts["select_group_giveaway"], reply_markup=builder.as_markup())
@@ -132,7 +132,7 @@ async def set_language_handler(callback: types.CallbackQuery, state: FSMContext)
 
     # Reload main menu
     texts = await get_locale(callback.from_user.id)
-    await callback.answer(texts["success_msg"])
+    await callback.answer(texts["giveaway_success_msg"])
     await safe_edit_text(
         callback,
         texts["main_menu_text"],
