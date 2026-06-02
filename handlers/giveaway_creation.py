@@ -37,33 +37,33 @@ class GiveawayCreation(StatesGroup):
 
 async def get_giveaway_kind_keyboard(texts):
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["fast_btn"], callback_data="kind_fast", icon_custom_emoji_id="5323761960829862762")
-    builder.button(text=texts["partner_btn"], callback_data="kind_partner", icon_custom_emoji_id="5258486128742244085")
-    builder.button(text=texts["back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_fast_btn"], callback_data="kind_fast", icon_custom_emoji_id="5323761960829862762")
+    builder.button(text=texts["giveaway_partner_btn"], callback_data="kind_partner", icon_custom_emoji_id="5258486128742244085")
+    builder.button(text=texts["giveaway_back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
     return builder.as_markup()
 
 async def get_nav_keyboard(texts):
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2)
     return builder.as_markup()
 
 async def get_recheck_keyboard(texts):
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["i_added_btn"], callback_data="recheck_admin", icon_custom_emoji_id="5260726538302660868")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_i_added_btn"], callback_data="recheck_admin", icon_custom_emoji_id="5260726538302660868")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
     return builder.as_markup()
 
 async def get_type_keyboard(texts):
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["timed_btn"], callback_data="type_timed", icon_custom_emoji_id="5850317551090800862")
-    builder.button(text=texts["limited_btn"], callback_data="type_limited", icon_custom_emoji_id="6032594876506312598")
-    builder.button(text=texts["back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_timed_btn"], callback_data="type_timed", icon_custom_emoji_id="5850317551090800862")
+    builder.button(text=texts["giveaway_limited_btn"], callback_data="type_limited", icon_custom_emoji_id="6032594876506312598")
+    builder.button(text=texts["giveaway_back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2, 2)
     return builder.as_markup()
 
@@ -80,9 +80,9 @@ async def get_mode_keyboard(gtype, texts):
         builder.button(text="5", callback_data="val_5")
         builder.button(text="10", callback_data="val_10")
 
-    builder.button(text=texts["custom_option_btn"], callback_data="val_custom", icon_custom_emoji_id="5274008024585871702")
-    builder.button(text=texts["back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_custom_option_btn"], callback_data="val_custom", icon_custom_emoji_id="5274008024585871702")
+    builder.button(text=texts["giveaway_back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2, 2, 1, 2)
     return builder.as_markup()
 
@@ -90,18 +90,18 @@ async def get_winners_keyboard(texts):
     builder = InlineKeyboardBuilder()
     for i in [1, 3, 5, 10]:
         builder.button(text=str(i), callback_data=f"win_{i}")
-    builder.button(text=texts["custom_option_btn"], callback_data="win_custom", icon_custom_emoji_id="5274008024585871702")
-    builder.button(text=texts["back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_custom_option_btn"], callback_data="win_custom", icon_custom_emoji_id="5274008024585871702")
+    builder.button(text=texts["giveaway_back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2, 2, 1, 2)
     return builder.as_markup()
 
 async def get_prizes_keyboard(prizes, texts):
     builder = InlineKeyboardBuilder()
     if prizes:
-        builder.button(text=texts["confirm_prizes_btn"], callback_data="confirm_prizes", icon_custom_emoji_id="5260726538302660868", style="success")
-    builder.button(text=texts["back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+        builder.button(text=texts["giveaway_confirm_prizes_btn"], callback_data="confirm_prizes", icon_custom_emoji_id="5260726538302660868", style="success")
+    builder.button(text=texts["giveaway_back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1, 2)
     return builder.as_markup()
 
@@ -116,23 +116,23 @@ def build_timed_end_at(value: str):
 
 async def get_access_type_keyboard(texts):
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["access_all_btn"], callback_data="access_all", icon_custom_emoji_id="5258486128742244085")
-    builder.button(text=texts["access_whitelist_btn"], callback_data="access_whitelist", icon_custom_emoji_id="5258476306152038031")
-    builder.button(text=texts["back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_access_all_btn"], callback_data="access_all", icon_custom_emoji_id="5258486128742244085")
+    builder.button(text=texts["giveaway_access_whitelist_btn"], callback_data="access_whitelist", icon_custom_emoji_id="5258476306152038031")
+    builder.button(text=texts["giveaway_back_btn"], callback_data="back", icon_custom_emoji_id="5260687119092817530")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1, 1, 2)
     return builder.as_markup()
 
 async def get_edit_params_keyboard(texts):
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["edit_name_btn"], callback_data="edit_title", icon_custom_emoji_id="5778299625370817409")
-    builder.button(text=texts["edit_channels_btn"], callback_data="edit_channels", icon_custom_emoji_id="5258185631355378853")
-    builder.button(text=texts["edit_type_btn"], callback_data="edit_type", icon_custom_emoji_id="5258185631355378853")
-    builder.button(text=texts["edit_mode_btn"], callback_data="edit_mode", icon_custom_emoji_id="5850317551090800862")
-    builder.button(text=texts["edit_winners_btn"], callback_data="edit_winners", icon_custom_emoji_id="5805553606635559688")
-    builder.button(text=texts["edit_prizes_btn"], callback_data="edit_prizes", icon_custom_emoji_id="5891105528356018797")
-    builder.button(text=texts["confirm_btn"], callback_data="confirm_giveaway", icon_custom_emoji_id="5258073068852485953", style="success")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_edit_name_btn"], callback_data="edit_title", icon_custom_emoji_id="5778299625370817409")
+    builder.button(text=texts["giveaway_edit_channels_btn"], callback_data="edit_channels", icon_custom_emoji_id="5258185631355378853")
+    builder.button(text=texts["giveaway_edit_type_btn"], callback_data="edit_type", icon_custom_emoji_id="5258185631355378853")
+    builder.button(text=texts["giveaway_edit_mode_btn"], callback_data="edit_mode", icon_custom_emoji_id="5850317551090800862")
+    builder.button(text=texts["giveaway_edit_winners_btn"], callback_data="edit_winners", icon_custom_emoji_id="5805553606635559688")
+    builder.button(text=texts["giveaway_edit_prizes_btn"], callback_data="edit_prizes", icon_custom_emoji_id="5891105528356018797")
+    builder.button(text=texts["giveaway_confirm_btn"], callback_data="confirm_giveaway", icon_custom_emoji_id="5258073068852485953", style="success")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2, 2, 2, 1, 1)
     return builder.as_markup()
 
@@ -143,7 +143,7 @@ async def process_chat_selection(callback: types.CallbackQuery, state: FSMContex
     texts = await get_locale(user_id)
     chat_id = int(callback.data.split("_")[1])
     await state.update_data(chat_id=chat_id)
-    await safe_edit_text(callback, texts["enter_title"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
+    await safe_edit_text(callback, texts["giveaway_enter_title"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
     await state.set_state(GiveawayCreation.ENTER_NAME)
 
 @router.message(GiveawayCreation.ENTER_NAME, F.text)
@@ -175,7 +175,7 @@ async def process_kind(callback: types.CallbackQuery, state: FSMContext, bot: Bo
     await state.update_data(kind=kind)
 
     if kind == "partner":
-        await safe_edit_text(callback, texts["enter_channels"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_channels"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.ENTER_CHANNELS)
     else:
         await state.update_data(mandatory_channels=None)
@@ -209,7 +209,7 @@ async def check_bot_admin_in_channels(message: types.Message | types.CallbackQue
 
     if failed_channels:
         failed_str = "\n".join(failed_channels)
-        text = texts["bot_not_admin"].format(channels=failed_str)
+        text = texts["giveaway_bot_not_admin"].format(channels=failed_str)
         if isinstance(message, types.CallbackQuery):
             await safe_edit_text(message, text, reply_markup=await get_recheck_keyboard(texts), parse_mode=ParseMode.HTML)
         else:
@@ -217,7 +217,7 @@ async def check_bot_admin_in_channels(message: types.Message | types.CallbackQue
         await state.set_state(GiveawayCreation.WAITING_FOR_BOT_ADMIN)
         return
 
-    await callback_answer_wrapper(message, texts["channels_verified_alert"])
+    await callback_answer_wrapper(message, texts["giveaway_channels_verified_alert"])
     if data.get('is_editing'):
         await show_edit_params(message, state, bot)
     else:
@@ -237,7 +237,7 @@ async def ask_access_type(message: types.Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     last_msg_id = data.get('last_msg_id')
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-        texts["select_access"],
+        texts["giveaway_select_access"],
         reply_markup=await get_access_type_keyboard(texts),
         parse_mode=ParseMode.HTML
     )
@@ -257,14 +257,14 @@ async def process_access_choice(callback: types.CallbackQuery, state: FSMContext
             await show_edit_params(callback, state, bot)
         else:
             await safe_edit_text(callback,
-                texts["select_type"],
+                texts["giveaway_select_type"],
                 reply_markup=await get_type_keyboard(texts),
                 parse_mode=ParseMode.HTML
             )
             await state.set_state(GiveawayCreation.SELECT_TYPE)
     elif callback.data == "access_whitelist":
         await safe_edit_text(callback,
-            texts["enter_whitelist"],
+            texts["giveaway_enter_whitelist"],
             reply_markup=await get_nav_keyboard(texts),
             parse_mode=ParseMode.HTML
         )
@@ -291,7 +291,7 @@ async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot)
         await show_edit_params(message, state, bot)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-            texts["select_type"],
+            texts["giveaway_select_type"],
             reply_markup=await get_type_keyboard(texts),
             parse_mode=ParseMode.HTML
         )
@@ -306,9 +306,9 @@ async def select_type(callback: types.CallbackQuery, state: FSMContext, bot: Bot
     await state.update_data(gtype=gtype)
 
     if gtype == "timed":
-        text = texts["enter_time"]
+        text = texts["giveaway_enter_time"]
     else:
-        text = texts["enter_participants"]
+        text = texts["giveaway_enter_participants"]
 
     await safe_edit_text(callback, text, reply_markup=await get_mode_keyboard(gtype, texts), parse_mode=ParseMode.HTML)
     await state.set_state(GiveawayCreation.SELECT_MODE_VALUE)
@@ -329,7 +329,7 @@ async def select_mode_value(callback: types.CallbackQuery, state: FSMContext, bo
             await show_edit_params(callback, state, bot)
         else:
             await safe_edit_text(callback,
-                texts["enter_winners_count"],
+                texts["giveaway_enter_winners_count"],
                 reply_markup=await get_winners_keyboard(texts),
                 parse_mode=ParseMode.HTML
             )
@@ -347,7 +347,7 @@ async def enter_custom_mode_value(message: types.Message, state: FSMContext, bot
     value = message.text.strip()
 
     if gtype == "timed" and build_timed_end_at(value) is None:
-        await safe_answer(message, texts["enter_time"], parse_mode=ParseMode.HTML)
+        await safe_answer(message, texts["giveaway_enter_time"], parse_mode=ParseMode.HTML)
         return
     if gtype == "limited" and (not value.isdigit() or int(value) <= 0):
         await safe_answer(message, texts["enter_number_error"], parse_mode=ParseMode.HTML)
@@ -361,7 +361,7 @@ async def enter_custom_mode_value(message: types.Message, state: FSMContext, bot
         await show_edit_params(message, state, bot)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-            texts["enter_winners_count"],
+            texts["giveaway_enter_winners_count"],
             reply_markup=await get_winners_keyboard(texts),
             parse_mode=ParseMode.HTML
         )
@@ -374,7 +374,7 @@ async def select_winners_count(callback: types.CallbackQuery, state: FSMContext,
     await callback.answer()
     val = callback.data.split("_")[1]
     if val == "custom":
-        await safe_edit_text(callback, texts["enter_winners_count"], parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_winners_count"], parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.CUSTOM_WINNERS_COUNT)
     else:
         await state.update_data(winners_count=int(val))
@@ -383,7 +383,7 @@ async def select_winners_count(callback: types.CallbackQuery, state: FSMContext,
             await show_edit_params(callback, state, bot)
         else:
             await safe_edit_text(callback,
-                texts["enter_prizes"],
+                texts["giveaway_enter_prizes"],
                 reply_markup=await get_prizes_keyboard([], texts),
                 parse_mode=ParseMode.HTML
             )
@@ -408,7 +408,7 @@ async def enter_custom_winners_count(message: types.Message, state: FSMContext, 
         await show_edit_params(message, state, bot)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
-            texts["enter_prizes"],
+            texts["giveaway_enter_prizes"],
             reply_markup=await get_prizes_keyboard([], texts),
             parse_mode=ParseMode.HTML
         )
@@ -430,7 +430,7 @@ async def process_prizes(message: types.Message, state: FSMContext, bot: Bot):
     last_msg_id = data.get('last_msg_id')
 
     prizes_list = "\n".join([f"• {p}" for p in prizes])
-    text = texts["enter_prizes"] + f"\n\n<b>{texts['current_prizes']}:</b>\n{prizes_list}"
+    text = texts["giveaway_enter_prizes"] + f"\n\n<b>{texts['giveaway_current_prizes']}:</b>\n{prizes_list}"
 
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id, text, reply_markup=await get_prizes_keyboard(prizes, texts), parse_mode=ParseMode.HTML)
 
@@ -446,12 +446,12 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
 
     preview_text = await generate_preview(data, texts)
     try:
-        text = texts["preview_title"].format(
+        text = texts["giveaway_preview_title"].format(
             preview=preview_text,
             post_text=preview_text
         )
     except Exception as e:
-        logger.error(f"preview_title = {texts.get('preview_title')}")
+        logger.error(f"preview_title = {texts.get('giveaway_preview_title')}")
         raise
 
     kb = await get_edit_params_keyboard(texts)
@@ -467,18 +467,18 @@ async def show_edit_params(event, state: FSMContext, bot: Bot):
     await state.set_state(GiveawayCreation.CONFIRMATION)
 
 async def generate_preview(data, texts):
-    kind_label = texts["fast_btn"] if data['kind'] == "fast" else texts["partner_btn"]
-    type_label = texts["timed_btn"] if data['gtype'] == "timed" else texts["limited_btn"]
+    kind_label = texts["giveaway_fast_btn"] if data['kind'] == "fast" else texts["giveaway_partner_btn"]
+    type_label = texts["giveaway_timed_btn"] if data['gtype'] == "timed" else texts["giveaway_limited_btn"]
 
-    preview = f"<b>{texts['title_label']}:</b> {html.escape(data['title'])}\n"
-    preview += f"<b>{texts['kind_label']}:</b> {kind_label}\n"
+    preview = f"<b>{texts['giveaway_title_label']}:</b> {html.escape(data['title'])}\n"
+    preview += f"<b>{texts['giveaway_kind_label']}:</b> {kind_label}\n"
     if data.get('mandatory_channels'):
-        preview += f"<b>{texts['channels_label']}:</b> {', '.join(data['mandatory_channels'])}\n"
-    preview += f"<b>{texts['type_label']}:</b> {type_label}\n"
-    preview += f"<b>{texts['value_label']}:</b> {data['mode_value']}\n"
-    preview += f"<b>{texts['winners_label']}:</b> {data['winners_count']}\n"
-    preview += f"<b>{texts['prizes_label']}:</b> {', '.join(data['prizes'])}\n"
-    preview += f"<b>{texts['access_label']}:</b> {texts['access_all_btn'] if not data.get('allowed_users') else texts['access_whitelist_btn']}"
+        preview += f"<b>{texts['giveaway_channels_label']}:</b> {', '.join(data['mandatory_channels'])}\n"
+    preview += f"<b>{texts['giveaway_type_label']}:</b> {type_label}\n"
+    preview += f"<b>{texts['giveaway_value_label']}:</b> {data['mode_value']}\n"
+    preview += f"<b>{texts['giveaway_winners_label']}:</b> {data['winners_count']}\n"
+    preview += f"<b>{texts['giveaway_prizes_label']}:</b> {', '.join(data['prizes'])}\n"
+    preview += f"<b>{texts['giveaway_access_label']}:</b> {texts['giveaway_access_all_btn'] if not data.get('allowed_users') else texts['giveaway_access_whitelist_btn']}"
 
     return preview
 
@@ -505,7 +505,7 @@ async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bo
         allowed_users=data.get("allowed_users")
     )
     if not giveaway:
-        await callback.answer(texts.get("error_msg", "Error"), show_alert=True)
+        await callback.answer(texts.get("giveaway_error_msg", "Error"), show_alert=True)
         return
 
     giveaway_id = giveaway["id"]
@@ -519,7 +519,7 @@ async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bo
     post_text, gif_to_send = await get_giveaway_post_data(giveaway, en_texts)
 
     kb = InlineKeyboardBuilder()
-    kb.button(text=en_texts["join_btn"], callback_data=f"join_{giveaway_id}", icon_custom_emoji_id="5260726538302660868", style="success")
+    kb.button(text=en_texts["giveaway_join_btn"], callback_data=f"join_{giveaway_id}", icon_custom_emoji_id="5260726538302660868", style="success")
 
     try:
         try:
@@ -533,7 +533,7 @@ async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bo
 
     # Success message
     success_builder = InlineKeyboardBuilder()
-    success_builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    success_builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     await safe_edit_text(callback, texts["giveaway_launched_success"], reply_markup=success_builder.as_markup(), parse_mode=ParseMode.HTML)
     await state.clear()
 
@@ -547,20 +547,20 @@ async def get_giveaway_post_data(giveaway, texts=None):
     winners = giveaway['winners_count']
 
     if giveaway['mode'] == 'timed':
-        cond = f"{texts['ends_at']} {giveaway['value']}"
+        cond = f"{texts['giveaway_ends_at']} {giveaway['value']}"
     else:
-        cond = f"{texts['ends_when']} {giveaway['value']} {texts['participants_suffix']}"
+        cond = f"{texts['giveaway_ends_when']} {giveaway['value']} {texts['giveaway_participants_suffix']}"
 
     channels_text = ""
     if giveaway.get('mandatory_channels'):
-        channels_text = f"\n┋ {texts['subscribe_to']}: " + ", ".join(giveaway['mandatory_channels'])
+        channels_text = f"\n┋ {texts['giveaway_subscribe_to']}: " + ", ".join(giveaway['mandatory_channels'])
 
     post_text = (
         f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
         f"┋\n"
-        f"┣ <b>{texts['prizes']}:</b> {prizes}\n"
-        f"┣ <b>{texts['winners']}:</b> {winners}\n"
-        f"┣ <b>{texts['condition']}:</b> {cond}"
+        f"┣ <b>{texts['giveaway_prizes']}:</b> {prizes}\n"
+        f"┣ <b>{texts['giveaway_winners']}:</b> {winners}\n"
+        f"┣ <b>{texts['giveaway_condition']}:</b> {cond}"
         f"{channels_text}\n"
         f"┋\n"
         f"┗┅┅┅/ #NOTAPES /"
@@ -599,10 +599,10 @@ async def make_announcement_select_chat(callback: types.CallbackQuery, bot: Bot)
             builder.button(text=chat['title'], callback_data=f"ann_to_{giveaway_id}_{chat['chat_id']}")
             count += 1
 
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["giveaway_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1)
 
-    text = texts["select_announcement_chat"] if count > 0 else texts["no_chats_available"]
+    text = texts["giveaway_select_announcement_chat"] if count > 0 else texts["giveaway_no_chats_available"]
 
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
@@ -639,11 +639,11 @@ async def execute_announcement(callback: types.CallbackQuery, bot: Bot):
 
         if orig_msg_id:
             link = get_message_link(orig_chat, orig_msg_id)
-            join_builder.button(text=en_texts["join_btn"], url=link)
+            join_builder.button(text=en_texts["giveaway_join_btn"], url=link)
         else:
-            join_builder.button(text=en_texts["start_btn"], callback_data=f"join_{giveaway_id}", icon_custom_emoji_id="5260726538302660868", style="success")
+            join_builder.button(text=en_texts["giveaway_start_btn"], callback_data=f"join_{giveaway_id}", icon_custom_emoji_id="5260726538302660868", style="success")
     else:
-        join_builder.button(text=en_texts["start_btn"], callback_data=f"join_{giveaway_id}", icon_custom_emoji_id="5260726538302660868", style="success")
+        join_builder.button(text=en_texts["giveaway_start_btn"], callback_data=f"join_{giveaway_id}", icon_custom_emoji_id="5260726538302660868", style="success")
 
     try:
         try:
@@ -662,9 +662,9 @@ async def execute_announcement(callback: types.CallbackQuery, bot: Bot):
                 parse_mode=ParseMode.HTML
             )
         await db.add_giveaway_message(giveaway_id, target_chat_id, ann_msg.message_id)
-        await callback.message.answer(texts["success_msg"], parse_mode=ParseMode.HTML)
+        await callback.message.answer(texts["giveaway_success_msg"], parse_mode=ParseMode.HTML)
     except Exception as e:
-        await callback.message.answer(f"{texts['error_msg']}: {e}", parse_mode=ParseMode.HTML)
+        await callback.message.answer(f"{texts['giveaway_error_msg']}: {e}", parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data == "back")
 async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
@@ -685,17 +685,17 @@ async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bo
     await callback.answer()
 
     if current_state == GiveawayCreation.SELECT_GIVEAWAY_KIND.state:
-        await safe_edit_text(callback, texts["enter_title"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_title"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.ENTER_NAME)
     elif current_state == GiveawayCreation.ENTER_CHANNELS.state:
         await safe_edit_text(callback, texts["giveaway_title"], reply_markup=await get_giveaway_kind_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.SELECT_GIVEAWAY_KIND)
     elif current_state == GiveawayCreation.WAITING_FOR_BOT_ADMIN.state:
-        await safe_edit_text(callback, texts["enter_channels"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_channels"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.ENTER_CHANNELS)
     elif current_state == GiveawayCreation.WAITING_FOR_ACCESS_TYPE.state:
         if data.get('kind') == 'partner':
-            await safe_edit_text(callback, texts["enter_channels"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
+            await safe_edit_text(callback, texts["giveaway_enter_channels"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
             await state.set_state(GiveawayCreation.ENTER_CHANNELS)
         else:
             await safe_edit_text(callback, texts["giveaway_title"], reply_markup=await get_giveaway_kind_keyboard(texts), parse_mode=ParseMode.HTML)
@@ -703,17 +703,17 @@ async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bo
     elif current_state in [GiveawayCreation.WAITING_FOR_WHITELIST.state, GiveawayCreation.SELECT_TYPE.state]:
         await ask_access_type(callback.message, state, bot)
     elif current_state in [GiveawayCreation.SELECT_MODE_VALUE.state, GiveawayCreation.CUSTOM_MODE_VALUE.state]:
-        await safe_edit_text(callback, texts["select_type"], reply_markup=await get_type_keyboard(texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_select_type"], reply_markup=await get_type_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.SELECT_TYPE)
     elif current_state in [GiveawayCreation.SELECT_WINNERS_COUNT.state, GiveawayCreation.CUSTOM_WINNERS_COUNT.state]:
         gtype = data.get("gtype")
-        await safe_edit_text(callback, texts["enter_time"] if gtype == "timed" else texts["enter_participants"], reply_markup=await get_mode_keyboard(gtype, texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_time"] if gtype == "timed" else texts["giveaway_enter_participants"], reply_markup=await get_mode_keyboard(gtype, texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.SELECT_MODE_VALUE)
     elif current_state == GiveawayCreation.ENTER_PRIZES.state:
-        await safe_edit_text(callback, texts["enter_winners_count"], reply_markup=await get_winners_keyboard(texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_winners_count"], reply_markup=await get_winners_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.SELECT_WINNERS_COUNT)
     elif current_state in [GiveawayCreation.CONFIRMATION.state, GiveawayCreation.EDIT_PARAMS.state]:
-        await safe_edit_text(callback, texts["enter_prizes"], reply_markup=await get_prizes_keyboard(data.get('prizes', []), texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_prizes"], reply_markup=await get_prizes_keyboard(data.get('prizes', []), texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.ENTER_PRIZES)
     else:
         from handlers.main_menu import get_main_menu_keyboard
@@ -734,22 +734,22 @@ async def edit_param_handler(callback: types.CallbackQuery, state: FSMContext, b
     await state.update_data(is_editing=True)
 
     if param == "title":
-        await safe_edit_text(callback, texts["enter_title"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_title"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.ENTER_NAME)
     elif param == "channels":
-        await safe_edit_text(callback, texts["enter_channels"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_channels"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.ENTER_CHANNELS)
     elif param == "type":
-        await safe_edit_text(callback, texts["select_type"], reply_markup=await get_type_keyboard(texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_select_type"], reply_markup=await get_type_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.SELECT_TYPE)
     elif param == "mode":
         gtype = (await state.get_data()).get('gtype')
-        await safe_edit_text(callback, texts["enter_time"] if gtype == "timed" else texts["enter_participants"], reply_markup=await get_mode_keyboard(gtype, texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_time"] if gtype == "timed" else texts["giveaway_enter_participants"], reply_markup=await get_mode_keyboard(gtype, texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.SELECT_MODE_VALUE)
     elif param == "winners":
-        await safe_edit_text(callback, texts["enter_winners_count"], reply_markup=await get_winners_keyboard(texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_winners_count"], reply_markup=await get_winners_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.SELECT_WINNERS_COUNT)
     elif param == "prizes":
         await state.update_data(prizes=[]) # Reset prizes to enter again
-        await safe_edit_text(callback, texts["enter_prizes"], reply_markup=await get_prizes_keyboard([], texts), parse_mode=ParseMode.HTML)
+        await safe_edit_text(callback, texts["giveaway_enter_prizes"], reply_markup=await get_prizes_keyboard([], texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.ENTER_PRIZES)

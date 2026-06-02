@@ -13,28 +13,28 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Choose your preferred wallet below:</b> /"
     ),
-    "disconnect_btn": "Disconnect",
-    "connect_btn": "Connect Wallet",
-    "back_btn": "Back",
-    "select_wallet": "<b>Select your wallet:</b>",
+    "wallet_disconnect_btn": "Disconnect",
+    "wallet_connect_btn": "Connect Wallet",
+    "wallet_back_btn": "Back",
+    "wallet_select_wallet": "<b>Select your wallet:</b>",
     "wallet_connection_title": (
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / {wallet_name} <b>Connection</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>Tap the button below and confirm connection inside</b> {wallet_name}"
     ),
-    "open_wallet_btn": "Open Wallet",
-    "cancel_btn": "Cancel",
-    "success_title": (
+    "wallet_open_wallet_btn": "Open Wallet",
+    "wallet_cancel_btn": "Cancel",
+    "wallet_success_title": (
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Success!</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>Your wallet has been linked:</b> <code>{address}</code>"
     ),
-    "return_to_game": "Return to the game:",
-    "game_menu_btn": "Game Menu",
+    "wallet_return_to_game": "Return to the game:",
+    "wallet_game_menu_btn": "Game Menu",
     "wallet_menu_error": "Wallet menu error.",
     "wallet_disconnected_alert": "Wallet disconnected",
-    "service_unavailable": "Connection service temporarily unavailable.",
-    "no_supported_wallets": "No supported wallets found.",
-    "config_not_found": "Wallet configuration not found.",
-    "init_failed": "Failed to initiate connection."
+    "wallet_service_unavailable": "Connection service temporarily unavailable.",
+    "wallet_no_supported_wallets": "No supported wallets found.",
+    "wallet_config_not_found": "Wallet configuration not found.",
+    "wallet_init_failed": "Failed to initiate connection."
 }

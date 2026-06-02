@@ -18,10 +18,10 @@ async def show_game_menu(message: types.Message | types.CallbackQuery, state: FS
     text = texts["game_menu_title"]
 
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["leaderboard_btn"], callback_data="leaderboard", icon_custom_emoji_id="5258330865674494479")
-    builder.button(text=texts["wallet_btn"], callback_data="wallet_menu", icon_custom_emoji_id="5258204546391351475")
-    builder.button(text=texts["stickers_btn"], url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544", icon_custom_emoji_id="5258391025281408576")
-    builder.button(text=texts["main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["game_leaderboard_btn"], callback_data="leaderboard", icon_custom_emoji_id="5258330865674494479")
+    builder.button(text=texts["game_wallet_btn"], callback_data="wallet_menu", icon_custom_emoji_id="5258204546391351475")
+    builder.button(text=texts["game_stickers_btn"], url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544", icon_custom_emoji_id="5258391025281408576")
+    builder.button(text=texts["game_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(1, 2, 1)
 
     if isinstance(message, types.CallbackQuery):
@@ -67,7 +67,7 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
                 pass
 
         packs = h.get('packsCount', h.get('packs', 0))
-        lines.append(f"┋ {i}. {html.escape(display_name)} — {packs} {texts['packs']}")
+        lines.append(f"┋ {i}. {html.escape(display_name)} — {packs} {texts['game_packs']}")
 
     user_wallet = await db.get_user_wallet(user_id)
     user_pos_line = ""
@@ -86,20 +86,20 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
         if pos:
             user_h = holders[pos-1]
             packs = user_h.get('packsCount', user_h.get('packs', 0))
-            user_pos_line = f"┋ {pos}. {friendly_wallet} ({texts['you']}) — {packs} {texts['packs']}"
+            user_pos_line = f"┋ {pos}. {friendly_wallet} ({texts['game_you']}) — {packs} {texts['game_packs']}"
         else:
-            user_pos_line = f"┋ —. {friendly_wallet} ({texts['you']}) — 0 {texts['packs']}"
+            user_pos_line = f"┋ —. {friendly_wallet} ({texts['game_you']}) — 0 {texts['game_packs']}"
 
     if not lines:
-        text = texts["leaderboard_waiting"]
+        text = texts["game_leaderboard_waiting"]
     else:
-        text = texts["leaderboard_title"].format(
+        text = texts["game_leaderboard_title"].format(
             lines="\n".join(lines),
-            user_pos=user_pos_line if user_pos_line else texts["wallet_not_linked"]
+            user_pos=user_pos_line if user_pos_line else texts["game_wallet_not_linked"]
         )
 
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["back_btn"], callback_data="game_menu", icon_custom_emoji_id="5877629862306385808")
+    builder.button(text=texts["game_back_btn"], callback_data="game_menu", icon_custom_emoji_id="5877629862306385808")
     builder.adjust(1)
 
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)

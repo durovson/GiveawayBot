@@ -10,12 +10,12 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
-    "leaderboard_btn": "Таблица лидеров",
-    "wallet_btn": "Кошелек",
-    "stickers_btn": "Стикеры",
-    "main_menu_btn": "Главное меню",
-    "back_btn": "Назад",
-    "leaderboard_waiting": (
+    "game_leaderboard_btn": "Таблица лидеров",
+    "game_wallet_btn": "Кошелек",
+    "game_stickers_btn": "Стикеры",
+    "game_main_menu_btn": "Главное меню",
+    "game_back_btn": "Назад",
+    "game_leaderboard_waiting": (
         "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
         "┋\n"
         "┣ Статистика холдеров пока недоступна.\n"
@@ -23,7 +23,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ Ожидание... /"
     ),
-    "leaderboard_title": (
+    "game_leaderboard_title": (
         "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
         "┋\n"
         "┣ Глобальный рейтинг холдеров. \n"
@@ -34,7 +34,7 @@ TEXTS = {
         "{user_pos}\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
-    "wallet_not_linked": "┋ Кошелек не привязан\n┋",
-    "you": "Вы",
-    "packs": "паков"
+    "game_wallet_not_linked": "┋ Кошелек не привязан\n┋",
+    "game_you": "Вы",
+    "game_packs": "паков"
 }

@@ -20,8 +20,8 @@ class UpdateGifStates(StatesGroup):
 async def get_gif_type_kb(user_id: int):
     texts = await get_locale(user_id)
     buttons = [
-        [InlineKeyboardButton(text=texts["giveaways_label"], callback_data="set_type_main", icon_custom_emoji_id="6032644646587338669")],
-        [InlineKeyboardButton(text=texts["cancel_btn"], callback_data="cancel_update", icon_custom_emoji_id="5877629862306385808")]
+        [InlineKeyboardButton(text=texts["admin_giveaways_label"], callback_data="set_type_main", icon_custom_emoji_id="6032644646587338669")],
+        [InlineKeyboardButton(text=texts["admin_cancel_btn"], callback_data="cancel_update", icon_custom_emoji_id="5877629862306385808")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -39,7 +39,7 @@ async def start_gif_update(callback: types.CallbackQuery, state: FSMContext):
     
     await safe_edit_text(
         callback,
-        texts["gif_mgmt_title"],
+        texts["admin_gif_mgmt_title"],
         reply_markup=await get_gif_type_kb(user_id),
         parse_mode=ParseMode.HTML
     )
@@ -55,11 +55,11 @@ async def process_type_choice(callback: types.CallbackQuery, state: FSMContext):
     
     await state.set_state(UpdateGifStates.waiting_for_media)
     
-    label = texts["giveaways_label"]
+    label = texts["admin_giveaways_label"]
     await safe_edit_text(
         callback,
-        texts["upload_media"].format(label=label),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="❌ " + texts["cancel_btn"], callback_data="cancel_update")]]),
+        texts["admin_upload_media"].format(label=label),
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="❌ " + texts["admin_cancel_btn"], callback_data="cancel_update")]]),
         parse_mode=ParseMode.HTML
     )
     await callback.answer()
@@ -84,13 +84,13 @@ async def process_gif_file(message: types.Message, state: FSMContext):
         
         await safe_answer(
             message,
-            texts["update_success"].format(key=setting_key),
+            texts["admin_update_success"].format(key=setting_key),
             parse_mode=ParseMode.HTML
         )
         logger.info(f"Admin {message.from_user.id} updated GIF for {setting_key}")
     except Exception as e:
         logger.error(f"Error saving GIF: {e}")
-        await safe_answer(message, texts["db_error"], parse_mode=ParseMode.HTML)
+        await safe_answer(message, texts["admin_db_error"], parse_mode=ParseMode.HTML)
     
     await state.clear()
 
@@ -100,5 +100,5 @@ async def cancel_handler(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
     await state.clear()
-    await safe_edit_text(callback, texts["update_cancelled"])
+    await safe_edit_text(callback, texts["admin_update_cancelled"])
     await callback.answer()

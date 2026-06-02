@@ -10,12 +10,12 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "leaderboard_btn": "Leaderboard",
-    "wallet_btn": "Wallet",
-    "stickers_btn": "Stickers",
-    "main_menu_btn": "Main Menu",
-    "back_btn": "Back",
-    "leaderboard_waiting": (
+    "game_leaderboard_btn": "Leaderboard",
+    "game_wallet_btn": "Wallet",
+    "game_stickers_btn": "Stickers",
+    "game_main_menu_btn": "Main Menu",
+    "game_back_btn": "Back",
+    "game_leaderboard_waiting": (
         "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
         "┋\n"
         "┣ No holder statistics available yet.\n"
@@ -23,7 +23,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ Wating... /"
     ),
-    "leaderboard_title": (
+    "game_leaderboard_title": (
         "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
         "┋\n"
         "┣ Global holders ranking. \n"
@@ -34,7 +34,7 @@ TEXTS = {
         "{user_pos}\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "wallet_not_linked": "┋ Wallet not linked\n┋",
-    "you": "You",
-    "packs": "packs"
+    "game_wallet_not_linked": "┋ Wallet not linked\n┋",
+    "game_you": "You",
+    "game_packs": "packs"
 }
