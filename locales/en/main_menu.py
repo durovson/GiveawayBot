@@ -29,7 +29,7 @@ TEXTS = {
     "no_groups_available": "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>There are no available groups. Add the bot to the group and make it an administrator.</b>",
     "no_admin_rights": "❌ You do not have administrator rights in connected chats.",
     "select_language": (
-        "┏┅🌐┅ / Language /\n"
+        "┏┅<tg-emoji emoji-id=\"5260512129240276089\">📚</tg-emoji>┅ / Language /\n"
         "┋\n"
         "┣ Please select your preferred language\n"
         "┋\n"
