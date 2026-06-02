@@ -41,7 +41,7 @@ TEXTS = {
     "preview_title": (
         "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>Preview</b> /\n"
         "┋\n"
-        f"┣ {{post_text}}\n"
+        "┣ {preview}\n"
         "┋\n"
         "┗┅┅┅/ <b>Confirm or edit your post:</b> /"
     ),
