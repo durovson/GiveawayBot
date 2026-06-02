@@ -33,7 +33,7 @@ TEXTS = {
         "┋\n"
         "┣ Please select your preferred language\n"
         "┋\n"
-        "┗┅┅┅/ Select an option /"
+        "┗┅┅┅/ Select an option: /"
     ),
     "bot_ready": (
         "<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji> <b>The bot is ready to work!</b>\n\n"
