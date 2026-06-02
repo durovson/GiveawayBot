@@ -146,7 +146,7 @@ async def enter_price(message: types.Message, state: FSMContext, bot: Bot):
 
     text = message.text.strip()
     if text.replace(".", "", 1).isdigit():
-        price = f"{text} TON"
+        price = f"{text} GRAM"
     else:
         price = text
 
