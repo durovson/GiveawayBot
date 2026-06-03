@@ -379,4 +379,29 @@ class Database:
         except Exception as e:
             logger.error(f"Error updating user language: {e}")
 
+    async def get_last_holder_invite(self, telegram_id: int) -> Optional[Dict]:
+        if not self._check_client(): return None
+        try:
+            response = await self.client.table("holders_chat_invites") \
+                .select("*") \
+                .eq("telegram_id", telegram_id) \
+                .order("created_at", desc=True) \
+                .limit(1) \
+                .execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error getting last holder invite: {e}")
+            return None
+
+    async def save_holder_invite(self, telegram_id: int, username: Optional[str], packs: int):
+        if not self._check_client(): return
+        try:
+            await self.client.table("holders_chat_invites").insert({
+                "telegram_id": telegram_id,
+                "username": username,
+                "packs": packs
+            }).execute()
+        except Exception as e:
+            logger.error(f"Error saving holder invite: {e}")
+
 db = Database()
