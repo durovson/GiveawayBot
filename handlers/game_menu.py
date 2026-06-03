@@ -124,7 +124,7 @@ async def holders_chat_handler(callback: types.CallbackQuery, state: FSMContext)
 
     builder = InlineKeyboardBuilder()
     if packs >= 10:
-        builder.button(text=texts["holders_chat_join_btn"], callback_data="join_holders_chat", icon_custom_emoji_id="5260726538302660868")
+        builder.button(text=texts["holders_chat_join_btn"], callback_data="join_holders_chat", icon_custom_emoji_id="5256143829672672750")
 
     builder.button(text=texts["game_back_btn"], callback_data="game_menu", icon_custom_emoji_id="5877629862306385808")
     builder.adjust(1)
@@ -194,7 +194,7 @@ async def join_holders_chat_handler(callback: types.CallbackQuery, state: FSMCon
         success_text = texts["holders_chat_join_success"]
 
         builder = InlineKeyboardBuilder()
-        builder.button(text=texts["holders_chat_open_btn"], url=invite.invite_link)
+        builder.button(text=texts["holders_chat_open_btn"], url=invite.invite_link, icon_custom_emoji_id="5316727448644103237")
         builder.button(text=texts["game_back_btn"], callback_data="holders_chat", icon_custom_emoji_id="5877629862306385808")
         builder.adjust(1)
 
