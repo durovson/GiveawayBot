@@ -37,7 +37,7 @@ TEXTS = {
     "game_wallet_not_linked": "┋ Кошелек не привязан\n┋",
     "game_you": "Вы",
     "game_packs": "паков",
-    "holders_chat_btn": "💬 Чат холдеров",
+    "holders_chat_btn": "Чат холдеров",
     "holders_chat_title": (
         "┏┅┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>HOLDERS</b> /\n"
         "┋\n"
@@ -49,7 +49,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Выберите действие</b> /"
     ),
     "holders_chat_join_btn": "ВСТУПИТЬ",
-    "holders_chat_open_btn": "🔗 ОТКРЫТЬ ЧАТ ХОЛДЕРОВ",
+    "holders_chat_open_btn": "ОТКРЫТЬ ЧАТ",
     "holders_chat_already_invited": (
         "Вы уже получили ссылку-приглашение.\n"
         "Используйте ранее выданную ссылку."
