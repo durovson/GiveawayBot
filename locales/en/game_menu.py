@@ -37,7 +37,7 @@ TEXTS = {
     "game_wallet_not_linked": "┋ Wallet not linked\n┋",
     "game_you": "You",
     "game_packs": "packs",
-    "holders_chat_btn": "💬 Holders Chat",
+    "holders_chat_btn": "Holders Chat",
     "holders_chat_title": (
         "┏┅┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>HOLDERS</b> /\n"
         "┋\n"
@@ -49,7 +49,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "holders_chat_join_btn": "JOIN",
-    "holders_chat_open_btn": "🔗 OPEN HOLDERS CHAT",
+    "holders_chat_open_btn": "OPEN CHAT",
     "holders_chat_already_invited": (
         "You already received an invite link.\n"
         "Please use the previous one."
