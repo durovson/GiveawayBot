@@ -48,7 +48,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите действие</b> /"
     ),
-    "holders_chat_join_btn": "ВСТУПИТЬ",
+    "holders_chat_join_btn": "ПРОВЕРИТЬ",
     "holders_chat_open_btn": "ОТКРЫТЬ ЧАТ",
     "holders_chat_already_invited": (
         "Вы уже получили ссылку-приглашение.\n"
