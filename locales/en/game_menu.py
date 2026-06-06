@@ -48,7 +48,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "holders_chat_join_btn": "JOIN",
+    "holders_chat_join_btn": "CHECK",
     "holders_chat_open_btn": "OPEN CHAT",
     "holders_chat_already_invited": (
         "You already received an invite link.\n"
