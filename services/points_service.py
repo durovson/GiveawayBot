@@ -24,7 +24,7 @@ class PointsService:
 
                 # Try to get username and display_name from Telegram
                 username = None
-                display_name = "Unknown User"
+                display_name = str(user_id)
                 try:
                     tg_user = await loader.bot.get_chat(user_id)
                     username = tg_user.username
@@ -78,7 +78,7 @@ class PointsService:
         elif first_name:
             display = first_name
         else:
-            display = "Unknown User"
+            display = str(user_id)
 
         await db.upsert_points(
             user_id=user_id,

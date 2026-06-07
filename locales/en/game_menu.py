@@ -4,8 +4,14 @@ TEXTS = {
         "┋\n"
         "┣ Ready to play?\n"
         "┋\n"
-        "┣ Your Points: {rp}\n"
-        "┣ Total Invited: {refs}\n"
+        "┣ Your Points: {rp} pts\n"
+        "┣ Total Invited: {refs} fnds\n"
+        "┋\n"
+        "┣ <tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji> <b>HIGHSCORE:</b> View Leaderboard\n"
+        "┣ <tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji> <b>REFERRAL:</b> Invite & Earn Points\n"
+        "┣ <tg-emoji emoji-id=\"5260687681733533075\">🤝</tg-emoji> <b>HOLDERS:</b> Join Private Chat\n"
+        "┣ <tg-emoji emoji-id=\"5316612764427367709\">💰</tg-emoji> <b>LOGIN:</b> Connect Ton Wallet\n"
+        "┣ <tg-emoji emoji-id=\"5258212268742549391\">🌠</tg-emoji> <b>BOOST:</b> Boost your Power\n"
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
@@ -83,11 +89,11 @@ TEXTS = {
     "terms_btn": "📄 Terms",
     "privacy_btn": "🔒 Privacy",
     "continue_btn": "✅ Continue",
-    "highscore_btn": "[🍑] HIGHSCORE",
-    "referral_btn": "[👥] REFERRAL",
-    "holders_btn": "[👤] HOLDERS",
-    "login_btn": "[💰] LOGIN",
-    "boost_btn": "[📈] BOOST",
+    "highscore_btn": "HIGHSCORE",
+    "referral_btn": "REFERRAL",
+    "holders_btn": "HOLDERS",
+    "login_btn": "LOGIN",
+    "boost_btn": "BOOST",
     "access_granted_msg": "Access granted. Press again to join.",
     "need_packs_msg": "You need 10 packs to access Holder Chat."
 }

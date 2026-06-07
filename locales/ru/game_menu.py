@@ -4,8 +4,14 @@ TEXTS = {
         "┋\n"
         "┣ Готовы играть?\n"
         "┋\n"
-        "┣ Ваши очки (RP): {rp}\n"
-        "┣ Всего приглашено: {refs}\n"
+        "┣ Ваши очки (RP): {rp} pts\n"
+        "┣ Всего приглашено: {refs} fnds\n"
+        "┋\n"
+        "┣ <tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji> <b>HIGHSCORE:</b> Таблица лидеров\n"
+        "┣ <tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji> <b>REFERRAL:</b> Приглашай и зарабатывай\n"
+        "┣ <tg-emoji emoji-id=\"5260687681733533075\">🤝</tg-emoji> <b>HOLDERS:</b> Закрытый чат\n"
+        "┣ <tg-emoji emoji-id=\"5316612764427367709\">💰</tg-emoji> <b>LOGIN:</b> Подключить кошелек\n"
+        "┣ <tg-emoji emoji-id=\"5258212268742549391\">🌠</tg-emoji> <b>BOOST:</b> Увеличить силу\n"
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
@@ -83,11 +89,11 @@ TEXTS = {
     "terms_btn": "📄 Условия",
     "privacy_btn": "🔒 Приватность",
     "continue_btn": "✅ Продолжить",
-    "highscore_btn": "[🍑] HIGHSCORE",
-    "referral_btn": "[👥] REFERRAL",
-    "holders_btn": "[👤] HOLDERS",
-    "login_btn": "[💰] LOGIN",
-    "boost_btn": "[📈] BOOST",
+    "highscore_btn": "HIGHSCORE",
+    "referral_btn": "REFERRAL",
+    "holders_btn": "HOLDERS",
+    "login_btn": "LOGIN",
+    "boost_btn": "BOOST",
     "access_granted_msg": "Доступ разрешен. Нажмите еще раз, чтобы войти.",
     "need_packs_msg": "Вам нужно 10 паков для доступа в чат холдеров."
 }

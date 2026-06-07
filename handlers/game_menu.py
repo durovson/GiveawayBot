@@ -41,13 +41,13 @@ async def show_game_menu(message: types.Message | types.CallbackQuery, state: FS
     text = texts["game_menu_title"].format(rp=rp, refs=refs)
 
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["highscore_btn"], callback_data="leaderboard")
-    builder.button(text=texts["referral_btn"], callback_data="referral_menu")
-    builder.button(text=texts["holders_btn"], callback_data="holders_chat")
-    builder.button(text=texts["login_btn"], callback_data="wallet_menu")
-    builder.button(text=texts["boost_btn"], url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544")
+    builder.button(text=texts["highscore_btn"], callback_data="leaderboard", icon_custom_emoji_id="5258508428212445001")
+    builder.button(text=texts["referral_btn"], callback_data="referral_menu", icon_custom_emoji_id="6032594876506312598")
+    builder.button(text=texts["holders_btn"], callback_data="holders_chat", icon_custom_emoji_id="5260687681733533075")
+    builder.button(text=texts["login_btn"], callback_data="wallet_menu", icon_custom_emoji_id="5316612764427367709")
+    builder.button(text=texts["boost_btn"], url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544", icon_custom_emoji_id="5258212268742549391")
     builder.button(text=texts["game_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(2, 2, 1, 1)
+    builder.adjust(1)
 
     if isinstance(message, types.CallbackQuery):
         await message.answer()
@@ -102,7 +102,7 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
 
     lines = []
     for i, p in enumerate(top_points, 1):
-        display_name = html.escape(p.get("display_name") or "Unknown")
+        display_name = html.escape(p.get("display_name") or str(p.get("user_id", "Unknown")))
         rp = p.get("total_points", 0)
         packs = p.get("packs", 0)
         active_refs = p.get("active_referrals", 0)
