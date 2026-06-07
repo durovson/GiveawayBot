@@ -84,7 +84,7 @@ TEXTS = {
         "┋\n"
         "┣ By continuing, you agree to the <b>Terms of Service</b> and <b>Privacy Policy.</b>\n"
         "┋\n"
-        "┗┅┅┅/ <b>Select an option</b> /."
+        "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "terms_btn": "Terms",
     "privacy_btn": "Privacy",
