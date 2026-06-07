@@ -1,0 +1,4 @@
+- Profile Synchronization: Added `username` and `first_name` columns to the `users` table. Implemented auto-update logic in `ReferralValidatorMiddleware` to keep user profiles in `users` and `points` tables synchronized with Telegram data on every interaction.
+- Leaderboard Naming Priority: Display names in the leaderboard follow the priority: `@username` > `first_name` > `User ID`. Fallback to "You" for the current user's entry if no name is found.
+- Privacy Policy Logic: Fixed `terms_version` comparison and ensured that acceptance timestamps are saved as ISO format strings to avoid serialization issues with the Supabase client. Added logging for policy version checks.
+- UI Navigation: Ensured the "Main Menu" button consistently returns users to the root Main Menu (`texts["main_menu_text"]`) instead of the Game Menu by introducing a dedicated `show_main_menu` function.

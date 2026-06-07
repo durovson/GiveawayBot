@@ -50,13 +50,13 @@ async def show_game_menu(message: types.Message | types.CallbackQuery, state: FS
     builder.adjust(1)
 
     if isinstance(message, types.CallbackQuery):
-        await message.answer()
         await safe_edit_text(message, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
     else:
         await message.answer(text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data == "game_menu")
 async def game_menu_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     await show_game_menu(callback, state)
 
 @router.callback_query(F.data == "referral_menu")
@@ -102,11 +102,22 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
 
     lines = []
     for i, p in enumerate(top_points, 1):
-        display_name = html.escape(p.get("display_name") or str(p.get("user_id", "Unknown")))
+        # Priority logic for display name
+        username = p.get("username")
+        display_name = p.get("display_name")
+
+        if username:
+            final_name = f"@{username}"
+        elif display_name and not display_name.isdigit() and display_name != str(p.get("user_id")):
+            final_name = display_name
+        else:
+            final_name = f"User {p.get('user_id')}"
+
+        final_name = html.escape(final_name)
         rp = p.get("total_points", 0)
         packs = p.get("packs", 0)
         active_refs = p.get("active_referrals", 0)
-        lines.append(f"┋ {i}. {display_name} — {rp} RP ({packs}/{active_refs})")
+        lines.append(f"┋ {i}. {final_name} — {rp} RP ({packs}/{active_refs})")
 
     user_points = await db.get_points(user_id)
     user_pos_line = ""
@@ -118,11 +129,21 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
         except:
             rank = "—"
 
-        display_name = html.escape(user_points.get("display_name") or "You")
+        username = user_points.get("username")
+        display_name = user_points.get("display_name")
+
+        if username:
+            final_name = f"@{username}"
+        elif display_name and not display_name.isdigit() and display_name != str(user_id):
+            final_name = display_name
+        else:
+            final_name = "You"
+
+        final_name = html.escape(final_name)
         rp = user_points.get("total_points", 0)
         packs = user_points.get("packs", 0)
         active_refs = user_points.get("active_referrals", 0)
-        user_pos_line = f"┋ {rank}. {display_name} — {rp} RP ({packs}/{active_refs})"
+        user_pos_line = f"┋ {rank}. {final_name} — {rp} RP ({packs}/{active_refs})"
 
     text = texts["game_leaderboard_title"].format(
         lines='\n'.join(lines),
