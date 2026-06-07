@@ -52,18 +52,46 @@ async def get_main_menu_keyboard(user_id: int, texts: dict):
 
     return builder.as_markup()
 
-async def show_terms_screen(message: types.Message | types.CallbackQuery, texts: dict):
-    text = (
-        "<b>Welcome to NOTAPES Hub.</b>\n\n"
-        "By continuing, you agree to the\n"
-        "Terms of Service and Privacy Policy."
-    )
+async def show_terms_screen(
+    message: types.Message | types.CallbackQuery,
+    texts: dict
+):
+    text = texts["terms_screen_text"]
 
     builder = InlineKeyboardBuilder()
-    builder.button(text="📄 Terms", url="https://telegra.ph/terms-placeholder")
-    builder.button(text="🔒 Privacy", url="https://telegra.ph/privacy-placeholder")
-    builder.button(text="✅ Continue", callback_data="accept_terms")
+
+    builder.button(
+        text=texts["terms_btn"],
+        url="https://telegra.ph/terms-placeholder",
+        icon_custom_emoji_id="5258477770735885832"
+    )
+
+    builder.button(
+        text=texts["privacy_btn"],
+        url="https://telegra.ph/privacy-placeholder",
+        icon_custom_emoji_id="5258476306152038031"
+    )
+
+    builder.button(
+        text=texts["continue_btn"],
+        callback_data="accept_terms",
+        icon_custom_emoji_id="5260416304224936047"
+    )
+
     builder.adjust(2, 1)
+
+    markup = builder.as_markup()
+
+    if isinstance(message, types.CallbackQuery):
+        await message.message.edit_text(
+            text,
+            reply_markup=markup
+        )
+    else:
+        await message.answer(
+            text,
+            reply_markup=markup
+        )
 
     if isinstance(message, types.Message):
         await message.answer(text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
