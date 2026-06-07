@@ -22,18 +22,24 @@ class PointsService:
                     logger.error(f"Cannot recalculate points: User {user_id} not found in database")
                     return
 
-                # Try to get username and display_name from Telegram
-                username = None
-                display_name = str(user_id)
-                try:
-                    tg_user = await loader.bot.get_chat(user_id)
-                    username = tg_user.username
-                    if tg_user.username:
-                        display_name = f"@{tg_user.username}"
-                    elif tg_user.first_name:
-                        display_name = tg_user.first_name
-                except Exception:
-                    pass
+                # Try to get username and display_name from user record or Telegram
+                username = user.get("username")
+                first_name = user.get("first_name")
+
+                if not username or not first_name:
+                    try:
+                        tg_user = await loader.bot.get_chat(user_id)
+                        username = tg_user.username
+                        first_name = tg_user.first_name
+                    except Exception:
+                        pass
+
+                if username:
+                    display_name = f"@{username}"
+                elif first_name:
+                    display_name = first_name
+                else:
+                    display_name = f"User {user_id}"
 
                 points_data = {
                     "user_id": user_id,
@@ -72,14 +78,22 @@ class PointsService:
 
     @staticmethod
     async def update_username(user_id: int, username: str, first_name: str):
-        """Updates username and display_name in the points table."""
+        """Updates username and display_name in users and points tables."""
         if username:
             display = f"@{username}"
         elif first_name:
             display = first_name
         else:
-            display = str(user_id)
+            display = f"User {user_id}"
 
+        # Update users table
+        await db.update_user_fields(
+            user_id,
+            username=username,
+            first_name=first_name
+        )
+
+        # Update points table
         await db.upsert_points(
             user_id=user_id,
             username=username,

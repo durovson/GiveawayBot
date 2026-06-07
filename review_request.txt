@@ -1,0 +1,12 @@
+I have implemented the following fixes for NOTAPES Hub:
+
+1. **Privacy Policy Fix**: Added logging and fixed the logic in `handlers/main_menu.py`. Used `isoformat()` for datetime to avoid serialization issues.
+2. **Main Menu Navigation**: Fixed the bug where "Main Menu" button opened "Game Menu". Created a dedicated `show_main_menu` function.
+3. **Leaderboard & Name Sync**:
+   - Added `username` and `first_name` columns to `users` table.
+   - Updated `PointsService` to sync these fields on every interaction.
+   - Fixed leaderboard priority logic: `@username` > `first_name` > `User ID`.
+   - Updated `ReferralValidatorMiddleware` to auto-update user names on every message/callback.
+   - Backfilled `display_name` in `points` table using SQL.
+
+Please review the changes in `handlers/main_menu.py`, `handlers/game_menu.py`, `services/points_service.py`, and `middleware/referral_validator.py`.
