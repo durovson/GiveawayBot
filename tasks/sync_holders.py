@@ -1,8 +1,10 @@
 import asyncio
 import logging
 import loader
+from typing import List, Dict, Optional
 from database import db
 from services.leaderboard import LeaderboardService
+from services.points_service import PointsService
 from utils import normalize_to_raw
 import json
 
@@ -90,6 +92,44 @@ async def fetch_holders():
 
     return cached
 
+async def sync_points_and_referrals(holders: List[Dict]):
+    """Syncs pack counts to the points table and awards referral income for new purchases."""
+    try:
+        linked_wallets = await db.get_all_linked_wallets()
+        wallet_to_tg = {normalize_to_raw(w['wallet_address']): w['telegram_id'] for w in linked_wallets if w.get('wallet_address')}
+
+        for h in holders:
+            wallet = h['wallet'] # Already raw from fetch_holders
+            if wallet in wallet_to_tg:
+                user_id = wallet_to_tg[wallet]
+                current_packs = h['packs']
+
+                pts = await db.get_points(user_id)
+                if pts is None:
+                    # First sync for this user: initialize packs without referral bonus
+                    await db.upsert_points(user_id, packs=current_packs)
+                    await PointsService.recalculate_points(user_id)
+                else:
+                    prev_packs = pts.get("packs", 0)
+                    if current_packs != prev_packs:
+                        # Update packs count
+                        await db.upsert_points(user_id, packs=current_packs)
+
+                        # If increased, award referral income to referrer
+                        if current_packs > prev_packs:
+                            user = await db.get_user_by_telegram_id(user_id)
+                            if user and user.get("referrer_id"):
+                                referrer_id = user["referrer_id"]
+                                ref_pts = await db.get_points(referrer_id)
+                                curr_income = ref_pts.get("referral_income", 0) if ref_pts else 0
+                                await db.upsert_points(referrer_id, referral_income=curr_income + 1)
+                                await PointsService.recalculate_points(referrer_id)
+
+                        # Recalculate for the user
+                        await PointsService.recalculate_points(user_id)
+    except Exception as e:
+        logger.error(f"Error in sync_points_and_referrals: {e}")
+
 async def daily_sync_task(bot):
     """Background task to sync holders from Stickers Tools API daily."""
     logger.info("Starting daily sync task")
@@ -105,8 +145,11 @@ async def daily_sync_task(bot):
                 except Exception:
                     logger.exception("Snapshot save failed")
 
+                # Sync points for linked wallets
+                await sync_points_and_referrals(holders)
+
                 LeaderboardService.invalidate_cache()
-                logger.info("Holders snapshot updated")
+                logger.info("Holders snapshot and points updated")
             else:
                 logger.warning("Holders API returned empty dataset. Skipping update.")
 
@@ -115,7 +158,7 @@ async def daily_sync_task(bot):
         except Exception as e:
             logger.error(f"Error in daily_sync_task: {e}", exc_info=True)
 
-        # Sleep for 24 hours
+        # Sleep for 8 hours
         await asyncio.sleep(8 * 3600)
 
 MILESTONES = (333, 666, 1000)
@@ -147,6 +190,9 @@ async def milestone_monitor_task(bot):
                     total_held=current_total
                 )
             else:
+                # Sync points for linked wallets frequently
+                await sync_points_and_referrals(holders)
+
                 # 3. Detect milestone crossings
                 for target in MILESTONES:
                     if previous_total < target <= current_total:

@@ -14,6 +14,7 @@ from web_server import app, ping_self
 from services.ton_connect_service import TonConnectService
 from services.leaderboard import LeaderboardService
 from services.localization import get_locale
+from middleware.referral_validator import ReferralValidatorMiddleware
 
 # Import handlers
 from handlers.main_menu import router as main_menu_router
@@ -50,6 +51,10 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
                 )
             except Exception:
                 pass
+
+# Middleware
+dp.message.middleware(ReferralValidatorMiddleware())
+dp.callback_query.middleware(ReferralValidatorMiddleware())
 
 # Registration
 dp.include_router(admin_router)

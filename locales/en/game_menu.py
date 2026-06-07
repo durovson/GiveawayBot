@@ -4,9 +4,8 @@ TEXTS = {
         "┋\n"
         "┣ Ready to play?\n"
         "┋\n"
-        "┣ [<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>] HIGHSCORE: View Leaderboard\n"
-        "┣ [<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>] LOGIN: Connect Ton Wallet\n"
-        "┣ [<tg-emoji emoji-id=\"5258391025281408576\">📈</tg-emoji>] BUY Stickers: Boost your Power\n"
+        "┣ Your Points: {rp}\n"
+        "┣ Total Invited: {refs}\n"
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
@@ -18,15 +17,19 @@ TEXTS = {
     "game_leaderboard_waiting": (
         "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
         "┋\n"
-        "┣ No holder statistics available yet.\n"
-        "┣ Blockchain sync in progress.\n"
+        "┣ No ranking data available yet.\n"
         "┋\n"
         "┗┅┅┅/ Wating... /"
     ),
     "game_leaderboard_title": (
         "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
         "┋\n"
-        "┣ Global holders ranking. \n"
+        "┣ Global ranking by Rating Points (RP).\n"
+        "┋\n"
+        "┣ ⭐️ 1 Pack = 10 RP\n"
+        "┣ 👥 1 Wallet Ref = 5 RP\n"
+        "┣ 🦍 Holder Bonus = 150 RP\n"
+        "┋\n"
         "┣ Data is synchronized in real-time.\n"
         "┋\n"
         "{lines}\n"
@@ -59,5 +62,32 @@ TEXTS = {
         "Invite link created successfully!\n\n"
         "Click the button below to join. The link is valid for 24 hours and can only be used once."
     ),
-    "holders_chat_error": "❌ Error generating invite link. Please try again later."
+    "holders_chat_error": "❌ Error generating invite link. Please try again later.",
+    "referral_menu_title": (
+        "┏┅┅👥 / <b>REFERRAL</b> /\n"
+        "┋\n"
+        "┣ Your referral link:\n"
+        "┣ {ref_link}\n"
+        "┋\n"
+        "┣ Invited: {invited}\n"
+        "┣ Active: {active}\n"
+        "┣ 1 Wallet Ref = 5 RP\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Select an option</b> /"
+    ),
+    "terms_screen_text": (
+        "<b>Welcome to NOTAPES Hub.</b>\n\n"
+        "By continuing, you agree to the\n"
+        "Terms of Service and Privacy Policy."
+    ),
+    "terms_btn": "📄 Terms",
+    "privacy_btn": "🔒 Privacy",
+    "continue_btn": "✅ Continue",
+    "highscore_btn": "[🍑] HIGHSCORE",
+    "referral_btn": "[👥] REFERRAL",
+    "holders_btn": "[👤] HOLDERS",
+    "login_btn": "[💰] LOGIN",
+    "boost_btn": "[📈] BOOST",
+    "access_granted_msg": "Access granted. Press again to join.",
+    "need_packs_msg": "You need 10 packs to access Holder Chat."
 }
