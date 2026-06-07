@@ -65,13 +65,11 @@ async def show_terms_screen(
         url="https://telegra.ph/terms-placeholder",
         icon_custom_emoji_id="5258477770735885832"
     )
-
     builder.button(
         text=texts["privacy_btn"],
         url="https://telegra.ph/privacy-placeholder",
         icon_custom_emoji_id="5258476306152038031"
     )
-
     builder.button(
         text=texts["continue_btn"],
         callback_data="accept_terms",
@@ -80,23 +78,19 @@ async def show_terms_screen(
 
     builder.adjust(2, 1)
 
-    markup = builder.as_markup()
-
-    if isinstance(message, types.CallbackQuery):
-        await message.message.edit_text(
-            text,
-            reply_markup=markup
-        )
-    else:
+    if isinstance(message, types.Message):
         await message.answer(
             text,
-            reply_markup=markup
+            reply_markup=builder.as_markup(),
+            parse_mode=ParseMode.HTML
         )
-
-    if isinstance(message, types.Message):
-        await message.answer(text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
     else:
-        await safe_edit_text(message, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+        await safe_edit_text(
+            message,
+            text,
+            reply_markup=builder.as_markup(),
+            parse_mode=ParseMode.HTML
+        )
 
 async def show_main_menu(event: types.Message | types.CallbackQuery, texts: dict = None):
     user_id = event.from_user.id
