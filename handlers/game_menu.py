@@ -102,16 +102,18 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
 
     lines = []
     for i, p in enumerate(top_points, 1):
-        # Priority logic for display name
-        username = p.get("username")
-        display_name = p.get("display_name")
+        # Data from joined users table
+        user_data = p.get("users") or {}
+        uname = user_data.get("username")
+        fname = user_data.get("first_name")
+        tid = p.get("user_id")
 
-        if username:
-            final_name = f"@{username}"
-        elif display_name and not display_name.isdigit() and display_name != str(p.get("user_id")):
-            final_name = display_name
+        if uname:
+            final_name = f"@{uname}"
+        elif fname:
+            final_name = fname
         else:
-            final_name = f"User {p.get('user_id')}"
+            final_name = str(tid)
 
         final_name = html.escape(final_name)
         rp = p.get("total_points", 0)
@@ -129,15 +131,16 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
         except:
             rank = "—"
 
-        username = user_points.get("username")
-        display_name = user_points.get("display_name")
+        user_data = user_points.get("users") or {}
+        uname = user_data.get("username")
+        fname = user_data.get("first_name")
 
-        if username:
-            final_name = f"@{username}"
-        elif display_name and not display_name.isdigit() and display_name != str(user_id):
-            final_name = display_name
+        if uname:
+            final_name = f"@{uname}"
+        elif fname:
+            final_name = fname
         else:
-            final_name = "You"
+            final_name = str(user_id)
 
         final_name = html.escape(final_name)
         rp = user_points.get("total_points", 0)

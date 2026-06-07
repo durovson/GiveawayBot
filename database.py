@@ -453,7 +453,7 @@ class Database:
     async def get_points(self, user_id: int) -> Optional[Dict]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("points").select("*").eq("user_id", user_id).execute()
+            response = await self.client.table("points").select("*, users(username, first_name)").eq("user_id", user_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error getting points: {e}")
@@ -471,7 +471,7 @@ class Database:
     async def get_leaderboard(self, limit: int = 50) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("points").select("*").order("total_points", desc=True).limit(limit).execute()
+            response = await self.client.table("points").select("*, users(username, first_name)").order("total_points", desc=True).limit(limit).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting leaderboard: {e}")
