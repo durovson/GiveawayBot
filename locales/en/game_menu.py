@@ -86,9 +86,9 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /."
     ),
-    "terms_btn": "<tg-emoji emoji-id=\"5258477770735885832\">📄</tg-emoji> Terms",
-    "privacy_btn": "<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji> Privacy",
-    "continue_btn": "<tg-emoji emoji-id=\"5260416304224936047\">✅</tg-emoji> Continue",
+    "terms_btn": "Terms",
+    "privacy_btn": "Privacy",
+    "continue_btn": "Continue",
     "highscore_btn": "HIGHSCORE",
     "referral_btn": "REFERRAL",
     "holders_btn": "HOLDERS",
