@@ -1,15 +1,20 @@
-from aiogram import Router, types, F
-from aiogram.filters import Command
+from aiogram import Router, types, F, Bot
+from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.enums import ParseMode
 import html
+from datetime import datetime
+
 from database import db
 from handlers.giveaway_creation import GiveawayCreation
 from utils import is_admin, is_any_admin, safe_answer, safe_edit_text, is_holder
 from services.localization import get_locale
+from services.referral_service import ReferralService
 
 router = Router()
+
+CURRENT_TERMS_VERSION = "v1"
 
 async def get_main_menu_keyboard(user_id: int, texts: dict):
     builder = InlineKeyboardBuilder()
@@ -46,15 +51,78 @@ async def get_main_menu_keyboard(user_id: int, texts: dict):
 
     return builder.as_markup()
 
+async def show_terms_screen(message: types.Message | types.CallbackQuery, texts: dict):
+    text = (
+        "<b>Welcome to NOTAPES Hub.</b>\n\n"
+        "By continuing, you agree to the\n"
+        "Terms of Service and Privacy Policy."
+    )
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text="📄 Terms", url="https://telegra.ph/terms-placeholder")
+    builder.button(text="🔒 Privacy", url="https://telegra.ph/privacy-placeholder")
+    builder.button(text="✅ Continue", callback_data="accept_terms")
+    builder.adjust(2, 1)
+
+    if isinstance(message, types.Message):
+        await message.answer(text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+    else:
+        await safe_edit_text(message, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
+
 @router.message(Command("start"))
-async def cmd_start(message: types.Message):
-    texts = await get_locale(message.from_user.id)
+async def cmd_start(message: types.Message, command: CommandObject):
+    user_id = message.from_user.id
+    texts = await get_locale(user_id)
+
+    # 1. Ensure user exists
+    await db.ensure_user_exists(user_id)
+
+    # 2. Process referral parameter
+    if command.args:
+        await ReferralService.process_start_param(user_id, command.args)
+
+    # 3. Ensure user has a referral code (First Login Migration)
+    await ReferralService.get_or_create_ref_code(user_id)
+
+    # 4. Check Terms
+    user_data = await db.get_user_by_telegram_id(user_id)
+    if not user_data or user_data.get("terms_version") != CURRENT_TERMS_VERSION:
+        await show_terms_screen(message, texts)
+        return
+
+    # 5. Show Main Menu
     await safe_answer(
         message,
         texts["main_menu_text"],
-        reply_markup=await get_main_menu_keyboard(message.from_user.id, texts),
+        reply_markup=await get_main_menu_keyboard(user_id, texts),
         parse_mode=ParseMode.HTML
     )
+
+@router.callback_query(F.data == "accept_terms")
+async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    texts = await get_locale(user_id)
+
+    # Save acceptance
+    await db.update_user_fields(
+        user_id,
+        terms_accepted_at=datetime.now(),
+        terms_version=CURRENT_TERMS_VERSION
+    )
+
+    # Delete terms message
+    try:
+        await callback.message.delete()
+    except:
+        pass
+
+    # Open Main Menu
+    await callback.message.answer(
+        texts["main_menu_text"],
+        reply_markup=await get_main_menu_keyboard(user_id, texts),
+        parse_mode=ParseMode.HTML
+    )
+    await callback.answer()
 
 @router.message(Command("setup"), F.chat.type.in_({"group", "supergroup"}))
 async def cmd_setup(message: types.Message):
@@ -72,13 +140,21 @@ async def cmd_setup(message: types.Message):
 
 @router.callback_query(F.data == "main_menu")
 async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext):
-    texts = await get_locale(callback.from_user.id)
+    user_id = callback.from_user.id
+    texts = await get_locale(user_id)
+
+    # Check Terms even on return to main menu
+    user_data = await db.get_user_by_telegram_id(user_id)
+    if not user_data or user_data.get("terms_version") != CURRENT_TERMS_VERSION:
+        await show_terms_screen(callback, texts)
+        return
+
     await callback.answer()
     await state.clear()
     await safe_edit_text(
         callback,
         texts["main_menu_text"],
-        reply_markup=await get_main_menu_keyboard(callback.from_user.id, texts),
+        reply_markup=await get_main_menu_keyboard(user_id, texts),
         parse_mode=ParseMode.HTML
     )
 

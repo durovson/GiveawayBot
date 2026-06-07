@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime
 from aiogram import Router, F, types
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
@@ -187,6 +188,16 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
                 await clear_messages(user_id, state, category=MessageCategory.TEMPORARY)
 
                 await db.update_user_wallet(user_id, raw_address)
+
+                # Referral system hook: set wallet_connected_at and referral_status
+                user_data = await db.get_user_by_telegram_id(user_id)
+                if user_data and not user_data.get("wallet_connected_at"):
+                    await db.update_user_fields(
+                        user_id,
+                        wallet_connected_at=datetime.now(),
+                        referral_status="wallet_connected"
+                    )
+
                 display_addr = short_wallet(raw_address)
 
                 # 2. Send success notification (PERSISTENT)

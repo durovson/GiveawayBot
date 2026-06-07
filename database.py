@@ -404,4 +404,77 @@ class Database:
         except Exception as e:
             logger.error(f"Error saving holder invite: {e}")
 
+    async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[Dict]:
+        if not self._check_client(): return None
+        try:
+            response = await self.client.table("users").select("*").eq("telegram_id", telegram_id).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error getting user by telegram_id: {e}")
+            return None
+
+    async def get_user_by_ref_code(self, ref_code: str) -> Optional[Dict]:
+        if not self._check_client(): return None
+        try:
+            response = await self.client.table("users").select("*").eq("ref_code", ref_code).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error getting user by ref_code: {e}")
+            return None
+
+    async def update_user_fields(self, telegram_id: int, **kwargs):
+        if not self._check_client(): return
+        try:
+            await self.client.table("users").update(kwargs).eq("telegram_id", telegram_id).execute()
+        except Exception as e:
+            logger.error(f"Error updating user fields: {e}")
+
+    async def create_referral(self, referrer_id: int, referred_id: int):
+        if not self._check_client(): return
+        try:
+            await self.client.table("referrals").upsert({
+                "referrer_id": referrer_id,
+                "referred_id": referred_id,
+                "status": "new"
+            }).execute()
+        except Exception as e:
+            logger.error(f"Error creating referral: {e}")
+
+    async def update_referral_status(self, referred_id: int, status: str, activated_at: Optional[datetime] = None):
+        if not self._check_client(): return
+        try:
+            data = {"status": status}
+            if activated_at:
+                data["activated_at"] = activated_at.isoformat()
+            await self.client.table("referrals").update(data).eq("referred_id", referred_id).execute()
+        except Exception as e:
+            logger.error(f"Error updating referral status: {e}")
+
+    async def get_points(self, user_id: int) -> Optional[Dict]:
+        if not self._check_client(): return None
+        try:
+            response = await self.client.table("points").select("*").eq("user_id", user_id).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error getting points: {e}")
+            return None
+
+    async def upsert_points(self, user_id: int, **kwargs):
+        if not self._check_client(): return
+        try:
+            data = {"user_id": user_id, "updated_at": datetime.now().isoformat()}
+            data.update(kwargs)
+            await self.client.table("points").upsert(data).execute()
+        except Exception as e:
+            logger.error(f"Error upserting points: {e}")
+
+    async def get_leaderboard(self, limit: int = 50) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("points").select("*").order("total_points", desc=True).limit(limit).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting leaderboard: {e}")
+            return []
+
 db = Database()
