@@ -1,4 +1,0 @@
-- Profile Synchronization: User profile data (username, first_name) is stored strictly in the users table, which serves as the single source of truth. The points table only stores numeric point data and holder status. Auto-update logic in ReferralValidatorMiddleware keeps the users table synchronized with Telegram data on every interaction.
-- Leaderboard Naming Priority: Leaderboard names use @username > first_name > raw Telegram ID. Joins between points and users tables ensure correct display without name duplication or sync issues.
-- Privacy Policy Logic: Fixed terms_version comparison and ensured that acceptance timestamps are saved as ISO format strings to avoid serialization issues with the Supabase client. Added logging for policy version checks.
-- UI Navigation: Ensured the "Main Menu" button consistently returns users to the root Main Menu (texts["main_menu_text"]) instead of the Game Menu by introducing a dedicated show_main_menu function.
