@@ -11,10 +11,9 @@ from handlers.giveaway_creation import GiveawayCreation
 from utils import is_admin, is_any_admin, safe_answer, safe_edit_text, is_holder
 from services.localization import get_locale
 from services.referral_service import ReferralService
+from services.points_service import PointsService
 
 router = Router()
-
-CURRENT_TERMS_VERSION = "v1"
 
 async def get_main_menu_keyboard(user_id: int, texts: dict):
     builder = InlineKeyboardBuilder()
@@ -77,20 +76,24 @@ async def cmd_start(message: types.Message, command: CommandObject):
     # 1. Ensure user exists
     await db.ensure_user_exists(user_id)
 
-    # 2. Process referral parameter
+    # 2. Sync profile for leaderboard
+    await PointsService.update_username(user_id, message.from_user.username, message.from_user.first_name)
+
+    # 3. Process referral parameter
     if command.args:
         await ReferralService.process_start_param(user_id, command.args)
 
-    # 3. Ensure user has a referral code (First Login Migration)
+    # 4. Ensure user has a referral code (First Login Migration)
     await ReferralService.get_or_create_ref_code(user_id)
 
-    # 4. Check Terms
+    # 5. Check Terms
+    current_policy_version = await db.get_setting("Privacy Policy") or "v1"
     user_data = await db.get_user_by_telegram_id(user_id)
-    if not user_data or user_data.get("terms_version") != CURRENT_TERMS_VERSION:
+    if not user_data or user_data.get("terms_version") != current_policy_version:
         await show_terms_screen(message, texts)
         return
 
-    # 5. Show Main Menu
+    # 6. Show Main Menu
     await safe_answer(
         message,
         texts["main_menu_text"],
@@ -103,11 +106,13 @@ async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext)
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
 
+    current_policy_version = await db.get_setting("Privacy Policy") or "v1"
+
     # Save acceptance
     await db.update_user_fields(
         user_id,
         terms_accepted_at=datetime.now(),
-        terms_version=CURRENT_TERMS_VERSION
+        terms_version=current_policy_version
     )
 
     # Delete terms message
@@ -140,23 +145,10 @@ async def cmd_setup(message: types.Message):
 
 @router.callback_query(F.data == "main_menu")
 async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
-    texts = await get_locale(user_id)
-
-    # Check Terms even on return to main menu
-    user_data = await db.get_user_by_telegram_id(user_id)
-    if not user_data or user_data.get("terms_version") != CURRENT_TERMS_VERSION:
-        await show_terms_screen(callback, texts)
-        return
-
+    from handlers.game_menu import show_game_menu
     await callback.answer()
     await state.clear()
-    await safe_edit_text(
-        callback,
-        texts["main_menu_text"],
-        reply_markup=await get_main_menu_keyboard(user_id, texts),
-        parse_mode=ParseMode.HTML
-    )
+    await show_game_menu(callback, state)
 
 @router.callback_query(F.data == "create_giveaway")
 async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMContext):
