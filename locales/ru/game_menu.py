@@ -89,9 +89,9 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /."
     ),
-    "terms_btn": "<tg-emoji emoji-id=\"5258477770735885832\">📄</tg-emoji> Условия",
-    "privacy_btn": "<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji> Приватность",
-    "continue_btn": "<tg-emoji emoji-id=\"5260416304224936047\">✅</tg-emoji> Продолжить",
+    "terms_btn": "Условия",
+    "privacy_btn": "Приватность",
+    "continue_btn": "Продолжить",
     "highscore_btn": "HIGHSCORE",
     "referral_btn": "REFERRAL",
     "holders_btn": "HOLDERS",
