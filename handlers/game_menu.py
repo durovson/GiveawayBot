@@ -109,13 +109,11 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
         tid = p.get("user_id")
 
         if uname:
-            final_name = f"@{uname}"
+            final_name = f"@{html.escape(uname)}"
         elif fname:
-            final_name = fname
+            final_name = html.escape(fname)
         else:
-            final_name = str(tid)
-
-        final_name = html.escape(final_name)
+            final_name = f"<code>{tid}</code>"
         rp = p.get("total_points", 0)
         packs = p.get("packs", 0)
         active_refs = p.get("active_referrals", 0)
@@ -136,13 +134,11 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
         fname = user_data.get("first_name")
 
         if uname:
-            final_name = f"@{uname}"
+            final_name = f"@{html.escape(uname)}"
         elif fname:
-            final_name = fname
+            final_name = html.escape(fname)
         else:
-            final_name = str(user_id)
-
-        final_name = html.escape(final_name)
+            final_name = f"<code>{user_id}</code>"
         rp = user_points.get("total_points", 0)
         packs = user_points.get("packs", 0)
         active_refs = user_points.get("active_referrals", 0)
