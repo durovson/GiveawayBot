@@ -7,11 +7,11 @@ TEXTS = {
         "┣ Ваши очки (RP): {rp} pts\n"
         "┣ Всего приглашено: {refs} fnds\n"
         "┋\n"
-        "┣ <tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji> <b>HIGHSCORE:</b> Таблица лидеров\n"
+        "┣ <tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji> <b>HIGHSCORE:</b> Таблица лидеров\n"
         "┣ <tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji> <b>REFERRAL:</b> Приглашай и зарабатывай\n"
-        "┣ <tg-emoji emoji-id=\"5260687681733533075\">🤝</tg-emoji> <b>HOLDERS:</b> Закрытый чат\n"
-        "┣ <tg-emoji emoji-id=\"5316612764427367709\">💰</tg-emoji> <b>LOGIN:</b> Подключить кошелек\n"
-        "┣ <tg-emoji emoji-id=\"5258212268742549391\">🌠</tg-emoji> <b>BOOST:</b> Увеличить силу\n"
+        "┣ <tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji> <b>HOLDERS:</b> Закрытый чат\n"
+        "┣ <tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji> <b>LOGIN:</b> Подключить кошелек\n"
+        "┣ <tg-emoji emoji-id=\"5260221883940347555\">🔫</tg-emoji> <b>BOOST:</b> Увеличить силу\n"
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
@@ -21,22 +21,20 @@ TEXTS = {
     "game_main_menu_btn": "Главное меню",
     "game_back_btn": "Назад",
     "game_leaderboard_waiting": (
-        "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ / <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
         "┋\n"
         "┣ Данные рейтинга пока недоступны.\n"
         "┋\n"
         "┗┅┅┅/ Ожидание... /"
     ),
     "game_leaderboard_title": (
-        "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ / <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
         "┋\n"
         "┣ Глобальный рейтинг по Rating Points (RP).\n"
         "┋\n"
-        "┣ ⭐️ 1 Pack = 10 RP\n"
-        "┣ 👥 1 Wallet Ref = 5 RP\n"
-        "┣ 🦍 Holder Bonus = 150 RP\n"
-        "┋\n"
-        "┣ Данные синхронизируются в реальном времени.\n"
+        "┣ <tg-emoji emoji-id=\"5258165702707125574\">⭐️</tg-emoji> <b>1 Pack = 10 RP</b>\n"
+        "┣ <tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji> <b>1 Wallet Ref = 5 RP</b>\n"
+        "┣ <tg-emoji emoji-id=\"5258179403652801593\">❤️</tg-emoji> <b>Holder Bonus = 150 RP</b>\n"
         "┋\n"
         "{lines}\n"
         "┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n"
@@ -48,12 +46,12 @@ TEXTS = {
     "game_packs": "паков",
     "holders_chat_btn": "Чат холдеров",
     "holders_chat_title": (
-        "┏┅┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>HOLDERS</b> /\n"
+        "┏┅┅<tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji>┅ / <b>HOLDERS</b> /\n"
         "┋\n"
         "┣ Хотите вступить в закрытый чат холдеров?\n"
         "┣ Доступ открыт от 10 паков!\n"
         "┋\n"
-        "┣ Ваши паки: {packs}\n"
+        "┣ <b>Ваши паки:</b> {packs}\n"
         "┋\n"
         "┗┅┅┅/ <b>Выберите действие</b> /"
     ),
@@ -70,14 +68,14 @@ TEXTS = {
     ),
     "holders_chat_error": "❌ Ошибка при создании ссылки. Пожалуйста, попробуйте позже.",
     "referral_menu_title": (
-        "┏┅┅👥 / <b>РЕФЕРАЛЫ</b> /\n"
+        "┏┅┅<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>┅ / <b>РЕФЕРАЛЫ</b> /\n"
         "┋\n"
-        "┣ Ваша реферальная ссылка:\n"
+        "┣ <b>Ваша реферальная ссылка:</b>\n"
         "┣ {ref_link}\n"
         "┋\n"
-        "┣ Приглашено: {invited}\n"
-        "┣ Активно: {active}\n"
-        "┣ 1 Wallet Ref = 5 RP\n"
+        "┣ <b>Приглашено:<b> {invited}\n"
+        "┣ <b>Активно:</b> {active}\n"
+        "┣ <b>1 Wallet Ref = 5 RP</b>\n"
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
@@ -85,10 +83,15 @@ TEXTS = {
         "<b>Добро пожаловать в NOTAPES Hub.</b>\n\n"
         "Продолжая, вы соглашаетесь с\n"
         "Условиями обслуживания и Политикой конфиденциальности."
+        "┏┅┅<tg-emoji emoji-id=\"5258093637450866522\">🤖</tg-emoji>┅ / <b>NOTAPES Hub</b> /\n"
+        "┋\n"
+        "┣ Продолжая, вы соглашаетесь с <b>Условиями обслуживания</b> и <b>Политикой конфиденциальности.</b>\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Выберите опцию</b> /."
     ),
-    "terms_btn": "📄 Условия",
-    "privacy_btn": "🔒 Приватность",
-    "continue_btn": "✅ Продолжить",
+    "terms_btn": "<tg-emoji emoji-id=\"5258477770735885832\">📄</tg-emoji> Условия",
+    "privacy_btn": "<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji> Приватность",
+    "continue_btn": "<tg-emoji emoji-id=\"5260416304224936047\">✅</tg-emoji> Продолжить",
     "highscore_btn": "HIGHSCORE",
     "referral_btn": "REFERRAL",
     "holders_btn": "HOLDERS",
