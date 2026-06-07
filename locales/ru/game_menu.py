@@ -73,7 +73,7 @@ TEXTS = {
         "┣ <b>Ваша реферальная ссылка:</b>\n"
         "┣ {ref_link}\n"
         "┋\n"
-        "┣ <b>Приглашено:<b> {invited}\n"
+        "┣ <b>Приглашено:</b> {invited}\n"
         "┣ <b>Активно:</b> {active}\n"
         "┣ <b>1 Wallet Ref = 5 RP</b>\n"
         "┋\n"
