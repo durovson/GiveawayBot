@@ -471,7 +471,7 @@ class Database:
     async def get_leaderboard(self, limit: int = 50) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("points").select("*, users(username, first_name)").order("total_points", desc=True).limit(limit).execute()
+            response = await self.client.table("points").select("*, users(username, first_name)").order("total_points", desc=True).order("packs", desc=True).order("active_referrals", desc=True).order("user_id", desc=False).limit(limit).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting leaderboard: {e}")
