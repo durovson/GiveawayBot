@@ -4,14 +4,14 @@ TEXTS = {
         "┋\n"
         "┣ Ready to play?\n"
         "┋\n"
-        "┣ Your Points: {rp} pts\n"
-        "┣ Total Invited: {refs} fnds\n"
+        "┣ <b>Your Points:</b> {rp} RP\n"
+        "┣ <b>Total Invited:</b> {refs} \n"
         "┋\n"
-        "┣ <tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji> <b>HIGHSCORE:</b> View Leaderboard\n"
+        "┣ <tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji> <b>HIGHSCORE:</b> View Leaderboard\n"
         "┣ <tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji> <b>REFERRAL:</b> Invite & Earn Points\n"
-        "┣ <tg-emoji emoji-id=\"5260687681733533075\">🤝</tg-emoji> <b>HOLDERS:</b> Join Private Chat\n"
-        "┣ <tg-emoji emoji-id=\"5316612764427367709\">💰</tg-emoji> <b>LOGIN:</b> Connect Ton Wallet\n"
-        "┣ <tg-emoji emoji-id=\"5258212268742549391\">🌠</tg-emoji> <b>BOOST:</b> Boost your Power\n"
+        "┣ <tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji> <b>HOLDERS:</b> Join Private Chat\n"
+        "┣ <tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji> <b>LOGIN:</b> Connect Ton Wallet\n"
+        "┣ <tg-emoji emoji-id=\"5260221883940347555\">🔫</tg-emoji> <b>BOOST:</b> Boost your Power\n"
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
@@ -21,22 +21,20 @@ TEXTS = {
     "game_main_menu_btn": "Main Menu",
     "game_back_btn": "Back",
     "game_leaderboard_waiting": (
-        "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
         "┋\n"
         "┣ No ranking data available yet.\n"
         "┋\n"
         "┗┅┅┅/ Wating... /"
     ),
     "game_leaderboard_title": (
-        "┏┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
         "┋\n"
         "┣ Global ranking by Rating Points (RP).\n"
         "┋\n"
-        "┣ ⭐️ 1 Pack = 10 RP\n"
-        "┣ 👥 1 Wallet Ref = 5 RP\n"
-        "┣ 🦍 Holder Bonus = 150 RP\n"
-        "┋\n"
-        "┣ Data is synchronized in real-time.\n"
+        "┣ <tg-emoji emoji-id=\"5258165702707125574\">⭐️</tg-emoji> <b>1 Pack = 10 RP</b>\n"
+        "┣ <tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji> <b>1 Wallet Ref = 5 RP</b>\n"
+        "┣ <tg-emoji emoji-id=\"5258179403652801593\">❤️</tg-emoji> </b>Holder Bonus = 150 RP<b>\n"
         "┋\n"
         "{lines}\n"
         "┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n"
@@ -48,12 +46,12 @@ TEXTS = {
     "game_packs": "packs",
     "holders_chat_btn": "Holders Chat",
     "holders_chat_title": (
-        "┏┅┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>HOLDERS</b> /\n"
+        "┏┅┅<tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji>┅ / <b>HOLDERS</b> /\n"
         "┋\n"
         "┣ Want to join the closed holders chat?\n"
         "┣ Access is available from 10 packs!\n"
         "┋\n"
-        "┣ Your packs: {packs}\n"
+        "┣ <b>Your packs:</b> {packs}\n"
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
@@ -70,25 +68,27 @@ TEXTS = {
     ),
     "holders_chat_error": "❌ Error generating invite link. Please try again later.",
     "referral_menu_title": (
-        "┏┅┅👥 / <b>REFERRAL</b> /\n"
+        "┏┅┅<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>┅ / <b>REFERRAL</b> /\n"
         "┋\n"
-        "┣ Your referral link:\n"
+        "┣ <b>Your referral link:</b>\n"
         "┣ {ref_link}\n"
         "┋\n"
-        "┣ Invited: {invited}\n"
-        "┣ Active: {active}\n"
-        "┣ 1 Wallet Ref = 5 RP\n"
+        "┣ <b>Invited:</b> {invited}\n"
+        "┣ <b>Active:</b> {active}\n"
+        "┣ <b>1 Wallet Ref = 5 RP</b>\n"
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "terms_screen_text": (
-        "<b>Welcome to NOTAPES Hub.</b>\n\n"
-        "By continuing, you agree to the\n"
-        "Terms of Service and Privacy Policy."
+        "┏┅┅<tg-emoji emoji-id=\"5258093637450866522\">🤖</tg-emoji>┅ / <b>NOTAPES Hub</b> /\n"
+        "┋\n"
+        "┣ By continuing, you agree to the <b>Terms of Service</b> and <b>Privacy Policy.</b>\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Select an option</b> /."
     ),
-    "terms_btn": "📄 Terms",
-    "privacy_btn": "🔒 Privacy",
-    "continue_btn": "✅ Continue",
+    "terms_btn": "<tg-emoji emoji-id=\"5258477770735885832\">📄</tg-emoji> Terms",
+    "privacy_btn": "<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji> Privacy",
+    "continue_btn": "<tg-emoji emoji-id=\"5260416304224936047\">✅</tg-emoji> Continue",
     "highscore_btn": "HIGHSCORE",
     "referral_btn": "REFERRAL",
     "holders_btn": "HOLDERS",
