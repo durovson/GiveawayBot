@@ -32,6 +32,7 @@ async def cleanup_connect(user_id: int):
 
 @router.callback_query(F.data == "wallet_menu")
 async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
     await db.ensure_user_exists(user_id)

@@ -98,35 +98,44 @@ async def sync_points_and_referrals(holders: List[Dict]):
         linked_wallets = await db.get_all_linked_wallets()
         wallet_to_tg = {normalize_to_raw(w['wallet_address']): w['telegram_id'] for w in linked_wallets if w.get('wallet_address')}
 
+        relevant_user_ids = [wallet_to_tg[h['wallet']] for h in holders if h['wallet'] in wallet_to_tg]
+        if not relevant_user_ids:
+            return
+
+        # Batch fetch points and users
+        all_pts = await db.get_points_batch(relevant_user_ids)
+        pts_map = {p['user_id']: p for p in all_pts}
+
+        # Batch fetch users for referrers lookup if needed
+        all_users = await db.get_users_batch(relevant_user_ids)
+        users_map = {u['telegram_id']: u for u in all_users}
+
         for h in holders:
-            wallet = h['wallet'] # Already raw from fetch_holders
+            wallet = h['wallet']
             if wallet in wallet_to_tg:
                 user_id = wallet_to_tg[wallet]
                 current_packs = h['packs']
 
-                pts = await db.get_points(user_id)
+                pts = pts_map.get(user_id)
                 if pts is None:
-                    # First sync for this user: initialize packs without referral bonus
                     await db.upsert_points(user_id, packs=current_packs)
                     await PointsService.recalculate_points(user_id)
                 else:
                     prev_packs = pts.get("packs", 0)
                     if current_packs != prev_packs:
-                        # Update packs count
                         await db.upsert_points(user_id, packs=current_packs)
 
-                        # If increased, award referral income to referrer
                         if current_packs > prev_packs:
-                            user = await db.get_user_by_telegram_id(user_id)
+                            user = users_map.get(user_id)
                             if user and user.get("referrer_id"):
                                 referrer_id = user["referrer_id"]
-                                ref_pts = await db.get_points(referrer_id)
+                                ref_pts = await db.get_points(referrer_id) # Referrers can be outside holders set, keep individual if not optimized further
                                 curr_income = ref_pts.get("referral_income", 0) if ref_pts else 0
                                 await db.upsert_points(referrer_id, referral_income=curr_income + 1)
                                 await PointsService.recalculate_points(referrer_id)
 
-                        # Recalculate for the user
                         await PointsService.recalculate_points(user_id)
+        return # End of function body replacement
     except Exception as e:
         logger.error(f"Error in sync_points_and_referrals: {e}")
 

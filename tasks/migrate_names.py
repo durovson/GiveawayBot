@@ -46,7 +46,7 @@ async def migrate_names():
 
     # 1. Get all points records
     try:
-        response = await db.client.table("points").select("*").execute()
+        response = await db.client.table("points").select("user_id, username, display_name").execute()
         points_records = response.data
     except Exception as e:
         logger.error(f"Error fetching points: {e}")

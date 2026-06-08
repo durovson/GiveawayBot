@@ -50,7 +50,7 @@ class Database:
     async def get_tracked_chats(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("chats").select("*").execute()
+            response = await self.client.table("chats").select("id, chat_id, title, chat_type").execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting tracked chats: {e}")
@@ -59,7 +59,7 @@ class Database:
     async def get_tracked_groups(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("chats").select("*").in_("chat_type", ["group", "supergroup", "channel"]).execute()
+            response = await self.client.table("chats").select("id, chat_id, title, chat_type").in_("chat_type", ["group", "supergroup", "channel"]).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting tracked groups: {e}")
@@ -101,7 +101,7 @@ class Database:
     async def get_giveaway_messages(self, giveaway_id: int) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("giveaway_messages").select("*").eq("giveaway_id", giveaway_id).execute()
+            response = await self.client.table("giveaway_messages").select("chat_id, message_id").eq("giveaway_id", giveaway_id).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting giveaway messages: {e}")
@@ -124,7 +124,7 @@ class Database:
     async def get_expired_giveaways(self, now: datetime) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("giveaways")                 .select("*")                 .eq("status", "active")                 .eq("mode", "timed")                 .lte("end_at", now.isoformat())                 .execute()
+            response = await self.client.table("giveaways").select("id, creator_id, chat_id, title, winners_count, prizes, mandatory_channels, allowed_users").eq("status", "active").eq("mode", "timed").lte("end_at", now.isoformat()).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error fetching expired giveaways: {e}")
@@ -133,7 +133,7 @@ class Database:
     async def get_giveaway(self, giveaway_id: int) -> Optional[Dict]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("giveaways").select("*").eq("id", giveaway_id).execute()
+            response = await self.client.table("giveaways").select("id, creator_id, chat_id, title, mode, value, winners_count, prizes, status, end_at, mandatory_channels, allowed_users").eq("id", giveaway_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error getting giveaway: {e}")
@@ -142,7 +142,7 @@ class Database:
     async def add_participant(self, giveaway_id: int, user_id: int, username: Optional[str]) -> bool:
         if not self._check_client(): return False
         try:
-            existing = await self.client.table("participants").select("*").eq("giveaway_id", giveaway_id).eq("user_id", user_id).execute()
+            existing = await self.client.table("participants").select("id").eq("giveaway_id", giveaway_id).eq("user_id", user_id).execute()
             if existing.data:
                 return False
             await self.client.table("participants").insert({
@@ -165,7 +165,7 @@ class Database:
     async def get_participants(self, giveaway_id: int) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("participants").select("*").eq("giveaway_id", giveaway_id).execute()
+            response = await self.client.table("participants").select("user_id, username").eq("giveaway_id", giveaway_id).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting participants: {e}")
@@ -199,7 +199,7 @@ class Database:
     async def get_giveaway_winners(self, giveaway_id: int) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("winners").select("*").eq("giveaway_id", giveaway_id).execute()
+            response = await self.client.table("winners").select("user_id, username, prize").eq("giveaway_id", giveaway_id).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting giveaway winners: {e}")
@@ -231,7 +231,7 @@ class Database:
     async def get_notifications(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("notifications").select("*").execute()
+            response = await self.client.table("notifications").select("id, title, text, custom_buttons, interval_minutes, is_active, last_sent, last_message_id").execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting notifications: {e}")
@@ -240,7 +240,7 @@ class Database:
     async def get_active_notifications(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("notifications").select("*").eq("is_active", True).execute()
+            response = await self.client.table("notifications").select("id, title, text, custom_buttons, interval_minutes, last_sent, last_message_id").eq("is_active", True).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting active notifications: {e}")
@@ -383,7 +383,7 @@ class Database:
         if not self._check_client(): return None
         try:
             response = await self.client.table("holders_chat_invites") \
-                .select("*") \
+                .select("telegram_id, packs, created_at") \
                 .eq("telegram_id", telegram_id) \
                 .order("created_at", desc=True) \
                 .limit(1) \
@@ -407,7 +407,7 @@ class Database:
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[Dict]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("users").select("*").eq("telegram_id", telegram_id).execute()
+            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, terms_version, username, first_name").eq("telegram_id", telegram_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error getting user by telegram_id: {e}")
@@ -416,7 +416,7 @@ class Database:
     async def get_user_by_ref_code(self, ref_code: str) -> Optional[Dict]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("users").select("*").eq("ref_code", ref_code).execute()
+            response = await self.client.table("users").select("telegram_id, username").eq("ref_code", ref_code).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error getting user by ref_code: {e}")
@@ -475,6 +475,35 @@ class Database:
             return response.data
         except Exception as e:
             logger.error(f"Error getting leaderboard: {e}")
+            return []
+
+
+
+    async def get_referral_count(self, referrer_id: int) -> int:
+        if not self._check_client(): return 0
+        try:
+            response = await self.client.table("referrals").select("id", count="exact").eq("referrer_id", referrer_id).execute()
+            return response.count if response.count is not None else 0
+        except Exception as e:
+            logger.error(f"Error getting referral count: {e}")
+            return 0
+
+    async def get_points_batch(self, user_ids: List[int]) -> List[Dict]:
+        if not self._check_client() or not user_ids: return []
+        try:
+            response = await self.client.table("points").select("*, users(username, first_name)").in_("user_id", user_ids).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting points batch: {e}")
+            return []
+
+    async def get_users_batch(self, telegram_ids: List[int]) -> List[Dict]:
+        if not self._check_client() or not telegram_ids: return []
+        try:
+            response = await self.client.table("users").select("telegram_id, referrer_id").in_("telegram_id", telegram_ids).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting users batch: {e}")
             return []
 
 db = Database()

@@ -1,3 +1,4 @@
+import asyncio
 from aiogram import Router, types, F, Bot
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
@@ -132,9 +133,12 @@ async def cmd_start(message: types.Message, command: CommandObject):
     # 4. Ensure user has a referral code (First Login Migration)
     await ReferralService.get_or_create_ref_code(user_id)
 
-    # 5. Check Terms
-    current_policy_version = await db.get_setting("Privacy Policy") or "v1"
-    user_data = await db.get_user_by_telegram_id(user_id)
+    # 5. Check Terms (Parallelized)
+    policy_res, user_data = await asyncio.gather(
+        db.get_setting("Privacy Policy"),
+        db.get_user_by_telegram_id(user_id)
+    )
+    current_policy_version = policy_res or "v1"
     user_terms_version = user_data.get("terms_version") if user_data else None
 
     logger.info(
@@ -150,6 +154,7 @@ async def cmd_start(message: types.Message, command: CommandObject):
 
 @router.callback_query(F.data == "accept_terms")
 async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
 
@@ -172,7 +177,6 @@ async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext)
 
     # Open Main Menu
     await show_main_menu(callback, texts)
-    await callback.answer()
 
 @router.message(Command("setup"), F.chat.type.in_({"group", "supergroup"}))
 async def cmd_setup(message: types.Message):
@@ -224,6 +228,7 @@ async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMConte
 
 @router.callback_query(F.data == "select_language")
 async def select_language_handler(callback: types.CallbackQuery):
+    await callback.answer()
     texts = await get_locale(callback.from_user.id)
     builder = InlineKeyboardBuilder()
     builder.button(text="🇺🇸 English", callback_data="set_lang_en")
@@ -239,6 +244,7 @@ async def select_language_handler(callback: types.CallbackQuery):
 
 @router.callback_query(F.data.startswith("set_lang_"))
 async def set_language_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     lang = callback.data.replace("set_lang_", "")
     await db.update_user_language(callback.from_user.id, lang)
 
