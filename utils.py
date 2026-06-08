@@ -35,7 +35,7 @@ async def is_any_admin(user_id: int) -> bool:
 async def is_holder(user_id: int) -> bool:
     try:
         member = await bot.get_chat_member(-1001944951957, user_id)
-        return member.status not in ["left", "kicked"]
+        return member.status in ("member", "administrator", "creator")
     except Exception:
         return False
 
