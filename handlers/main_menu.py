@@ -94,27 +94,33 @@ async def show_terms_screen(
             parse_mode=ParseMode.HTML
         )
 
-async def show_main_menu(event: types.Message | types.CallbackQuery, texts: dict = None):
-    user_id = event.from_user.id
+async def show_main_menu_message(message: types.Message, texts: dict = None):
+    user_id = message.from_user.id
     if not texts:
         texts = await get_locale(user_id)
 
     keyboard = await get_main_menu_keyboard(user_id, texts)
 
-    if isinstance(event, types.Message):
-        await safe_answer(
-            event,
-            texts["main_menu_text"],
-            reply_markup=keyboard,
-            parse_mode=ParseMode.HTML
-        )
-    else:
-        await safe_edit_text(
-            event,
-            texts["main_menu_text"],
-            reply_markup=keyboard,
-            parse_mode=ParseMode.HTML
-        )
+    await safe_answer(
+        message,
+        texts["main_menu_text"],
+        reply_markup=keyboard,
+        parse_mode=ParseMode.HTML
+    )
+
+async def show_main_menu_callback(callback: types.CallbackQuery, texts: dict = None):
+    user_id = callback.from_user.id
+    if not texts:
+        texts = await get_locale(user_id)
+
+    keyboard = await get_main_menu_keyboard(user_id, texts)
+
+    await safe_edit_text(
+        callback,
+        texts["main_menu_text"],
+        reply_markup=keyboard,
+        parse_mode=ParseMode.HTML
+    )
 
 @router.message(Command("start"))
 async def cmd_start(message: types.Message, command: CommandObject):
@@ -151,7 +157,7 @@ async def cmd_start(message: types.Message, command: CommandObject):
         return
 
     # 6. Show Main Menu
-    await show_main_menu(message, texts)
+    await show_main_menu_message(message, texts)
 
 @router.callback_query(F.data == "accept_terms")
 async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext):
@@ -170,14 +176,8 @@ async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext)
 
     logger.info(f"User {user_id} accepted terms {current_policy_version}")
 
-    # Delete terms message
-    try:
-        await callback.message.delete()
-    except:
-        pass
-
     # Open Main Menu
-    await show_main_menu(callback.message, texts)
+    await show_main_menu_callback(callback, texts)
 
 @router.message(Command("setup"), F.chat.type.in_({"group", "supergroup"}))
 async def cmd_setup(message: types.Message):
@@ -197,7 +197,7 @@ async def cmd_setup(message: types.Message):
 async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.clear()
-    await show_main_menu(callback)
+    await show_main_menu_callback(callback)
 
 @router.callback_query(F.data == "create_giveaway")
 async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMContext):
@@ -252,4 +252,4 @@ async def set_language_handler(callback: types.CallbackQuery, state: FSMContext)
     # Reload main menu
     texts = await get_locale(callback.from_user.id)
     await callback.answer(texts["giveaway_success_msg"])
-    await show_main_menu(callback, texts)
+    await show_main_menu_callback(callback, texts)
