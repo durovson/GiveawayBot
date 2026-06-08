@@ -80,7 +80,8 @@ async def show_terms_screen(
     builder.adjust(2, 1)
 
     if isinstance(message, types.Message):
-        await message.answer(
+        await safe_answer(
+            message,
             text,
             reply_markup=builder.as_markup(),
             parse_mode=ParseMode.HTML
