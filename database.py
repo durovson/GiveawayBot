@@ -506,4 +506,26 @@ class Database:
             logger.error(f"Error getting users batch: {e}")
             return []
 
+    async def add_og_holder(self, telegram_id: int):
+        if not self._check_client(): return
+        try:
+            await self.client.table("og_holders_snapshot").upsert({
+                "telegram_id": telegram_id
+            }).execute()
+        except Exception as e:
+            logger.error(f"Error adding OG holder: {e}")
+
+    async def is_og_holder(self, telegram_id: int) -> bool:
+        if not self._check_client(): return False
+        try:
+            response = await self.client.table("og_holders_snapshot") \
+                .select("telegram_id") \
+                .eq("telegram_id", telegram_id) \
+                .limit(1) \
+                .execute()
+            return bool(response.data)
+        except Exception as e:
+            logger.error(f"Error checking OG holder status: {e}")
+            return False
+
 db = Database()
