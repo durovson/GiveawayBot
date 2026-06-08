@@ -80,7 +80,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "terms_screen_text": (
-        "┏┅┅<tg-emoji emoji-id=\"5258093637450866522\">🤖</tg-emoji>┅ / <b>NOTAPES | HUB</b> /\n"
+        "┏┅┅⋐[ ◍ _◍ ]っ┅ / <b>NOTAPES | HUB</b> /\n"
         "┋\n"
         "┣ By continuing, you agree to the <b>Terms of Service</b> and <b>Privacy Policy.</b>\n"
         "┋\n"
