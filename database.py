@@ -300,6 +300,19 @@ class Database:
         except Exception as e:
             logger.error(f"Error checking milestone existence: {e}")
             return False
+    async def get_milestones_data(self) -> list[dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("snapshots") \
+                .select("data, milestone") \
+                .eq("snapshot_type", "milestone") \
+                .in_("milestone", [333, 666, 1000]) \
+                .order("milestone", desc=False) \
+                .execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Error getting milestones data: {e}")
+            return []
 
     async def get_last_total_held(self) -> Optional[int]:
         if not self._check_client(): return None
@@ -407,7 +420,7 @@ class Database:
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[Dict]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, terms_version, username, first_name").eq("telegram_id", telegram_id).execute()
+            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, terms_version, username, first_name, og_bonus_awarded_at").eq("telegram_id", telegram_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error getting user by telegram_id: {e}")

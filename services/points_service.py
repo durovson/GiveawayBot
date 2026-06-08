@@ -2,6 +2,7 @@ import logging
 import loader
 from database import db
 from datetime import datetime
+from utils import normalize_to_raw
 
 logger = logging.getLogger(__name__)
 
@@ -9,40 +10,84 @@ class PointsService:
     @staticmethod
     async def recalculate_points(user_id: int):
         """
-        Recalculates and updates total points for a user based on the formula:
-        RP = (packs * 10) + (active_referrals * 5) + holder_bonus + referral_income
+        Recalculates and updates total points for a user based on the new formula:
+        RP = ((packs * 10) + (active_referrals * 5) + og_bonus) * multiplier
         """
         try:
-            # 1. Get current data from points table
+            # 1. Get current data from points table and users table
             points_data = await db.get_points(user_id)
-            if not points_data:
-                # If no record in points table, ensure user exists and init points
-                await db.ensure_user_exists(user_id)
-                points_data = {
-                    "user_id": user_id,
-                    "packs": 0,
-                    "active_referrals": 0,
-                    "holder_bonus": 0,
-                    "referral_income": 0,
-                    "is_holder": False
-                }
+            user_data = await db.get_user_by_telegram_id(user_id)
 
-            # 2. Extract values
+            if not user_data:
+                logger.error(f"User {user_id} not found in users table during recalculation")
+                return None
+
+            if not points_data:
+                await db.ensure_user_exists(user_id)
+                points_data = await db.get_points(user_id)
+                if not points_data:
+                    points_data = {
+                        "packs": 0,
+                        "active_referrals": 0
+                    }
+
+            # 2. Extract base values
             packs = points_data.get("packs", 0)
             active_referrals = points_data.get("active_referrals", 0)
-            holder_bonus = points_data.get("holder_bonus", 0)
-            referral_income = points_data.get("referral_income", 0)
 
-            # 3. Calculate RP
-            total_points = (packs * 10) + (active_referrals * 5) + holder_bonus + referral_income
+            # 3. OG Bonus (O)
+            # OG is determined exclusively by users.og_bonus_awarded_at
+            og_bonus = 50 if user_data.get("og_bonus_awarded_at") else 0
 
-            # 4. Update the points table (only point-related data)
+            # 4. Retention Multiplier (C)
+            multiplier = 1.0
+            wallet = user_data.get("wallet_address")
+
+            if wallet:
+                try:
+                    normalized_wallet = normalize_to_raw(wallet)
+                    milestones = await db.get_milestones_data()
+                    if milestones:
+                        ms_map = {m["milestone"]: m["data"] for m in milestones}
+
+                        def get_bal(ms_data, w):
+                            if not ms_data: return 0
+                            # Snapshot data is a list of {"wallet": "...", "packs": ...}
+                            for item in ms_data:
+                                if item.get("wallet") == w:
+                                    return item.get("packs", 0)
+                            return 0
+
+                        # Snapshot #3 (1000 sold)
+                        if 1000 in ms_map and 666 in ms_map and 333 in ms_map:
+                            bal_333 = get_bal(ms_map[333], normalized_wallet)
+                            bal_666 = get_bal(ms_map[666], normalized_wallet)
+                            bal_1000 = get_bal(ms_map[1000], normalized_wallet)
+
+                            # Rule: continuous retention from 1 to 3
+                            if bal_666 >= bal_333 and bal_1000 >= bal_666:
+                                multiplier = 1.5
+                        # Snapshot #2 (666 sold)
+                        elif 666 in ms_map and 333 in ms_map:
+                            bal_333 = get_bal(ms_map[333], normalized_wallet)
+                            bal_666 = get_bal(ms_map[666], normalized_wallet)
+
+                            if bal_666 >= bal_333:
+                                multiplier = 1.2
+                except Exception as ex:
+                    logger.error(f"Error calculating retention for user {user_id}: {ex}")
+
+            # 5. Calculate RP: RP = round(((P * 10) + (R * 5) + O) * C)
+            base_points = (packs * 10) + (active_referrals * 5) + og_bonus
+            total_points = round(base_points * multiplier)
+
+            # 6. Update the points table
             await db.upsert_points(
                 user_id=user_id,
                 total_points=total_points
             )
 
-            logger.info(f"RP recalculated for user {user_id}: {total_points}")
+            logger.info(f"RP recalculated for user {user_id}: {total_points} (C={multiplier}, O={og_bonus})")
             return total_points
 
         except Exception as e:
@@ -52,7 +97,6 @@ class PointsService:
     @staticmethod
     async def update_username(user_id: int, username: str, first_name: str):
         """Updates user profile info strictly in the users table."""
-        # Update users table - this is the source of truth for user names
         await db.update_user_fields(
             user_id,
             username=username,
