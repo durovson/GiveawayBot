@@ -229,6 +229,7 @@ async def callback_answer_wrapper(event, text):
 
 @router.callback_query(F.data == "recheck_admin")
 async def recheck_admin(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
     await check_bot_admin_in_channels(callback, state, bot)
 
 async def ask_access_type(message: types.Message, state: FSMContext, bot: Bot):
@@ -245,6 +246,7 @@ async def ask_access_type(message: types.Message, state: FSMContext, bot: Bot):
 
 @router.callback_query(GiveawayCreation.WAITING_FOR_ACCESS_TYPE, F.data.in_({"access_all", "access_whitelist"}))
 async def process_access_choice(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
     answered = False
@@ -269,9 +271,6 @@ async def process_access_choice(callback: types.CallbackQuery, state: FSMContext
             parse_mode=ParseMode.HTML
         )
         await state.set_state(GiveawayCreation.WAITING_FOR_WHITELIST)
-    if not answered:
-        await callback.answer()
-
 @router.message(GiveawayCreation.WAITING_FOR_WHITELIST)
 async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot):
     user_id = message.from_user.id
@@ -299,9 +298,9 @@ async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot)
 
 @router.callback_query(F.data.startswith("type_"))
 async def select_type(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     gtype = callback.data.split("_")[1]
     await state.update_data(gtype=gtype)
 
@@ -315,9 +314,9 @@ async def select_type(callback: types.CallbackQuery, state: FSMContext, bot: Bot
 
 @router.callback_query(F.data.startswith("val_"), GiveawayCreation.SELECT_MODE_VALUE)
 async def select_mode_value(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     val = callback.data.split("_")[1]
     if val == "custom":
         await safe_edit_text(callback, texts["enter_value_prompt"], parse_mode=ParseMode.HTML)
@@ -369,9 +368,9 @@ async def enter_custom_mode_value(message: types.Message, state: FSMContext, bot
 
 @router.callback_query(F.data.startswith("win_"), GiveawayCreation.SELECT_WINNERS_COUNT)
 async def select_winners_count(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     val = callback.data.split("_")[1]
     if val == "custom":
         await safe_edit_text(callback, texts["giveaway_enter_winners_count"], parse_mode=ParseMode.HTML)
@@ -585,9 +584,9 @@ async def is_bot_admin(chat_id: int | str, bot: Bot) -> bool:
 
 @router.callback_query(F.data.startswith("make_announcement_"))
 async def make_announcement_select_chat(callback: types.CallbackQuery, bot: Bot):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     giveaway_id = int(callback.data.split("_")[-1])
 
     chats = await db.get_tracked_groups()
@@ -668,6 +667,7 @@ async def execute_announcement(callback: types.CallbackQuery, bot: Bot):
 
 @router.callback_query(F.data == "back")
 async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
     current_state = await state.get_state()
@@ -682,7 +682,6 @@ async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bo
         await create_giveaway_handler(callback, state)
         return
 
-    await callback.answer()
 
     if current_state == GiveawayCreation.SELECT_GIVEAWAY_KIND.state:
         await safe_edit_text(callback, texts["giveaway_enter_title"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)

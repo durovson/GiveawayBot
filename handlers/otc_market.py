@@ -46,13 +46,14 @@ async def start_otc_market(callback: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "otc_back_to_type")
 async def otc_back_to_type(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     await start_otc_market(callback, state)
 
 @router.callback_query(OTCMarket.SELECT_TYPE, F.data.startswith("otc_type_"))
 async def select_trade_type(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     trade_type = callback.data.split("_")[-1]
     await state.update_data(trade_type=trade_type)
 
@@ -68,9 +69,9 @@ async def select_trade_type(callback: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "otc_no_link")
 async def otc_no_link_selected(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
 
     builder = InlineKeyboardBuilder()
     builder.button(text=texts["otc_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
@@ -300,9 +301,9 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
 
 @router.callback_query(OTCMarket.PREVIEW, F.data == "otc_edit_item")
 async def otc_edit_item(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     data = await state.get_data()
     url = data.get("url")
 
@@ -329,9 +330,9 @@ async def otc_edit_item(callback: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(OTCMarket.PREVIEW, F.data == "otc_edit_price")
 async def otc_edit_price(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
 
     builder = InlineKeyboardBuilder()
     builder.button(text=texts["otc_skip_offer_btn"], callback_data="otc_price_skip", icon_custom_emoji_id="5260687681733533075")

@@ -44,9 +44,9 @@ def get_interval_keyboard():
 
 @router.callback_query(F.data == "manage_notifications")
 async def start_notification_management(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     await state.clear()
 
     notifications = await db.get_notifications()
@@ -65,9 +65,9 @@ async def start_notification_management(callback: types.CallbackQuery, state: FS
 
 @router.callback_query(F.data == "notif_add")
 async def add_new_notification(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     text = texts["notif_enter_title"]
     await safe_edit_text(callback, text, reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(NotificationStates.ENTER_TITLE)
@@ -293,18 +293,18 @@ async def show_notification_preview(event, state: FSMContext, bot: Bot):
 
 @router.callback_query(NotificationStates.PREVIEW, F.data == "notif_edit_title")
 async def edit_title(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     await state.update_data(is_editing=True)
     await safe_edit_text(callback, texts["notif_enter_title"], reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(NotificationStates.ENTER_TITLE)
 
 @router.callback_query(NotificationStates.PREVIEW, F.data == "notif_edit_text")
 async def edit_text(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     await state.update_data(is_editing=True)
     await safe_edit_text(callback, texts["notif_enter_text"], reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(NotificationStates.ENTER_TEXT)
@@ -317,9 +317,9 @@ async def edit_btns(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
 
 @router.callback_query(NotificationStates.PREVIEW, F.data == "notif_edit_interval")
 async def edit_interval(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
-    await callback.answer()
     await state.update_data(is_editing=True)
     await safe_edit_text(callback, texts["notif_enter_interval"], reply_markup=get_interval_keyboard(), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(NotificationStates.ENTER_INTERVAL)

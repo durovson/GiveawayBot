@@ -1,3 +1,4 @@
+import asyncio
 import os
 import logging
 from datetime import datetime, timedelta
@@ -22,21 +23,17 @@ async def show_game_menu(message: types.Message | types.CallbackQuery, state: FS
     user_id = message.from_user.id
     texts = await get_locale(user_id)
 
-    # Get user points info
-    points_data = await db.get_points(user_id)
+    # Parallelize independent DB calls
+    points_data, refs = await asyncio.gather(
+        db.get_points(user_id),
+        db.get_referral_count(user_id)
+    )
+
     if not points_data:
-        # Initialize if not present
         await PointsService.recalculate_points(user_id)
         points_data = await db.get_points(user_id)
 
     rp = points_data.get("total_points", 0) if points_data else 0
-
-    # Get total invited (from referrals table)
-    try:
-        response = await db.client.table("referrals").select("id", count="exact").eq("referrer_id", user_id).execute()
-        refs = response.count if response.count is not None else 0
-    except:
-        refs = 0
 
     text = texts["game_menu_title"].format(rp=rp, refs=refs)
 
@@ -61,22 +58,19 @@ async def game_menu_handler(callback: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "referral_menu")
 async def referral_menu_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     texts = await get_locale(user_id)
 
-    ref_code = await ReferralService.get_or_create_ref_code(user_id)
-    bot_user = await callback.bot.get_me()
+    results = await asyncio.gather(
+        ReferralService.get_or_create_ref_code(user_id),
+        callback.bot.get_me(),
+        db.get_points(user_id),
+        db.get_referral_count(user_id)
+    )
+    ref_code, bot_user, points_data, total_invited = results
     ref_link = f"https://t.me/{bot_user.username}?start=ref_{ref_code}"
-
-    # Get stats
-    points_data = await db.get_points(user_id)
     active_refs = points_data.get("active_referrals", 0) if points_data else 0
-
-    try:
-        response = await db.client.table("referrals").select("id", count="exact").eq("referrer_id", user_id).execute()
-        total_invited = response.count if response.count is not None else 0
-    except:
-        total_invited = 0
 
     text = texts["referral_menu_title"].format(
         ref_link=f"<code>{ref_link}</code>",
@@ -89,7 +83,6 @@ async def referral_menu_handler(callback: types.CallbackQuery, state: FSMContext
     builder.adjust(1)
 
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
-    await callback.answer()
 
 @router.callback_query(F.data == "leaderboard")
 async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
@@ -224,4 +217,5 @@ async def check_holders_chat_access(callback: types.CallbackQuery, state: FSMCon
 
 @router.callback_query(F.data == "join_holders_chat")
 async def join_holders_chat_handler(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    await callback.answer()
     await check_holders_chat_access(callback, state, bot)
