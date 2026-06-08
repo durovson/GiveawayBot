@@ -177,7 +177,7 @@ async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext)
         pass
 
     # Open Main Menu
-    await show_main_menu(callback, texts)
+    await show_main_menu(callback.message, texts)
 
 @router.message(Command("setup"), F.chat.type.in_({"group", "supergroup"}))
 async def cmd_setup(message: types.Message):
