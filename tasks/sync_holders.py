@@ -126,16 +126,32 @@ async def sync_points_and_referrals(holders: List[Dict]):
                         await db.upsert_points(user_id, packs=current_packs)
 
                         if current_packs > prev_packs:
+                            delta_packs = current_packs - prev_packs
+                            
                             user = users_map.get(user_id)
+                            
                             if user and user.get("referrer_id"):
                                 referrer_id = user["referrer_id"]
-                                ref_pts = await db.get_points(referrer_id) # Referrers can be outside holders set, keep individual if not optimized further
-                                curr_income = ref_pts.get("referral_income", 0) if ref_pts else 0
-                                await db.upsert_points(referrer_id, referral_income=curr_income + 1)
-                                await PointsService.recalculate_points(referrer_id)
-
+                                ref_pts = await db.get_points(referrer_id)
+                                
+                                curr_income = (
+                                    ref_pts.get("referral_income", 0)
+                                    if ref_pts else 0
+                                )
+                                
+                                referral_reward = delta_packs * 2
+                                
+                                await db.upsert_points(
+                                    referrer_id,
+                                    referral_income=curr_income + referral_reward
+                                )
+                            
+                                await PointsService.recalculate_points(
+                                    referrer_id
+                                )
+                        
                         await PointsService.recalculate_points(user_id)
-        return # End of function body replacement
+
     except Exception as e:
         logger.error(f"Error in sync_points_and_referrals: {e}")
 
