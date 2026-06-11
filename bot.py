@@ -25,6 +25,7 @@ from handlers.admin import router as admin_router
 from handlers.notifications import router as notifications_router
 from handlers.game_menu import router as game_menu_router
 from handlers.wallet import router as wallet_router
+from tasks.og_snapshot import create_og_snapshot_once
 
 # Setup logging
 logging.basicConfig(
@@ -68,17 +69,24 @@ dp.include_router(otc_market_router)
 
 async def initial_sync():
     """Perform initial sync of holders before starting polling."""
-    from tasks.sync_holders import fetch_holders
+    from tasks.sync_holders import fetch_holders, sync_points_and_referrals
     logger.info("Performing initial holders sync...")
     try:
         cached = await fetch_holders()
         holders = cached.get("holders", []) if isinstance(cached, dict) else []
-        if holders:
-            await db.save_snapshot(data=holders, snapshot_type="daily", total_held=cached.get("totalHeld", 0))
-            LeaderboardService.invalidate_cache()
-            logger.info("Initial sync complete: %s holders saved", len(holders))
-        else:
+        if not holders:
             logger.warning("Initial sync returned no holders")
+            return
+
+        await db.save_snapshot(
+            data=holders,
+            snapshot_type="daily",
+            total_held=cached.get("totalHeld", 0)
+        )
+
+        await sync_points_and_referrals(holders)
+        LeaderboardService.invalidate_cache()
+        logger.info("Initial sync complete: %s holders saved", len(holders))
     except Exception:
         logger.exception("Initial sync failed")
 
@@ -103,7 +111,8 @@ async def main():
     loader.http_session = aiohttp.ClientSession()
     await db.connect()
 
-    # 2. Perform initial sync
+    # 2. Perform OG snapshot and initial sync
+    await create_og_snapshot_once()
     await initial_sync()
 
     # 3. Start background tasks
