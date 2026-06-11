@@ -70,22 +70,22 @@ async def show_rules_screen(
 
     builder.button(
         text=texts["terms_btn"],
-        url="https://telegra.ph/terms-placeholder",
+        url="https://telegra.ph/%E3%81%A3-NOTAPES--LEGAL-PROTOCOLS-06-11",
         icon_custom_emoji_id="5258477770735885832"
     )
     builder.button(
         text=texts["privacy_btn"],
-        url="https://telegra.ph/privacy-placeholder",
+        url="https://telegra.ph/%E3%81%A3--NOTAPES--LEGAL-PROTOCOLS-06-11-3",
         icon_custom_emoji_id="5260249440450520061"
     )
     builder.button(
         text=texts["referral_rules_btn"],
-        url="https://telegra.ph/referral-rules-placeholder",
+        url="https://telegra.ph/%E3%81%A3--NOTAPES--REFERRAL-PROTOCOL-06-11",
         icon_custom_emoji_id="5258513401784573443"
     )
     builder.button(
         text=texts["giveaway_rules_btn"],
-        url="https://telegra.ph/giveaway-rules-placeholder",
+        url="https://telegra.ph/%E3%81%A3--NOTAPES--TOURNAMENT-PROTOCOL-06-11",
         icon_custom_emoji_id="5258093637450866522"
     )
     builder.button(
