@@ -2,6 +2,7 @@ import asyncio
 from aiogram import Router, types, F, Bot
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.enums import ParseMode
 import html
@@ -17,6 +18,9 @@ from services.points_service import PointsService
 
 logger = logging.getLogger(__name__)
 router = Router()
+
+class OnboardingStates(StatesGroup):
+    SELECT_LANGUAGE = State()
 
 async def get_main_menu_keyboard(user_id: int, texts: dict):
     builder = InlineKeyboardBuilder()
@@ -36,28 +40,31 @@ async def get_main_menu_keyboard(user_id: int, texts: dict):
 
         # Row 4
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
+        builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258477770735885832")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
-        builder.adjust(2, 2, 2, 1, 1)
+        builder.adjust(2, 2, 2, 2, 1)
     elif await is_holder(user_id):
         builder.button(text=texts["game_btn"], callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
         builder.button(text=texts["otc_btn"], callback_data="otc_market", icon_custom_emoji_id="5260687681733533075")
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
+        builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258477770735885832")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
-        builder.adjust(2, 1, 1)
+        builder.adjust(2, 2, 1)
 
     else:
         builder.button(text=texts["game_btn"], callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
+        builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258477770735885832")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
-        builder.adjust(1, 1, 1)
+        builder.adjust(1, 2, 1)
 
     return builder.as_markup()
 
-async def show_terms_screen(
-    message: types.Message | types.CallbackQuery,
+async def show_rules_screen(
+    event: types.Message | types.CallbackQuery,
     texts: dict
 ):
-    text = texts["terms_screen_text"]
+    text = texts["rules_screen_text"]
 
     builder = InlineKeyboardBuilder()
 
@@ -72,23 +79,33 @@ async def show_terms_screen(
         icon_custom_emoji_id="5258476306152038031"
     )
     builder.button(
+        text=texts["referral_rules_btn"],
+        url="https://telegra.ph/referral-rules-placeholder",
+        icon_custom_emoji_id="6032594876506312598"
+    )
+    builder.button(
+        text=texts["giveaway_rules_btn"],
+        url="https://telegra.ph/giveaway-rules-placeholder",
+        icon_custom_emoji_id="5296348778012361146"
+    )
+    builder.button(
         text=texts["continue_btn"],
         callback_data="accept_terms",
         icon_custom_emoji_id="5260416304224936047"
     )
 
-    builder.adjust(2, 1)
+    builder.adjust(2, 2, 1)
 
-    if isinstance(message, types.Message):
+    if isinstance(event, types.Message):
         await safe_answer(
-            message,
+            event,
             text,
             reply_markup=builder.as_markup(),
             parse_mode=ParseMode.HTML
         )
     else:
         await safe_edit_text(
-            message,
+            event,
             text,
             reply_markup=builder.as_markup(),
             parse_mode=ParseMode.HTML
@@ -123,7 +140,7 @@ async def show_main_menu_callback(callback: types.CallbackQuery, texts: dict = N
     )
 
 @router.message(Command("start"))
-async def cmd_start(message: types.Message, command: CommandObject):
+async def cmd_start(message: types.Message, command: CommandObject, state: FSMContext):
     user_id = message.from_user.id
     texts = await get_locale(user_id)
 
@@ -153,7 +170,9 @@ async def cmd_start(message: types.Message, command: CommandObject):
     )
 
     if not user_data or user_terms_version != current_policy_version:
-        await show_terms_screen(message, texts)
+        # Start onboarding flow
+        await state.set_state(OnboardingStates.SELECT_LANGUAGE)
+        await show_language_selection(message, texts)
         return
 
     # 6. Show Main Menu
@@ -227,21 +246,38 @@ async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMConte
     await state.update_data(last_msg_id=msg.message_id)
     await state.set_state(GiveawayCreation.SELECT_CHAT)
 
-@router.callback_query(F.data == "select_language")
-async def select_language_handler(callback: types.CallbackQuery):
-    await callback.answer()
-    texts = await get_locale(callback.from_user.id)
+async def show_language_selection(event: types.Message | types.CallbackQuery, texts: dict):
     builder = InlineKeyboardBuilder()
     builder.button(text="🇺🇸 English", callback_data="set_lang_en")
     builder.button(text="🇷🇺 Русский", callback_data="set_lang_ru")
     builder.adjust(1)
 
-    await safe_edit_text(
-        callback,
-        texts["select_language"],
-        reply_markup=builder.as_markup(),
-        parse_mode=ParseMode.HTML
-    )
+    if isinstance(event, types.Message):
+        await safe_answer(
+            event,
+            texts["select_language"],
+            reply_markup=builder.as_markup(),
+            parse_mode=ParseMode.HTML
+        )
+    else:
+        await safe_edit_text(
+            event,
+            texts["select_language"],
+            reply_markup=builder.as_markup(),
+            parse_mode=ParseMode.HTML
+        )
+
+@router.callback_query(F.data == "select_language")
+async def select_language_handler(callback: types.CallbackQuery):
+    await callback.answer()
+    texts = await get_locale(callback.from_user.id)
+    await show_language_selection(callback, texts)
+
+@router.callback_query(F.data == "show_rules")
+async def show_rules_callback(callback: types.CallbackQuery):
+    await callback.answer()
+    texts = await get_locale(callback.from_user.id)
+    await show_rules_screen(callback, texts)
 
 @router.callback_query(F.data.startswith("set_lang_"))
 async def set_language_handler(callback: types.CallbackQuery, state: FSMContext):
@@ -249,7 +285,14 @@ async def set_language_handler(callback: types.CallbackQuery, state: FSMContext)
     lang = callback.data.replace("set_lang_", "")
     await db.update_user_language(callback.from_user.id, lang)
 
-    # Reload main menu
+    # Reload texts
     texts = await get_locale(callback.from_user.id)
-    await callback.answer(texts["giveaway_success_msg"])
-    await show_main_menu_callback(callback, texts)
+
+    # Check if we are in onboarding flow
+    current_state = await state.get_state()
+    if current_state == OnboardingStates.SELECT_LANGUAGE:
+        await state.clear()
+        await show_rules_screen(callback, texts)
+    else:
+        await callback.answer(texts["giveaway_success_msg"])
+        await show_main_menu_callback(callback, texts)

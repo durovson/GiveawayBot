@@ -79,15 +79,22 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "terms_screen_text": (
-        "┏┅┅⋐[ ◍ _◍ ]っ┅ / <b>NOTAPES | HUB</b> /\n"
-        "┋\n"
-        "┣ By continuing, you agree to the <b>Terms of Service</b> and <b>Privacy Policy.</b>\n"
-        "┋\n"
-        "┗┅┅┅/ <b>Select an option</b> /"
+    "rules_screen_text": (
+        "┏┅⋐[ ◍ _◍ ]っ┅📖┅ / <b>GAME DOCS</b> / \n"
+        "┋ \n"
+        "┣ Select a document: \n"
+        "┋ \n"
+        "┣ [📄] Terms of Service \n"
+        "┣ [🤚] Privacy Policy \n"
+        "┣ [👥] Referral Rules \n"
+        "┣ [🤖] Giveaway Rules \n"
+        "┋ \n"
+        "┗┅┅┅/ <b>SELECT_DOCUMENT</b> /"
     ),
     "terms_btn": "Terms",
     "privacy_btn": "Privacy",
+    "referral_rules_btn": "Referral Rules",
+    "giveaway_rules_btn": "Giveaway Rules",
     "continue_btn": "Continue",
     "highscore_btn": "HIGHSCORE",
     "referral_btn": "REFERRAL",
