@@ -80,7 +80,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "rules_screen_text": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258328383183396223\">📖</tg-emoji>┅ / <b>GAME DOCS</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258328383183396223\">📖</tg-emoji>┅ / <b>DOCS</b> /\n"
         "┋ \n"
         "┣ [<tg-emoji emoji-id=\"5258477770735885832\">📄</tg-emoji>] Terms of Service \n"
         "┣ [<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>] Privacy Policy \n"
