@@ -528,6 +528,39 @@ class Database:
         except Exception as e:
             logger.error(f"Error adding OG holder: {e}")
 
+    async def get_og_snapshot_count(self) -> int:
+        if not self._check_client(): return 0
+        try:
+            response = await self.client.table("og_holders_snapshot") \
+                .select("telegram_id", count="exact") \
+                .execute()
+            return response.count if response.count is not None else 0
+        except Exception as e:
+            logger.error(f"Error getting OG snapshot count: {e}")
+            return 0
+
+    async def save_og_snapshot(self, telegram_ids: List[int]):
+        if not self._check_client() or not telegram_ids: return
+        try:
+            data = [{"telegram_id": tid} for tid in telegram_ids]
+            await self.client.table("og_holders_snapshot").upsert(data).execute()
+        except Exception as e:
+            logger.error(f"Error saving OG snapshot: {e}")
+
+    async def get_all_registered_users(self) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            result = (
+                await self.client
+                .table("users")
+                .select("telegram_id")
+                .execute()
+            )
+            return result.data or []
+        except Exception as e:
+            logger.error(f"Error getting all registered users: {e}")
+            return []
+
     async def is_og_holder(self, telegram_id: int) -> bool:
         if not self._check_client(): return False
         try:

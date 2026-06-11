@@ -12,7 +12,7 @@ class HolderService:
     async def verify_holder_status(user_id: int):
         """
         Verifies if a user is a member of the holders chat.
-        If verified for the first time, awards the holder bonus to OG holders.
+        If verified for the first time, awards the OG bonus (tracked via og_bonus_awarded_at).
         """
         otc_chat_id = os.environ.get("OTC_CHAT_ID")
         if not otc_chat_id:
@@ -24,30 +24,25 @@ class HolderService:
             is_member = member.status in ["member", "administrator", "creator"]
 
             if is_member:
-                # After membership verification:
-                is_og = await db.is_og_holder(user_id)
-
                 # Check if already verified
                 user = await db.get_user_by_telegram_id(user_id)
                 if user and not user.get("holder_verified_at"):
                     # First time verification
                     now = datetime.now()
+                    is_og = await db.is_og_holder(user_id)
 
-                    # Always mark user as verified holder
-                    await db.update_user_fields(user_id, holder_verified_at=now)
-
-                    # Award points conditionally
+                    # Update user verification status
+                    update_fields = {"holder_verified_at": now}
                     if is_og:
-                        await db.upsert_points(
-                            user_id,
-                            is_holder=True,
-                            holder_bonus=150
-                        )
-                    else:
-                        await db.upsert_points(
-                            user_id,
-                            is_holder=True
-                        )
+                        update_fields["og_bonus_awarded_at"] = now
+
+                    await db.update_user_fields(user_id, **update_fields)
+
+                    # Mark as holder in points table
+                    await db.upsert_points(
+                        user_id,
+                        is_holder=True
+                    )
 
                     # Recalculate RP
                     await PointsService.recalculate_points(user_id)
