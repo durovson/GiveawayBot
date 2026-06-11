@@ -34,7 +34,7 @@ TEXTS = {
         "┋\n"
         "┣ [<tg-emoji emoji-id=\"5258165702707125574\">⭐️</tg-emoji>] <b>1 Pack = 10 RP</b>\n"
         "┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>1 Wallet Ref = 5 RP</b>\n"
-        "┣ [<tg-emoji emoji-id=\"5258179403652801593\">❤️</tg-emoji>] <b>Holder Bonus = 150 RP</b>\n"
+        "┣ [<tg-emoji emoji-id=\"5258179403652801593\">❤️</tg-emoji>] <b>Holder Bonus = 50 RP</b>\n"
         "┋\n"
         "{lines}\n"
         "┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n"
