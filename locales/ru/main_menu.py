@@ -20,6 +20,7 @@ TEXTS = {
     "update_gif_btn": "Обновить GIF",
     "support_btn": "Поддержка",
     "language_btn": "Язык",
+    "rules_btn": "Правила",
     "setup_success": (
         "┏┅<tg-emoji emoji-id=\"5258501105293205250\">👏</tg-emoji>┅ / <b>Группа {title} успешно зарегистрирована!</b> /\n"
         "┋\n"
