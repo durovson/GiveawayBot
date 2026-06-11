@@ -89,8 +89,8 @@ TEXTS = {
         "┋ \n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "terms_btn": "Terms",
-    "privacy_btn": "Privacy",
+    "terms_btn": "Terms of Service",
+    "privacy_btn": "Privacy Policy",
     "referral_rules_btn": "Referral Rules",
     "giveaway_rules_btn": "Giveaway Rules",
     "continue_btn": "Continue",
