@@ -80,16 +80,14 @@ TEXTS = {
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "rules_screen_text": (
-        "┏┅⋐[ ◍ _◍ ]っ┅📖┅ / <b>GAME DOCS</b> / \n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258328383183396223\">📖</tg-emoji>┅ / <b>GAME DOCS</b> /\n"
         "┋ \n"
-        "┣ Select a document: \n"
+        "┣ [<tg-emoji emoji-id=\"5258477770735885832\">📄</tg-emoji>] Terms of Service \n"
+        "┣ [<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>] Privacy Policy \n"
+        "┣ [<tg-emoji emoji-id=\"5258513401784573443\">👥</tg-emoji>] Referral Rules \n"
+        "┣ [<tg-emoji emoji-id=\"5258093637450866522\">🤖</tg-emoji>] Giveaway Rules \n"
         "┋ \n"
-        "┣ [📄] Terms of Service \n"
-        "┣ [🤚] Privacy Policy \n"
-        "┣ [👥] Referral Rules \n"
-        "┣ [🤖] Giveaway Rules \n"
-        "┋ \n"
-        "┗┅┅┅/ <b>SELECT_DOCUMENT</b> /"
+        "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "terms_btn": "Terms",
     "privacy_btn": "Privacy",
