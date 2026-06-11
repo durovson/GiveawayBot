@@ -2,11 +2,49 @@ import logging
 import os
 import asyncio
 from datetime import datetime
-import loader
 from database import db
 from services.points_service import PointsService
 
 logger = logging.getLogger(__name__)
+
+async def backfill_og_rewards():
+    """
+    Identifies users in the users table who are in the OG snapshot
+    but haven't been awarded the bonus yet, and awards it.
+    """
+    try:
+        og_ids = await db.get_og_holder_ids()
+        if not og_ids:
+            logger.info("No OG holders found in snapshot, nothing to backfill")
+            return
+
+        now = datetime.now()
+        backfilled_count = 0
+
+        for user_id in og_ids:
+            # We only care about users registered in our 'users' table
+            user = await db.get_user_by_telegram_id(user_id)
+            if not user:
+                continue
+
+            # Award bonus if not yet awarded OR if og_bonus_amount is 0
+            if not user.get("og_bonus_awarded_at") or not user.get("og_bonus_amount"):
+                await db.update_user_fields(
+                    user_id,
+                    og_bonus_awarded_at=now,
+                    og_bonus_amount=50
+                )
+                # Recalculate points (PointsService now uses is_og_holder which is True)
+                await PointsService.recalculate_points(user_id)
+                backfilled_count += 1
+
+        if backfilled_count > 0:
+            logger.info("OG Bonus backfill complete. Awarded to %s users.", backfilled_count)
+        else:
+            logger.info("OG Bonus backfill: No new users to award.")
+
+    except Exception as e:
+        logger.error("Error during OG rewards backfill: %s", e, exc_info=True)
 
 async def create_og_snapshot_once():
     """
@@ -14,10 +52,14 @@ async def create_og_snapshot_once():
     All users known to the bot (users, participants, etc.) are candidates.
     """
     try:
+        # Import loader here to avoid circular dependencies or startup issues in non-bot contexts
+        import loader
+
         # 1. Check if snapshot already exists
         count = await db.get_og_snapshot_count()
         if count > 0:
-            logger.info("OG snapshot already exists (%s users), skipping", count)
+            logger.info("OG snapshot already exists (%s users), skipping creation. Running backfill...", count)
+            await backfill_og_rewards()
             return
 
         logger.info("Starting OG snapshot creation...")
@@ -51,24 +93,8 @@ async def create_og_snapshot_once():
             await db.save_og_snapshot(og_ids)
             logger.info("OG snapshot saved. Users=%s", len(og_ids))
 
-            # 5. Backfill OG Bonus and Recalculate RP
-            now = datetime.now()
-            backfilled_count = 0
-
-            for user_id in og_ids:
-                user = await db.get_user_by_telegram_id(user_id)
-                if not user:
-                    continue
-
-                if not user.get("og_bonus_awarded_at"):
-                    await db.update_user_fields(
-                        user_id,
-                        og_bonus_awarded_at=now
-                    )
-                    await PointsService.recalculate_points(user_id)
-                    backfilled_count += 1
-
-            logger.info("OG Bonus backfill complete. Awarded to %s users.", backfilled_count)
+            # 5. Run backfill
+            await backfill_og_rewards()
         else:
             logger.info("No OG holders identified among %s users", len(user_ids))
 

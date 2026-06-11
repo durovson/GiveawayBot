@@ -232,7 +232,7 @@ class Database:
     async def get_notifications(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("notifications").select("id, title, text, custom_buttons, interval_minutes, is_active, last_sent, last_message_id").execute()
+            response = await self.client.table("notifications").select("id, title, text, custom_buttons, interval_minutes, is_active, last_sent, last_message_id, chat_id").execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting notifications: {e}")
@@ -241,25 +241,25 @@ class Database:
     async def get_active_notifications(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("notifications").select("id, title, text, custom_buttons, interval_minutes, last_sent, last_message_id").eq("is_active", True).execute()
+            response = await self.client.table("notifications").select("id, title, text, custom_buttons, interval_minutes, last_sent, last_message_id, chat_id").eq("is_active", True).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting active notifications: {e}")
             return []
 
-    async def update_notification_last_msg(self, notification_id: int, last_message_id: Optional[int]):
+    async def update_notification_last_msg(self, notification_id: int, last_message_id, chat_id: Optional[int]):
         if not self._check_client(): return
         try:
-            await self.client.table("notifications").update({"last_message_id": last_message_id}).eq("id", notification_id).execute()
+            await self.client.table("notifications").update({"last_message_id, chat_id": last_message_id}).eq("id", notification_id).execute()
         except Exception as e:
             logger.error(f"Error updating notification last message id: {e}")
 
-    async def update_notification_stats(self, notification_id: int, last_sent: datetime, last_message_id: int):
+    async def update_notification_stats(self, notification_id: int, last_sent: datetime, last_message_id, chat_id: int):
         if not self._check_client(): return
         try:
             await self.client.table("notifications").update({
                 "last_sent": last_sent.isoformat(),
-                "last_message_id": last_message_id
+                "last_message_id, chat_id": last_message_id
             }).eq("id", notification_id).execute()
         except Exception as e:
             logger.error(f"Error updating notification stats: {e}")
@@ -421,7 +421,7 @@ class Database:
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[Dict]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, terms_version, username, first_name, og_bonus_awarded_at").eq("telegram_id", telegram_id).execute()
+            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, terms_version, username, first_name, og_bonus_awarded_at, og_bonus_amount, holder_verified_at").eq("telegram_id", telegram_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error getting user by telegram_id: {e}")
@@ -597,6 +597,15 @@ class Database:
             return list(ids)
         except Exception as e:
             logger.error(f"Error getting all known users: {e}")
+            return []
+
+    async def get_og_holder_ids(self) -> List[int]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("og_holders_snapshot").select("telegram_id").execute()
+            return [row["telegram_id"] for row in response.data] if response.data else []
+        except Exception as e:
+            logger.error(f"Error getting OG holder IDs: {e}")
             return []
 
     async def is_og_holder(self, telegram_id: int) -> bool:

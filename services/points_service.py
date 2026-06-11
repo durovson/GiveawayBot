@@ -1,5 +1,4 @@
 import logging
-import loader
 from database import db
 from datetime import datetime
 from utils import normalize_to_raw
@@ -36,8 +35,9 @@ class PointsService:
             active_referrals = points_data.get("active_referrals", 0)
 
             # 3. OG Bonus (O)
-            # OG is determined exclusively by users.og_bonus_awarded_at
-            og_bonus = 50 if user_data.get("og_bonus_awarded_at") else 0
+            # OG is determined by membership in og_holders_snapshot
+            is_og = await db.is_og_holder(user_id)
+            og_bonus = 50 if is_og else 0
 
             # 4. Retention Multiplier (C)
             multiplier = 1.0
@@ -84,6 +84,7 @@ class PointsService:
             # 6. Update the points table
             await db.upsert_points(
                 user_id=user_id,
+                holder_bonus=og_bonus,
                 total_points=total_points
             )
 
