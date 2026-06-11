@@ -40,21 +40,21 @@ async def get_main_menu_keyboard(user_id: int, texts: dict):
 
         # Row 4
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
-        builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258477770735885832")
+        builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258328383183396223")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
         builder.adjust(2, 2, 2, 2, 1)
     elif await is_holder(user_id):
         builder.button(text=texts["game_btn"], callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
         builder.button(text=texts["otc_btn"], callback_data="otc_market", icon_custom_emoji_id="5260687681733533075")
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
-        builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258477770735885832")
+        builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258328383183396223")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
         builder.adjust(2, 2, 1)
 
     else:
         builder.button(text=texts["game_btn"], callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
-        builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258477770735885832")
+        builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258328383183396223")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522")
         builder.adjust(1, 2, 1)
 
@@ -76,17 +76,17 @@ async def show_rules_screen(
     builder.button(
         text=texts["privacy_btn"],
         url="https://telegra.ph/privacy-placeholder",
-        icon_custom_emoji_id="5258476306152038031"
+        icon_custom_emoji_id="5260249440450520061"
     )
     builder.button(
         text=texts["referral_rules_btn"],
         url="https://telegra.ph/referral-rules-placeholder",
-        icon_custom_emoji_id="6032594876506312598"
+        icon_custom_emoji_id="5258513401784573443"
     )
     builder.button(
         text=texts["giveaway_rules_btn"],
         url="https://telegra.ph/giveaway-rules-placeholder",
-        icon_custom_emoji_id="5296348778012361146"
+        icon_custom_emoji_id="5258093637450866522"
     )
     builder.button(
         text=texts["continue_btn"],
