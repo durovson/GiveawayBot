@@ -142,6 +142,7 @@ class Database:
     async def add_participant(self, giveaway_id: int, user_id: int, username: Optional[str]) -> bool:
         if not self._check_client(): return False
         try:
+            await self.ensure_user_exists(user_id)
             existing = await self.client.table("participants").select("id").eq("giveaway_id", giveaway_id).eq("user_id", user_id).execute()
             if existing.data:
                 return False
@@ -559,6 +560,43 @@ class Database:
             return result.data or []
         except Exception as e:
             logger.error(f"Error getting all registered users: {e}")
+            return []
+
+    async def get_all_known_users(self) -> List[int]:
+        """
+        Gathers unique Telegram IDs from all tables where users might be tracked.
+        """
+        if not self._check_client(): return []
+        try:
+            # 1. users
+            res_users = await self.client.table("users").select("telegram_id").execute()
+            ids = {row["telegram_id"] for row in res_users.data} if res_users.data else set()
+
+            # 2. participants
+            res_parts = await self.client.table("participants").select("user_id").execute()
+            if res_parts.data:
+                ids.update(row["user_id"] for row in res_parts.data)
+
+            # 3. points
+            res_pts = await self.client.table("points").select("user_id").execute()
+            if res_pts.data:
+                ids.update(row["user_id"] for row in res_pts.data)
+
+            # 4. referrals (referrer_id and referred_id)
+            res_refs = await self.client.table("referrals").select("referrer_id, referred_id").execute()
+            if res_refs.data:
+                for row in res_refs.data:
+                    if row.get("referrer_id"): ids.add(row["referrer_id"])
+                    if row.get("referred_id"): ids.add(row["referred_id"])
+
+            # 5. holders_chat_invites
+            res_invs = await self.client.table("holders_chat_invites").select("telegram_id").execute()
+            if res_invs.data:
+                ids.update(row["telegram_id"] for row in res_invs.data)
+
+            return list(ids)
+        except Exception as e:
+            logger.error(f"Error getting all known users: {e}")
             return []
 
     async def is_og_holder(self, telegram_id: int) -> bool:
