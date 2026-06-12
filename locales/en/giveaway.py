@@ -144,7 +144,7 @@ TEXTS = {
     "giveaway_finished_notify": (
         "┏┅<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji>┅ / <b>Giveaway \"{title}\" finished!</b>\n"
         "┋\n"
-        "┗┅┅┅/Results are published in the group."
+        "┗┅┅┅/ <b>Results are published in the group.</b> /"
     ),
     "giveaway_history_title": (
         "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>Created Giveaways</b> /\n"
