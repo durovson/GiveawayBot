@@ -247,22 +247,38 @@ class Database:
             logger.error(f"Error getting active notifications: {e}")
             return []
 
-    async def update_notification_last_msg(self, notification_id: int, last_message_id, chat_id: Optional[int]):
+    async def update_notification_stats(self, notification_id: int, last_sent: Any, last_message_id: int):
+        """
+        Обновляет статистику отправки уведомления.
+        Имя метода и аргументы приведены в соответствие с вызовом в handlers/completion.py.
+        Новые столбцы в БД не создаются — используются существующие 'last_sent' и 'last_message_id'.
+        """
         if not self._check_client(): return
         try:
-            await self.client.table("notifications").update({"last_message_id, chat_id": last_message_id}).eq("id", notification_id).execute()
-        except Exception as e:
-            logger.error(f"Error updating notification last message id: {e}")
+            # Приводим datetime к формату ISO строки для Supabase
+            iso_sent = last_sent.isoformat() if hasattr(last_sent, 'isoformat') else str(last_sent)
 
-    async def update_notification_stats(self, notification_id: int, last_sent: datetime, last_message_id, chat_id: int):
-        if not self._check_client(): return
-        try:
-            await self.client.table("notifications").update({
-                "last_sent": last_sent.isoformat(),
-                "last_message_id, chat_id": last_message_id
-            }).eq("id", notification_id).execute()
+            await self.client.table("notifications") \
+                .update({
+                    "last_sent": iso_sent,
+                    "last_message_id": last_message_id
+                }) \
+                .eq("id", notification_id) \
+                .execute()
+            logger.info(f"✅ Статистика уведомления {notification_id} успешно обновлена в БД.")
         except Exception as e:
-            logger.error(f"Error updating notification stats: {e}")
+            logger.error(f"❌ Ошибка при вызове update_notification_stats для ID {notification_id}: {e}")
+
+            # РЕЗЕРВНЫЙ ВАРИАНТ (Анти-спам): Если запись last_message_id упала из-за типов данных,
+            # принудительно обновляем ХОТЯ БЫ время отправки, чтобы бот не спамил каждую минуту.
+            try:
+                await self.client.table("notifications") \
+                    .update({"last_sent": datetime.now().isoformat()}) \
+                    .eq("id", notification_id) \
+                    .execute()
+                logger.warning(f"⚠️ Время отправки уведомления {notification_id} зафиксировано без message_id.")
+            except Exception as inner_e:
+                logger.error(f"🚨 Полный отказ Supabase при попытке спасти ситуацию: {inner_e}")
 
     # --- NEW METHODS ---
 

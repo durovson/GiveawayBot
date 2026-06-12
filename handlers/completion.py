@@ -5,7 +5,7 @@ import secrets
 import pytz
 import json
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 from aiogram import Bot, types
 from aiogram.enums import ParseMode, ChatType
@@ -161,90 +161,95 @@ async def check_periodic_notifications(bot: Bot):
             now = datetime.now(pytz.UTC)
             active_notifications = await db.get_active_notifications()
 
-            for notif in active_notifications:
-                try:
-                    last_sent = notif.get("last_sent")
-                    interval = notif.get("interval_minutes", 60)
+            try:
+                for notif in active_notifications:
+                    try:
+                        chat_id = notif.get("chat_id")
+                        if chat_id:
+                            last_sent = notif.get("last_sent")
+                            interval = notif.get("interval_minutes", 60)
 
-                    if last_sent is None:
-                        last_sent_dt = now - timedelta(minutes=interval)
-                    else:
-                        if isinstance(last_sent, str):
-                            last_sent_dt = datetime.fromisoformat(last_sent)
-                        else:
-                            last_sent_dt = last_sent
+                            if last_sent is None:
+                                last_sent_dt = now - timedelta(minutes=interval)
+                            else:
+                                if isinstance(last_sent, str):
+                                    last_sent_dt = datetime.fromisoformat(last_sent)
+                                else:
+                                    last_sent_dt = last_sent
 
-                        if last_sent_dt.tzinfo is None:
-                            last_sent_dt = pytz.UTC.localize(last_sent_dt)
-                        else:
-                            last_sent_dt = last_sent_dt.astimezone(pytz.UTC)
+                                if last_sent_dt.tzinfo is None:
+                                    last_sent_dt = pytz.UTC.localize(last_sent_dt)
+                                else:
+                                    last_sent_dt = last_sent_dt.astimezone(pytz.UTC)
 
-                    next_send_time = last_sent_dt + timedelta(minutes=interval)
-                    delete_threshold = next_send_time - timedelta(minutes=2)
+                            next_send_time = last_sent_dt + timedelta(minutes=interval)
 
-                    chat_id = notif["chat_id"]
-                    last_message_id = notif.get("last_message_id")
+                            if now >= next_send_time:
+                                title = notif.get("title", "Ad")
+                                text = notif.get("text", "")
 
-                    if now >= delete_threshold and now < next_send_time and last_message_id is not None:
-                        try:
-                            await bot.delete_message(chat_id=chat_id, message_id=last_message_id)
-                        except TelegramBadRequest as e:
-                            logger.error(f"Failed to delete old ad message: {e}")
-                        finally:
-                            await db.update_notification_last_msg(notif["id"], None)
+                                # Сохраняем оригинальную бизнес-логику сборки сообщения
+                                ad_text = (
+                                    f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ / {html.escape(title)} /\n"
+                                    f"┋\n"
+                                    f"┣{html.escape(text)}\n"
+                                    f"┋\n"
+                                    f"┗┅┅┅/ #NOTAPES /"
+                                )
 
-                    if now >= next_send_time:
-                        title = notif["title"]
-                        text = notif["text"]
+                                try:
+                                    target_chat = await bot.get_chat(chat_id)
+                                    if target_chat.type == ChatType.CHANNEL:
+                                        ad_text = strip_custom_emojis(ad_text)
+                                except Exception:
+                                    pass
 
-                        en_texts = get_locale_by_lang("en")
+                                # Сохраняем оригинальную бизнес-логику сборки клавиатуры
+                                builder = InlineKeyboardBuilder()
+                                c_btns = notif.get('custom_buttons', [])
 
-                        ad_text = (
-                            f"┏<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ / {html.escape(title)} /\n"
-                            f"┋\n"
-                            f"┣{html.escape(text)}\n"
-                            f"┋\n"
-                            f"┗┅┅┅/ #NOTAPES /"
-                        )
+                                if isinstance(c_btns, str):
+                                    try: c_btns = json.loads(c_btns)
+                                    except: c_btns = []
 
-                        try:
-                            target_chat = await bot.get_chat(chat_id)
-                            if target_chat.type == ChatType.CHANNEL:
-                                ad_text = strip_custom_emojis(ad_text)
-                        except Exception:
-                            pass
+                                if c_btns:
+                                    for b in c_btns:
+                                        builder.button(text=b['text'], url=b['url'])
+                                elif notif.get("button_url"):
+                                    builder.button(text=notif.get("button_text", "OPEN"), url=notif["button_url"])
 
-                        builder = InlineKeyboardBuilder()
-                        c_btns = notif.get('custom_buttons', [])
+                                builder.adjust(1)
+                                reply_markup = builder.as_markup() if (c_btns or notif.get("button_url")) else None
 
-                        if isinstance(c_btns, str):
-                            try: c_btns = json.loads(c_btns)
-                            except: c_btns = []
+                                # БЛОК ОТПРАВКИ С ЗАЩИТОЙ ОТ ПАДЕНИЙ
+                                try:
+                                    new_msg = await bot.send_message(
+                                        chat_id=chat_id,
+                                        text=ad_text,
+                                        reply_markup=reply_markup,
+                                        parse_mode=ParseMode.HTML
+                                    )
 
-                        if c_btns:
-                            for b in c_btns:
-                                builder.button(text=b['text'], url=b['url'])
-                        elif notif.get("button_url"):
-                            builder.button(text=notif.get("button_text", "OPEN"), url=notif["button_url"])
+                                    # Вызов метода (теперь имя метода совпадает с измененным в database.py)
+                                    await db.update_notification_stats(
+                                        notif["id"],
+                                        last_sent=now,
+                                        last_message_id=new_msg.message_id
+                                    )
+                                except Exception as tg_err:
+                                    logger.error(f"❌ Ошибка отправки сообщения в Telegram (ID уведомления: {notif.get('id')}): {tg_err}")
+                                    # Анти-спам: Если отправка не удалась (бан бота, чат не найден), мы "вхолостую"
+                                    # обновляем время в базе данных, чтобы бот не пытался слать это уведомление каждую минуту
+                                    await db.update_notification_stats(
+                                        notif["id"],
+                                        last_sent=now,
+                                        last_message_id=0
+                                    )
+                    except Exception as inner_loop_err:
+                        logger.error(f"❌ Ошибка при обработке уведомления {notif.get('id')}: {inner_loop_err}")
 
-                        builder.adjust(1)
-
-                        reply_markup = builder.as_markup() if (c_btns or notif.get("button_url")) else None
-
-                        new_msg = await bot.send_message(
-                            chat_id=chat_id,
-                            text=ad_text,
-                            reply_markup=reply_markup,
-                            parse_mode=ParseMode.HTML
-                        )
-
-                        await db.update_notification_stats(
-                            notif["id"],
-                            last_sent=now,
-                            last_message_id=new_msg.message_id
-                        )
-                except Exception as e:
-                    logger.error(f"Error processing notification {notif.get('id')}: {e}")
+            except Exception as e:
+                logger.error(f"Error in check_periodic_notifications loop: {e}")
 
         except Exception as e:
             logger.error(f"Error in check_periodic_notifications: {e}")
