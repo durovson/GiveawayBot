@@ -10,7 +10,7 @@ TEXTS = {
         "┋\n"
         "┣ Status upgrade unlocks more!\n"
         "┋\n"
-        "┗┅┅┅/ <b>Select an option:</b> /"
+        "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "game_btn": "Game",
     "otc_btn": "OTC",
@@ -35,7 +35,7 @@ TEXTS = {
         "┋\n"
         "┣ Please select your preferred language\n"
         "┋\n"
-        "┗┅┅┅/ <b>Select an option:</b> /"
+        "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "bot_ready": (
         "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>The bot is ready to work!</b> /\n"
