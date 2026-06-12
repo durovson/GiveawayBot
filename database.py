@@ -59,7 +59,7 @@ class Database:
     async def get_tracked_groups(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("chats").select("id, chat_id, title, chat_type").in_("chat_type", ["group", "supergroup", "channel"]).execute()
+            response = await self.client.table("chats").select("chat_id, title, chat_type").in_("chat_type", ["group", "supergroup", "channel"]).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting tracked groups: {e}")
