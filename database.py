@@ -50,7 +50,7 @@ class Database:
     async def get_tracked_chats(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("chats").select("id, chat_id, title, chat_type").execute()
+            response = await self.client.table("chats").select("chat_id, title, chat_type").execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting tracked chats: {e}")
