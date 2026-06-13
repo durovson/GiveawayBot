@@ -204,25 +204,33 @@ async def check_periodic_notifications(bot: Bot):
                                 except Exception:
                                     pass
 
-                                # Сохраняем оригинальную бизнес-логику сборки клавиатуры
+                                # Сборка markup кнопок (оригинальная бизнес-логика сохранена на 100%)
                                 builder = InlineKeyboardBuilder()
                                 c_btns = notif.get('custom_buttons', [])
-
                                 if isinstance(c_btns, str):
                                     try: c_btns = json.loads(c_btns)
                                     except: c_btns = []
-
                                 if c_btns:
                                     for b in c_btns:
                                         builder.button(text=b['text'], url=b['url'])
                                 elif notif.get("button_url"):
                                     builder.button(text=notif.get("button_text", "OPEN"), url=notif["button_url"])
-
                                 builder.adjust(1)
                                 reply_markup = builder.as_markup() if (c_btns or notif.get("button_url")) else None
 
-                                # БЛОК ОТПРАВКИ С ЗАЩИТОЙ ОТ ПАДЕНИЙ
+                                # --- МОДЕРНИЗИРОВАННЫЙ БЛОК ОТПРАВКИ И УДАЛЕНИЯ С ЗАЩИТОЙ ---
                                 try:
+                                    # 1. Попытка удалить предыдущее сообщение, если его ID есть в БД
+                                    old_message_id = notif.get("last_message_id")
+                                    if old_message_id and int(old_message_id) > 0:
+                                        try:
+                                            await bot.delete_message(chat_id=chat_id, message_id=int(old_message_id))
+                                            logger.info(f"🗑️ Старое сообщение {old_message_id} успешно удалено из чата {chat_id}")
+                                        except Exception as del_err:
+                                            # Игнорируем ошибку (если сообщение старше 48 часов или удалено вручную)
+                                            logger.warning(f"⚠️ Не удалось удалить старое сообщение {old_message_id}: {del_err}")
+
+                                    # 2. Отправка нового сообщения
                                     new_msg = await bot.send_message(
                                         chat_id=chat_id,
                                         text=ad_text,
@@ -230,16 +238,16 @@ async def check_periodic_notifications(bot: Bot):
                                         parse_mode=ParseMode.HTML
                                     )
 
-                                    # Вызов метода (теперь имя метода совпадает с измененным в database.py)
+                                    # 3. Фиксация нового сообщения и времени в Supabase
                                     await db.update_notification_stats(
                                         notif["id"],
                                         last_sent=now,
                                         last_message_id=new_msg.message_id
                                     )
+
                                 except Exception as tg_err:
                                     logger.error(f"❌ Ошибка отправки сообщения в Telegram (ID уведомления: {notif.get('id')}): {tg_err}")
-                                    # Анти-спам: Если отправка не удалась (бан бота, чат не найден), мы "вхолостую"
-                                    # обновляем время в базе данных, чтобы бот не пытался слать это уведомление каждую минуту
+                                    # Анти-спам заглушка на случай падения отправки
                                     await db.update_notification_stats(
                                         notif["id"],
                                         last_sent=now,
