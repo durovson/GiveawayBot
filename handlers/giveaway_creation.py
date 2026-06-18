@@ -555,7 +555,7 @@ async def get_giveaway_post_data(giveaway, texts=None):
         channels_text = f"\n┣ {texts['giveaway_subscribe_to']}: " + ", ".join(giveaway['mandatory_channels'])
 
     post_text = (
-        f"┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"6032937473162614352\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
+        f"┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
         f"┋\n"
         f"┣ <b>{texts['giveaway_prizes']}:</b> {prizes}\n"
         f"┋\n"
@@ -566,7 +566,7 @@ async def get_giveaway_post_data(giveaway, texts=None):
         f"{channels_text}\n"
         f"┋\n"
         f"┣ <b>GIVEAWAY</b>\n"
-        f"┣ [ HUMANS.. NOT APES ]\n"
+        f"┣ <b>[ HUMANS.. NOT APES ]</b>\n"
         f"┗┅┅┅/ #NOTAPES /"
     )
 
