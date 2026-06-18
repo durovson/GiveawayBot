@@ -68,7 +68,7 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
                     mention = f"<b>@{safe_username}</b>"
                 else:
                     mention = f"<b><a href=\"tg://user?id={w['user_id']}\">{safe_username}</a></b>"
-                winners_list_str += f"┋<tg-emoji emoji-id=\"5274159185959872191\">👑</tg-emoji> {mention} — {html.escape(prizes_str)}\n"
+                winners_list_str += f"┋ {mention} — {html.escape(prizes_str)}\n"
 
             if winners_to_save:
                 await db.save_winners(giveaway_id, winners_to_save)
