@@ -21,6 +21,7 @@ from handlers.main_menu import router as main_menu_router
 from handlers.giveaway_creation import router as creation_router
 from handlers.participants import router as participants_router
 from handlers.otc_market import router as otc_market_router
+from handlers.channel_reposter import router as channel_reposter_router
 from handlers.admin import router as admin_router
 from handlers.notifications import router as notifications_router
 from handlers.game_menu import router as game_menu_router
@@ -66,6 +67,7 @@ dp.include_router(main_menu_router)
 dp.include_router(creation_router)
 dp.include_router(participants_router)
 dp.include_router(otc_market_router)
+dp.include_router(channel_reposter_router)
 
 async def initial_sync():
     """Perform initial sync of holders before starting polling."""
