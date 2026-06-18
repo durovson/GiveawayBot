@@ -4,7 +4,7 @@ TEXTS = {
         "┋\n"
         "┣ Select the type of giveaway.\n"
         "┋\n"
-        "┗┅┅┅/ <b>Choose an option:</b> /"
+        "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "giveaway_fast_btn": "Fast (No channels)",
     "giveaway_partner_btn": "Partner (Required channels)",
@@ -35,7 +35,7 @@ TEXTS = {
         "┋\n"
         "┣ Select how the winner will be determined.\n"
         "┋\n"
-        "┗┅┅┅/ <b>Choose an option:</b> /"
+        "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "giveaway_timed_btn": "Certain time",
     "giveaway_limited_btn": "By participants",
@@ -49,7 +49,7 @@ TEXTS = {
         "┋\n"
         "┣ How many participants are needed to finish?\n"
         "┋\n"
-        "┗┅┅┅/ <b>Select or enter a number:</b> /"
+        "┗┅┅┅/ <b>Select or enter a number</b> /"
     ),
     "giveaway_custom_option_btn": "Your own option",
     "giveaway_enter_winners_count": (
@@ -57,7 +57,7 @@ TEXTS = {
         "┋\n"
         "┣ How many winners will there be?\n"
         "┋\n"
-        "┗┅┅┅/ <b>Select or enter a number:</b> /"
+        "┗┅┅┅/ <b>Select or enter a number</b> /"
     ),
     "giveaway_enter_prizes": (
         "┏┅<tg-emoji emoji-id=\"5891105528356018797\">🎁</tg-emoji>┅ / <b>Prizes</b> /\n"
@@ -73,7 +73,7 @@ TEXTS = {
         "┋\n"
         "┣ Who can participate in the giveaway?\n"
         "┋\n"
-        "┗┅┅┅/ <b>Choose an option:</b> /"
+        "┗┅┅┅/ <b>Choose an option</b> /"
     ),
     "giveaway_access_all_btn": "Public",
     "giveaway_access_whitelist_btn": "Whitelist (Users/IDs)",
@@ -89,7 +89,7 @@ TEXTS = {
         "┋\n"
         "{preview}\n"
         "┋\n"
-        "┗┅┅┅/ <b>Check everything and confirm:</b> /"
+        "┗┅┅┅/ <b>Check everything and confirm</b> /"
     ),
     "giveaway_edit_name_btn": "Name",
     "giveaway_edit_channels_btn": "Channels",
@@ -124,7 +124,7 @@ TEXTS = {
     "giveaway_success_join": "You have successfully joined the giveaway!",
     "giveaway_finished": "The giveaway has already ended.",
     "giveaway_no_participants_results": (
-        "┏┅<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"6032937473162614352\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
         "┣ <b>Unfortunately, there were no humans...</b>\n"
         "┋\n"
         "┣ <b>GIVEAWAY</b>\n"
@@ -132,7 +132,7 @@ TEXTS = {
         "┗┅┅┅/ #NOTAPES /"
     ),
     "giveaway_winners_results": (
-        "┏┅<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"6032937473162614352\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
         "┣<tg-emoji emoji-id=\"5422626434331990897\">🤩</tg-emoji> <b>GAME OVER!</b>\n"
         "┋\n"
         "{winners_list}"
@@ -144,14 +144,14 @@ TEXTS = {
     "giveaway_finished_notify": (
         "┏┅<tg-emoji emoji-id=\"5258096772776991776\">⚙️</tg-emoji>┅ / <b>Giveaway \"{title}\" finished!</b>\n"
         "┋\n"
-        "┗┅┅┅/ <b>Results are published in the group.</b> /"
+        "┗┅┅┅/ <b>Results are published in the group</b> /"
     ),
     "giveaway_history_title": (
-        "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>Created Giveaways</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"6032937473162614352\">🎁</tg-emoji>┅ / <b>Created Giveaways</b> /\n"
         "┋\n"
         "{content}\n"
         "┋\n"
-        "┗┅┅┅/<tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> <b>Select action:</b> /"
+        "┗┅┅┅/ <b>Select action</b> /"
     ),
     "giveaway_no_giveaways": "You haven't created any giveaways yet.",
     "giveaway_event_label": "Event",
