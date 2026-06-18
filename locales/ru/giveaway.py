@@ -128,7 +128,7 @@ TEXTS = {
         "┣ <b>Unfortunately, there were no humans...</b>\n"
         "┋\n"
         "┣ <b>GIVEAWAY</b>\n"
-        "┣ [ HUMANS.. NOT APES ]\n"
+        "┣ <b>[ HUMANS.. NOT APES ]</b>\n"
         "┗┅┅┅/ #NOTAPES /"
     ),
     "giveaway_winners_results": (
@@ -138,7 +138,7 @@ TEXTS = {
         "{winners_list}"
         "┋\n"
         "┣ <b>GIVEAWAY</b>\n"
-        "┣ [ HUMANS.. NOT APES ]\n"
+        "┣ <b>[ HUMANS.. NOT APES ]</b>\n"
         "┗┅┅┅/ #NOTAPES /"
     ),
     "giveaway_finished_notify": (
