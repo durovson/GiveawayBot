@@ -563,7 +563,7 @@ async def get_giveaway_post_data(giveaway, texts=None):
         f"┋\n"
         f"┣ <b>{texts['giveaway_condition']}:</b> {cond}"
         f"┋\n"
-        f"┣ {channels_text}\n"
+        f"{channels_text}\n"
         f"┋\n"
         f"┣ <b>GIVEAWAY</b>\n"
         f"┣ [ HUMANS.. NOT APES ]\n"
