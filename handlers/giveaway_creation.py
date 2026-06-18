@@ -561,7 +561,7 @@ async def get_giveaway_post_data(giveaway, texts=None):
         f"┋\n"
         f"┣ <b>{texts['giveaway_winners']}:</b> {winners}\n"
         f"┋\n"
-        f"┣ <b>{texts['giveaway_condition']}:</b> {cond}"
+        f"┣ <b>{texts['giveaway_condition']}:</b> {cond}\n"
         f"┋\n"
         f"{channels_text}\n"
         f"┋\n"
