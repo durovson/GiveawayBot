@@ -1,6 +1,6 @@
 TEXTS = {
     "giveaway_title": (
-        "┏┅<tg-emoji emoji-id=\"5296348778012361146\">🎁</tg-emoji>┅ / <b>New Giveaway</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ / <b>New Giveaway</b> /\n"
         "┋\n"
         "┣ Select the type of giveaway.\n"
         "┋\n"
@@ -60,7 +60,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Select or enter a number</b> /"
     ),
     "giveaway_enter_prizes": (
-        "┏┅<tg-emoji emoji-id=\"5891105528356018797\">🎁</tg-emoji>┅ / <b>Prizes</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ / <b>Prizes</b> /\n"
         "┋\n"
         "┣ Enter the prizes for the winners.\n"
         "┣ Each prize on a new line.\n"
@@ -124,7 +124,7 @@ TEXTS = {
     "giveaway_success_join": "You have successfully joined the giveaway!",
     "giveaway_finished": "The giveaway has already ended.",
     "giveaway_no_participants_results": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"6032937473162614352\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
         "┣ <b>Unfortunately, there were no humans...</b>\n"
         "┋\n"
         "┣ <b>GIVEAWAY</b>\n"
@@ -132,7 +132,7 @@ TEXTS = {
         "┗┅┅┅/ #NOTAPES /"
     ),
     "giveaway_winners_results": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"6032937473162614352\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
         "┣<tg-emoji emoji-id=\"5422626434331990897\">🤩</tg-emoji> <b>GAME OVER!</b>\n"
         "┋\n"
         "{winners_list}"
@@ -147,7 +147,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Results are published in the group</b> /"
     ),
     "giveaway_history_title": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"6032937473162614352\">🎁</tg-emoji>┅ / <b>Created Giveaways</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ / <b>Created Giveaways</b> /\n"
         "┋\n"
         "{content}\n"
         "┋\n"
