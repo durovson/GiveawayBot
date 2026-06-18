@@ -1,6 +1,6 @@
 TEXTS = {
     "giveaway_title": (
-        "┏┅<tg-emoji emoji-id=\"5296348778012361146\">🎁</tg-emoji>┅ / <b>Новый розыгрыш</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ / <b>Новый розыгрыш</b> /\n"
         "┋\n"
         "┣ Выберите тип розыгрыша.\n"
         "┋\n"
@@ -60,7 +60,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Выберите или введите число:</b> /"
     ),
     "giveaway_enter_prizes": (
-        "┏┅<tg-emoji emoji-id=\"5891105528356018797\">🎁</tg-emoji>┅ / <b>Призы</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ / <b>Призы</b> /\n"
         "┋\n"
         "┣ Введите призы для победителей.\n"
         "┣ Каждый приз с новой строки.\n"
@@ -124,7 +124,7 @@ TEXTS = {
     "giveaway_success_join": "Вы успешно присоединились к розыгрышу!",
     "giveaway_finished": "Розыгрыш уже завершен.",
     "giveaway_no_participants_results": (
-        "┏┅<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
         "┋ <b>Unfortunately, there were no humans...</b>\n"
         "┋\n"
         "┣ <b>GIVEAWAY</b>\n"
@@ -132,7 +132,7 @@ TEXTS = {
         "┗┅┅┅/ #NOTAPES /"
     ),
     "giveaway_winners_results": (
-        "┏┅<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>┅ <b>/ {title} /</b>\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
         "┋<tg-emoji emoji-id=\"5422626434331990897\">🤩</tg-emoji> <b>GAME OVER!</b>\n"
         "┋\n"
         "{winners_list}"
@@ -147,7 +147,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Результаты опубликованы в группе</b> /"
     ),
     "giveaway_history_title": (
-        "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>Созданные розыгрыши</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ / <b>Созданные розыгрыши</b> /\n"
         "┋\n"
         "{content}\n"
         "┋\n"
