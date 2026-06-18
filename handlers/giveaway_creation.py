@@ -552,7 +552,7 @@ async def get_giveaway_post_data(giveaway, texts=None):
 
     channels_text = ""
     if giveaway.get('mandatory_channels'):
-        channels_text = f"\n┣ {texts['giveaway_subscribe_to']}: " + ", ".join(giveaway['mandatory_channels'])
+        channels_text = f"\n┣ <b>{texts['giveaway_subscribe_to']}:</b> " + ", ".join(giveaway['mandatory_channels'])
 
     post_text = (
         f"┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
