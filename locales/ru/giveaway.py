@@ -125,7 +125,7 @@ TEXTS = {
     "giveaway_finished": "Розыгрыш уже завершен.",
     "giveaway_no_participants_results": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
-        "┋ <b>Unfortunately, there were no humans...</b>\n"
+        "┣ <b>Unfortunately, there were no humans...</b>\n"
         "┋\n"
         "┣ <b>GIVEAWAY</b>\n"
         "┣ [ HUMANS.. NOT APES ]\n"
@@ -133,7 +133,7 @@ TEXTS = {
     ),
     "giveaway_winners_results": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅ <b>/ {title} /</b>\n"
-        "┋<tg-emoji emoji-id=\"5422626434331990897\">🤩</tg-emoji> <b>GAME OVER!</b>\n"
+        "┣ <b>GAME OVER!</b>\n"
         "┋\n"
         "{winners_list}"
         "┋\n"
