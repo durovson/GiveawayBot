@@ -4,7 +4,7 @@ TEXTS = {
         "┋\n"
         "┣ Hub Online.\n"
         "┋\n"
-        "┣ Select Mode:\n"
+        "┣ Modes:\n"
         "┣ [1] Game (Public)\n"
         "┣ [2] OTC Market (Holders)\n"
         "┋\n"
