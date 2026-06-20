@@ -23,5 +23,10 @@ http_session = None
 
 # aiogram bot & dispatcher
 session = AiohttpSession()
-bot = Bot(token=BOT_TOKEN, session=session)
+from aiogram.client.default import DefaultBotProperties
+bot = Bot(
+    token=BOT_TOKEN,
+    session=session,
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+)
 dp = Dispatcher(storage=MemoryStorage())

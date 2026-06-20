@@ -3,6 +3,7 @@ import logging
 from loader import bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram import types
+from aiogram.enums import ParseMode
 from pytoniq_core import Address
 
 logger = logging.getLogger(__name__)
@@ -99,6 +100,8 @@ def short_wallet(addr: str) -> str:
 # --- UI HELPERS ---
 
 async def safe_answer(message, text, **kwargs):
+    if "parse_mode" not in kwargs:
+        kwargs["parse_mode"] = ParseMode.HTML
     try:
         return await message.answer(text, **kwargs)
     except TelegramBadRequest as e:
@@ -128,12 +131,14 @@ async def safe_edit_text(message, text, **kwargs):
     except TelegramBadRequest as e:
         err_msg = str(e).lower()
 
+        if "message is not modified" in err_msg:
+            return target
+
         if any(x in err_msg for x in [
             "document_invalid",
             "there is no text in the message to edit",
             "message can't be edited",
-            "message to edit not found",
-            "message is not modified"
+            "message to edit not found"
         ]):
             try:
                 await target.delete()
@@ -141,7 +146,8 @@ async def safe_edit_text(message, text, **kwargs):
                 pass
 
             safe_kwargs = kwargs.copy()
-            safe_kwargs.pop("parse_mode", None)
+            if "parse_mode" not in safe_kwargs:
+                safe_kwargs["parse_mode"] = ParseMode.HTML
 
             msg = await target.answer(
                 strip_custom_emojis(text),
@@ -165,12 +171,20 @@ async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
         return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, **kwargs)
     except TelegramBadRequest as e:
         err_msg = str(e).lower()
-        if any(x in err_msg for x in ["document_invalid", "message is not modified", "can't be edited", "no text in the message"]):
+        if "message is not modified" in err_msg:
+            return None
+
+        if any(x in err_msg for x in ["document_invalid", "can't be edited", "no text in the message"]):
             try:
                 await bot.delete_message(chat_id, message_id)
             except:
                 pass
-            return await bot.send_message(chat_id, text, **kwargs)
+
+            safe_kwargs = kwargs.copy()
+            if "parse_mode" not in safe_kwargs:
+                safe_kwargs["parse_mode"] = ParseMode.HTML
+
+            return await bot.send_message(chat_id, text, **safe_kwargs)
 
         if "can't parse entities" in err_msg:
             try:
@@ -180,6 +194,8 @@ async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
         raise e
 
 async def safe_bot_send_message(bot, chat_id, text, **kwargs):
+    if "parse_mode" not in kwargs:
+        kwargs["parse_mode"] = ParseMode.HTML
     try:
         return await bot.send_message(chat_id=chat_id, text=text, **kwargs)
     except TelegramBadRequest as e:

@@ -195,7 +195,7 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
                 if user_data and not user_data.get("wallet_connected_at"):
                     await db.update_user_fields(
                         user_id,
-                        wallet_connected_at=datetime.now(),
+                        wallet_connected_at=datetime.now().isoformat(),
                         referral_status="wallet_connected"
                     )
 

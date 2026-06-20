@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import loader
+
+holder_sync_lock = asyncio.Lock()
 from typing import List, Dict, Optional
 from database import db
 from services.leaderboard import LeaderboardService
@@ -13,84 +15,89 @@ logger = logging.getLogger(__name__)
 API_URL = "https://stickers.tools/api/v1/launching/packs/0:81abce045d81dc32c42aebc27b1ad6898bb4f89306231d2b58031908a4c267c7/holders"
 
 async def fetch_holders():
-    holders = []
-    offset = 0
-    limit = 30
-    retries = 5
-
-    total = 0
-    total_held = 0
-    has_more = False
-
-    # Use shared session from loader
-    session = loader.http_session
-    if not session:
-        logger.error("Shared HTTP session not initialized")
+    if holder_sync_lock.locked():
+        logger.warning("Holder sync already running")
         return {"holders": [], "total": 0, "totalHeld": 0, "hasMore": False}
 
-    while True:
-        url = f"{API_URL}?offset={offset}&limit={limit}"
-        payload = {}
-        page = []
+    async with holder_sync_lock:
+        holders = []
+        offset = 0
+        limit = 30
+        retries = 5
 
-        for attempt in range(1, retries + 1):
-            try:
-                async with session.get(url, timeout=30) as response:
-                    if response.status != 200:
-                        if attempt == retries:
-                            return {"holders": holders, "total": 0, "totalHeld": 0, "hasMore": False}
-                        await asyncio.sleep(attempt)
-                        continue
+        total = 0
+        total_held = 0
+        has_more = False
 
-                    response_json = await response.json()
-                    payload = response_json.get("data", {}) if isinstance(response_json, dict) else {}
-                    page = payload.get("holders", []) if isinstance(payload, dict) else []
-                    has_more = payload.get("hasMore", False) if isinstance(payload, dict) else False
-                    total = payload.get("total", 0) if isinstance(payload, dict) else 0
-                    total_held = payload.get("totalHeld", 0) if isinstance(payload, dict) else 0
+        # Use shared session from loader
+        session = loader.http_session
+        if not session:
+            logger.error("Shared HTTP session not initialized")
+            return {"holders": [], "total": 0, "totalHeld": 0, "hasMore": False}
 
-                    logger.info("HOLDERS_TOTAL=%s", total)
-                    logger.info("HOLDERS_RECEIVED=%s", len(page))
+        while True:
+            url = f"{API_URL}?offset={offset}&limit={limit}"
+            payload = {}
+            page = []
 
-                    break
-            except (asyncio.TimeoutError, Exception) as e:
-                if attempt == retries:
-                    logger.error("Holders API fetch failed after %s attempts: %s", retries, e)
-                    return {"holders": holders, "total": 0, "totalHeld": 0, "hasMore": False}
-                await asyncio.sleep(attempt)
+            for attempt in range(1, retries + 1):
+                try:
+                    async with session.get(url, timeout=30) as response:
+                        if response.status != 200:
+                            if attempt == retries:
+                                return {"holders": holders, "total": 0, "totalHeld": 0, "hasMore": False}
+                            await asyncio.sleep(attempt)
+                            continue
 
-        valid = []
-        for item in page:
-            if not isinstance(item, dict):
-                continue
-            addr = item.get("addr")
-            if not addr:
-                continue
-            try:
-                valid.append({
-                    "wallet": normalize_to_raw(addr),
-                    "packs": item.get("count", 0),
-                    "rank": item.get("rank")
-                })
-            except Exception:
-                continue
-        holders.extend(valid)
+                        response_json = await response.json()
+                        payload = response_json.get("data", {}) if isinstance(response_json, dict) else {}
+                        page = payload.get("holders", []) if isinstance(payload, dict) else []
+                        has_more = payload.get("hasMore", False) if isinstance(payload, dict) else False
+                        total = payload.get("total", 0) if isinstance(payload, dict) else 0
+                        total_held = payload.get("totalHeld", 0) if isinstance(payload, dict) else 0
 
-        if not has_more:
-            break
-        if len(page) < limit:
-            break
-        offset += limit
-        await asyncio.sleep(0.1)
+                        logger.info("HOLDERS_TOTAL=%s", total)
+                        logger.info("HOLDERS_RECEIVED=%s", len(page))
 
-    cached = {
-        "holders": holders,
-        "total": total,
-        "totalHeld": total_held,
-        "hasMore": has_more,
-    }
+                        break
+                except (asyncio.TimeoutError, Exception) as e:
+                    if attempt == retries:
+                        logger.error("Holders API fetch failed after %s attempts: %s", retries, e)
+                        return {"holders": holders, "total": 0, "totalHeld": 0, "hasMore": False}
+                    await asyncio.sleep(attempt)
 
-    return cached
+            valid = []
+            for item in page:
+                if not isinstance(item, dict):
+                    continue
+                addr = item.get("addr")
+                if not addr:
+                    continue
+                try:
+                    valid.append({
+                        "wallet": normalize_to_raw(addr),
+                        "packs": item.get("count", 0),
+                        "rank": item.get("rank")
+                    })
+                except Exception:
+                    continue
+            holders.extend(valid)
+
+            if not has_more:
+                break
+            if len(page) < limit:
+                break
+            offset += limit
+            await asyncio.sleep(0.1)
+
+        cached = {
+            "holders": holders,
+            "total": total,
+            "totalHeld": total_held,
+            "hasMore": has_more,
+        }
+
+        return cached
 
 async def sync_points_and_referrals(holders: List[Dict]):
     """Syncs pack counts to the points table and awards referral income for new purchases."""
