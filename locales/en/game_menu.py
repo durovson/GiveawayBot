@@ -1,4 +1,24 @@
 TEXTS = {
+    "store_btn": "STORE",
+    "store_menu_title": (
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260210201612529221\">💵</tg-emoji>┅ / <b>STORE</b> /\n"
+        "┋\n"
+        "┣ <b>Your RP:</b> {rp}\n"
+        "┣ <b>Active Tickets:</b> {tickets}\n"
+        "┋\n"
+        "┣ Tickets increase your chances in the <b>NEXT</b> giveaway you join.\n"
+        "┋\n"
+        "┣ Tickets are consumed automatically.\n"
+        "┣ They cannot be saved after participation.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Select an option</b> /"
+    ),
+    "buy_1_btn": "Buy 1",
+    "buy_5_btn": "Buy 5",
+    "buy_10_btn": "Buy 10",
+    "not_enough_points": "❌ Not enough RP to buy tickets.",
+    "purchase_success": "✅ Successfully purchased {amount} tickets!",
+    "lucky_tickets_applied": "✅ Lucky Tickets Applied!\n\nYou joined with {tickets} tickets.\n\nYour tickets were consumed automatically.",
     "game_menu_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>GAME MENU</b> /\n"
         "┋\n"

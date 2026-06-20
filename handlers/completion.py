@@ -1,3 +1,4 @@
+import random
 import asyncio
 import html
 import logging
@@ -35,14 +36,25 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
         if not participants:
             results_text = texts["giveaway_no_participants_results"].format(title=safe_title)
         else:
-            secrets.SystemRandom().shuffle(participants)
             winners_count_target = min(len(participants), giveaway["winners_count"])
             if winners_count_target <= 0:
                 results_text = texts["giveaway_no_participants_results"].format(title=safe_title)
                 winners = []
                 prizes = []
             else:
-                winners = participants[:winners_count_target]
+                # Weighted selection
+                remaining = participants.copy()
+                winners = []
+
+                while len(winners) < winners_count_target and remaining:
+                    winner = random.SystemRandom().choices(
+                        population=remaining,
+                        weights=[p.get("tickets_used", 1) or 1 for p in remaining],
+                        k=1
+                    )[0]
+                    winners.append(winner)
+                    remaining = [p for p in remaining if p["user_id"] != winner["user_id"]]
+
                 prizes = giveaway["prizes"]
             winners_prizes = [[] for _ in range(len(winners))]
 

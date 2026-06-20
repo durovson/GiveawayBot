@@ -116,9 +116,18 @@ async def join_giveaway(callback: types.CallbackQuery):
         await callback.answer(f"{texts['giveaway_not_subscribed']} ({channels_str})", show_alert=True)
         return
 
-    success = await db.add_participant(giveaway_id, user_id, username)
+    # Check active tickets
+    user = await db.get_user_by_telegram_id(user_id)
+    active_tickets = user.get("active_tickets", 0) if user else 0
+    tickets_used = max(1, active_tickets)
+
+    success = await db.add_participant(giveaway_id, user_id, username, tickets_used=tickets_used)
     if success:
-        await callback.answer(texts["giveaway_success_join"], show_alert=True)
+        if active_tickets > 0:
+            await db.reset_active_tickets(user_id)
+            await callback.answer(texts["lucky_tickets_applied"].format(tickets=active_tickets), show_alert=True)
+        else:
+            await callback.answer(texts["giveaway_success_join"], show_alert=True)
         if giveaway['mode'] == 'limited':
             participants = await db.get_participants(giveaway_id)
             try:
