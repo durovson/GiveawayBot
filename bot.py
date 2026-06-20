@@ -26,6 +26,7 @@ from handlers.admin import router as admin_router
 from handlers.notifications import router as notifications_router
 from handlers.game_menu import router as game_menu_router
 from handlers.wallet import router as wallet_router
+from handlers.store import router as store_router
 from tasks.og_snapshot import create_og_snapshot_once
 
 # Setup logging
@@ -63,6 +64,7 @@ dp.include_router(admin_router)
 dp.include_router(notifications_router)
 dp.include_router(game_menu_router)
 dp.include_router(wallet_router)
+dp.include_router(store_router)
 dp.include_router(main_menu_router)
 dp.include_router(creation_router)
 dp.include_router(participants_router)

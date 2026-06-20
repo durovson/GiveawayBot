@@ -139,7 +139,7 @@ class Database:
             logger.error(f"Error getting giveaway: {e}")
             return None
 
-    async def add_participant(self, giveaway_id: int, user_id: int, username: Optional[str]) -> bool:
+    async def add_participant(self, giveaway_id: int, user_id: int, username: Optional[str], tickets_used: int = 1) -> bool:
         if not self._check_client(): return False
         try:
             await self.ensure_user_exists(user_id)
@@ -149,7 +149,8 @@ class Database:
             await self.client.table("participants").insert({
                 "giveaway_id": giveaway_id,
                 "user_id": user_id,
-                "username": username
+                "username": username,
+                "tickets_used": tickets_used
             }).execute()
             return True
         except Exception as e:
@@ -166,7 +167,7 @@ class Database:
     async def get_participants(self, giveaway_id: int) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("participants").select("user_id, username").eq("giveaway_id", giveaway_id).execute()
+            response = await self.client.table("participants").select("user_id, username, tickets_used").eq("giveaway_id", giveaway_id).execute()
             return response.data
         except Exception as e:
             logger.error(f"Error getting participants: {e}")
@@ -437,7 +438,7 @@ class Database:
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[Dict]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, terms_version, username, first_name, og_bonus_awarded_at, og_bonus_amount, holder_verified_at").eq("telegram_id", telegram_id).execute()
+            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, terms_version, username, first_name, og_bonus_awarded_at, og_bonus_amount, holder_verified_at, active_tickets").eq("telegram_id", telegram_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error getting user by telegram_id: {e}")
@@ -636,5 +637,37 @@ class Database:
         except Exception as e:
             logger.error(f"Error checking OG holder status: {e}")
             return False
+
+
+    async def add_active_tickets(self, user_id: int, amount: int):
+        if not self._check_client(): return
+        try:
+            # We use RPC or raw SQL for increment if possible, but here we can just update
+            user = await self.get_user_by_telegram_id(user_id)
+            current = user.get("active_tickets", 0) if user else 0
+            await self.client.table("users").update({"active_tickets": current + amount}).eq("telegram_id", user_id).execute()
+        except Exception as e:
+            logger.error(f"Error adding active tickets: {e}")
+
+    async def reset_active_tickets(self, user_id: int):
+        if not self._check_client(): return
+        try:
+            await self.client.table("users").update({"active_tickets": 0}).eq("telegram_id", user_id).execute()
+        except Exception as e:
+            logger.error(f"Error resetting active tickets: {e}")
+
+    async def add_spent_points(self, user_id: int, amount: int):
+        if not self._check_client(): return
+        try:
+            points = await self.get_points(user_id)
+            current = points.get("spent_points", 0) if points else 0
+            await self.client.table("points").upsert({
+                "user_id": user_id,
+                "spent_points": current + amount,
+                "updated_at": datetime.now().isoformat() # PostgREST handles now() in some contexts or we can use python
+            }).execute()
+        except Exception as e:
+            logger.error(f"Error adding spent points: {e}")
+
 
 db = Database()

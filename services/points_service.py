@@ -77,9 +77,11 @@ class PointsService:
                 except Exception as ex:
                     logger.error(f"Error calculating retention for user {user_id}: {ex}")
 
-            # 5. Calculate RP: RP = round(((P * 10) + (R * 5) + O) * C)
+            # 5. Calculate RP: RP = round(((P * 10) + (R * 5) + O) * C) - spent_points
+            spent_points = points_data.get("spent_points", 0)
             base_points = (packs * 10) + (active_referrals * 5) + og_bonus
-            total_points = round(base_points * multiplier)
+            calculated_points = round(base_points * multiplier)
+            total_points = calculated_points - spent_points
 
             # 6. Update the points table
             await db.upsert_points(
