@@ -35,8 +35,8 @@ async def show_store_menu(callback: types.CallbackQuery, state: FSMContext):
     builder.button(text=texts["buy_1_btn"], callback_data="buy_tickets_1")
     builder.button(text=texts["buy_5_btn"], callback_data="buy_tickets_5")
     builder.button(text=texts["buy_10_btn"], callback_data="buy_tickets_10")
-    builder.button(text=texts["game_back_btn"], callback_data="game_menu", icon_custom_emoji_id="5877629862306385808")
-    builder.adjust(1)
+    builder.button(text=texts["game_main_menu_btn"], callback_data="game_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.adjust(3, 1)
 
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
