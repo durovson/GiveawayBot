@@ -29,14 +29,17 @@ async def backfill_og_rewards():
 
             # Award bonus if not yet awarded OR if og_bonus_amount is 0
             if not user.get("og_bonus_awarded_at") or not user.get("og_bonus_amount"):
-                await db.update_user_fields(
+                success = await db.update_user_fields(
                     user_id,
-                    og_bonus_awarded_at=now,
+                    og_bonus_awarded_at=now.isoformat(),
                     og_bonus_amount=50
                 )
-                # Recalculate points (PointsService now uses is_og_holder which is True)
-                await PointsService.recalculate_points(user_id)
-                backfilled_count += 1
+                if success:
+                    # Recalculate points (PointsService now uses is_og_holder which is True)
+                    await PointsService.recalculate_points(user_id)
+                    backfilled_count += 1
+                else:
+                    logger.error(f"Failed to award OG bonus to {user_id}")
 
         if backfilled_count > 0:
             logger.info("OG Bonus backfill complete. Awarded to %s users.", backfilled_count)

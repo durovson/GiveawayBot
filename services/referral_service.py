@@ -87,7 +87,7 @@ class ReferralService:
         await db.update_user_fields(
             referred_id,
             referral_status="active",
-            referral_validated_at=now
+            referral_validated_at=now.isoformat()
         )
         await db.update_referral_status(referred_id, status="active", activated_at=now)
 

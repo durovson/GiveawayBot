@@ -2,7 +2,8 @@ import os
 import logging
 from typing import List, Optional, Dict, Any
 from supabase import create_async_client, AsyncClient
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import Any, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -453,12 +454,18 @@ class Database:
             logger.error(f"Error getting user by ref_code: {e}")
             return None
 
-    async def update_user_fields(self, telegram_id: int, **kwargs):
-        if not self._check_client(): return
+    async def update_user_fields(self, telegram_id: int, **kwargs) -> bool:
+        if not self._check_client(): return False
         try:
+            for key, value in kwargs.items():
+                if isinstance(value, datetime):
+                    kwargs[key] = value.isoformat()
+
             await self.client.table("users").update(kwargs).eq("telegram_id", telegram_id).execute()
+            return True
         except Exception as e:
             logger.error(f"Error updating user fields: {e}")
+            return False
 
     async def create_referral(self, referrer_id: int, referred_id: int):
         if not self._check_client(): return

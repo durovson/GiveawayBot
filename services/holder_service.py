@@ -32,11 +32,14 @@ class HolderService:
                     is_og = await db.is_og_holder(user_id)
 
                     # Update user verification status
-                    update_fields = {"holder_verified_at": now}
+                    update_fields = {"holder_verified_at": now.isoformat()}
                     if is_og:
-                        update_fields["og_bonus_awarded_at"] = now
+                        update_fields["og_bonus_awarded_at"] = now.isoformat()
 
-                    await db.update_user_fields(user_id, **update_fields)
+                    success = await db.update_user_fields(user_id, **update_fields)
+                    if not success:
+                        logger.error(f"Failed to update user fields for {user_id}")
+                        return False
 
                     # Mark as holder in points table
                     await db.upsert_points(
