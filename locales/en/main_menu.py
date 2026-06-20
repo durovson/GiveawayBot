@@ -3,6 +3,8 @@ TEXTS = {
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258260149037965799\">💼</tg-emoji>┅ / <b>NOTAPES | HUB</b> / \n"
         "┋\n"
         "┣ Hub Online.\n"
+        "┣ <tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji> FL:  <b>{floor}</b> GRAM\n"
+        "┣ <tg-emoji emoji-id=\"5258391025281408576\">📈</tg-emoji> VOL:  <b>{volume}</b> GRAM\n"
         "┋\n"
         "┣ Modes:\n"
         "┣ [1] Game (Public)\n"
