@@ -1,7 +1,7 @@
 TEXTS = {
     "store_btn": "STORE",
     "store_menu_title": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260210201612529221\">💵</tg-emoji>┅ / <b>STORE</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5983399041197675256\">🏪</tg-emoji>┅ / <b>STORE</b> /\n"
         "┋\n"
         "┣ <b>Your RP:</b> {rp}\n"
         "┣ <b>Active Tickets:</b> {tickets}\n"
