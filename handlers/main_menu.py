@@ -15,6 +15,7 @@ from utils import is_admin, is_any_admin, safe_answer, safe_edit_text, is_holder
 from services.localization import get_locale
 from services.referral_service import ReferralService
 from services.points_service import PointsService
+from services.getgems_service import get_collection_stats
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -111,16 +112,24 @@ async def show_rules_screen(
             parse_mode=ParseMode.HTML
         )
 
+async def build_main_menu_text(texts: dict):
+    stats = await get_collection_stats()
+    return texts["main_menu_text"].format(
+        floor=stats["floor"],
+        volume=stats["volume"]
+    )
+
 async def show_main_menu_message(message: types.Message, texts: dict = None):
     user_id = message.from_user.id
     if not texts:
         texts = await get_locale(user_id)
 
     keyboard = await get_main_menu_keyboard(user_id, texts)
+    menu_text = await build_main_menu_text(texts)
 
     await safe_answer(
         message,
-        texts["main_menu_text"],
+        menu_text,
         reply_markup=keyboard,
         parse_mode=ParseMode.HTML
     )
@@ -131,10 +140,11 @@ async def show_main_menu_callback(callback: types.CallbackQuery, texts: dict = N
         texts = await get_locale(user_id)
 
     keyboard = await get_main_menu_keyboard(user_id, texts)
+    menu_text = await build_main_menu_text(texts)
 
     await safe_edit_text(
         callback,
-        texts["main_menu_text"],
+        menu_text,
         reply_markup=keyboard,
         parse_mode=ParseMode.HTML
     )
