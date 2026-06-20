@@ -2,8 +2,7 @@ import os
 import logging
 from typing import List, Optional, Dict, Any
 from supabase import create_async_client, AsyncClient
-from datetime import datetime
-from typing import Any, timedelta
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
