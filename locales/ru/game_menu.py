@@ -29,7 +29,6 @@ TEXTS = {
         "┋\n"
         "┣ [<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>] <b>HIGHSCORE:</b> Таблица лидеров\n"
         "┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>REFERRAL:</b> Приглашай и зарабатывай\n"
-        "┣ [<tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji>] <b>HOLDERS:</b> Закрытый чат\n"
         "┣ [<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>] <b>LOGIN:</b> Подключить кошелек\n"
         "┣ [<tg-emoji emoji-id=\"5260221883940347555\">🔫</tg-emoji>] <b>BOOST:</b> Увеличить силу\n"
         "┋\n"
