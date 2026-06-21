@@ -43,9 +43,8 @@ async def show_game_menu(message: types.Message | types.CallbackQuery, state: FS
     builder.button(text=texts["holders_btn"], callback_data="holders_chat", icon_custom_emoji_id="5260535596941582167")
     builder.button(text=texts["login_btn"], callback_data="wallet_menu", icon_custom_emoji_id="5258204546391351475")
     builder.button(text=texts["boost_btn"], url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544", icon_custom_emoji_id="5260221883940347555")
-    builder.button(text=texts["store_btn"], callback_data="store_menu", icon_custom_emoji_id="5983399041197675256")
     builder.button(text=texts["game_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
-    builder.adjust(2, 2, 2, 1)
+    builder.adjust(1, 2, 2, 1)
 
     if isinstance(message, types.CallbackQuery):
         await safe_edit_text(message, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
