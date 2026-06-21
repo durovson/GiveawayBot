@@ -29,7 +29,6 @@ TEXTS = {
         "┋\n"
         "┣ [<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>] <b>HIGHSCORE:</b> View Leaderboard\n"
         "┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>REFERRAL:</b> Invite & Earn Points\n"
-        "┣ [<tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji>] <b>HOLDERS:</b> Join Private Chat\n"
         "┣ [<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>] <b>LOGIN:</b> Connect Ton Wallet\n"
         "┣ [<tg-emoji emoji-id=\"5260221883940347555\">🔫</tg-emoji>] <b>BOOST:</b> Boost your Power\n"
         "┋\n"
