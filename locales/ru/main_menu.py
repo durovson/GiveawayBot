@@ -14,15 +14,16 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
-    "game_btn": "Игра",
+    "game_btn": "ИГРА",
     "otc_btn": "OTC",
-    "giveaway_btn": "Розыгрыш",
-    "history_btn": "История",
-    "notifications_btn": "Уведомления",
-    "update_gif_btn": "Обновить GIF",
-    "support_btn": "Поддержка",
-    "language_btn": "Язык",
-    "rules_btn": "Правила",
+    "giveaway_btn": "РОЗЫГРЫШ",
+    "history_btn": "ИСТОРИЯ",
+    "notifications_btn": "УВЕДОМЛЕНИЯ",
+    "update_gif_btn": "ОБНОВИТЬ GIF",
+    "chat_btn": "NOTAPES ЧАТ",
+    "support_btn": "ПОДДЕРЖКА",
+    "language_btn": "ЯЗЫК",
+    "rules_btn": "ПРАВИЛА",
     "setup_success": (
         "┏┅<tg-emoji emoji-id=\"5258501105293205250\">👏</tg-emoji>┅ / <b>Группа {title} успешно зарегистрирована!</b> /\n"
         "┋\n"
