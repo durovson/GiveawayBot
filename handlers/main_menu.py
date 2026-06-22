@@ -42,7 +42,7 @@ async def get_main_menu_keyboard(user_id: int, texts: dict):
         # Row 4
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
         builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258328383183396223")
-        builder.button(text=texts["chat_btn"], url="https://https://t.me/notapeschat", icon_custom_emoji_id="5258513401784573443", style="success")
+        builder.button(text=texts["chat_btn"], url="https://t.me/notapeschat", icon_custom_emoji_id="5258513401784573443", style="success")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522", style="primary")
         builder.adjust(2, 2, 2, 2, 2)
     elif await is_holder(user_id):
@@ -50,7 +50,7 @@ async def get_main_menu_keyboard(user_id: int, texts: dict):
         builder.button(text=texts["otc_btn"], callback_data="otc_market", icon_custom_emoji_id="5260687681733533075")
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
         builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258328383183396223")
-        builder.button(text=texts["chat_btn"], url="https://https://t.me/notapeschat", icon_custom_emoji_id="5258513401784573443", style="success")
+        builder.button(text=texts["chat_btn"], url="https://t.me/notapeschat", icon_custom_emoji_id="5258513401784573443", style="success")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522", style="primary")
         builder.adjust(2, 2, 2)
 
@@ -58,7 +58,7 @@ async def get_main_menu_keyboard(user_id: int, texts: dict):
         builder.button(text=texts["game_btn"], callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
         builder.button(text=texts["rules_btn"], callback_data="show_rules", icon_custom_emoji_id="5258328383183396223")
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
-        builder.button(text=texts["chat_btn"], url="https://https://t.me/notapeschat", icon_custom_emoji_id="5258513401784573443", style="success")
+        builder.button(text=texts["chat_btn"], url="https://t.me/notapeschat", icon_custom_emoji_id="5258513401784573443", style="success")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522", style="primary")
         builder.adjust(1, 2, 2)
 
