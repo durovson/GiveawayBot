@@ -14,15 +14,16 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "game_btn": "Game",
+    "game_btn": "GAME",
     "otc_btn": "OTC",
-    "giveaway_btn": "Giveaway",
-    "history_btn": "History",
-    "notifications_btn": "Notifications",
-    "update_gif_btn": "Update GIF",
-    "support_btn": "Support",
-    "language_btn": "Language",
-    "rules_btn": "Rules",
+    "giveaway_btn": "GIVEAWAY",
+    "history_btn": "HISTORY",
+    "notifications_btn": "NOTIFICATIONS",
+    "update_gif_btn": "UPDATE GIF",
+    "support_btn": "SUPPORT",
+    "chat_btn": "NOTAPES CHAT",
+    "language_btn": "LANGUAGE",
+    "rules_btn": "RULES",
     "setup_success": (
         "┏┅<tg-emoji emoji-id=\"5258501105293205250\">👏</tg-emoji> Group <b>{title}</b> successfully registered!\n"
         "┋\n"
