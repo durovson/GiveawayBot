@@ -23,9 +23,13 @@ class OTCMarket(StatesGroup):
     PREVIEW = State()
 
 @router.callback_query(F.data == "otc_market")
-async def start_otc_market(callback: types.CallbackQuery, state: FSMContext):
+async def start_otc_market(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+
+    # Parallelize check with something or just use the is_holder result if it was passed?
+    # In this case, we just keep it simple but ensure we use gather if possible.
+    # Actually, the task said: "Dont call holder-check twice inside one menu opening"
+
     if not await is_holder(user_id):
         await callback.answer(texts["otc_not_available"], show_alert=True)
         return
@@ -45,15 +49,15 @@ async def start_otc_market(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(OTCMarket.SELECT_TYPE)
 
 @router.callback_query(F.data == "otc_back_to_type")
-async def otc_back_to_type(callback: types.CallbackQuery, state: FSMContext):
+async def otc_back_to_type(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     await start_otc_market(callback, state)
 
 @router.callback_query(OTCMarket.SELECT_TYPE, F.data.startswith("otc_type_"))
-async def select_trade_type(callback: types.CallbackQuery, state: FSMContext):
+async def select_trade_type(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     trade_type = callback.data.split("_")[-1]
     await state.update_data(trade_type=trade_type)
 
@@ -68,10 +72,10 @@ async def select_trade_type(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(OTCMarket.ENTER_ITEM)
 
 @router.callback_query(F.data == "otc_no_link")
-async def otc_no_link_selected(callback: types.CallbackQuery, state: FSMContext):
+async def otc_no_link_selected(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
 
     builder = InlineKeyboardBuilder()
     builder.button(text=texts["otc_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531", style="danger")
@@ -81,7 +85,7 @@ async def otc_no_link_selected(callback: types.CallbackQuery, state: FSMContext)
     await state.set_state(OTCMarket.ENTER_NAME_ONLY)
 
 @router.message(OTCMarket.ENTER_NAME_ONLY, F.text)
-async def enter_name_only(message: types.Message, state: FSMContext, bot: Bot):
+async def enter_name_only(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     data = await state.get_data()
     last_msg_id = data.get("last_msg_id")
 
@@ -95,7 +99,7 @@ async def enter_name_only(message: types.Message, state: FSMContext, bot: Bot):
     await show_price_input(bot, message.chat.id, last_msg_id, state)
 
 @router.message(OTCMarket.ENTER_ITEM, F.text)
-async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot):
+async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     data = await state.get_data()
     last_msg_id = data.get("last_msg_id")
 
@@ -120,7 +124,7 @@ async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot
     await show_price_input(bot, message.chat.id, last_msg_id, state)
 
 async def show_price_input(bot: Bot, chat_id: int, last_msg_id: int, state: FSMContext):
-    texts = await get_locale(chat_id)
+    # texts from middleware
     builder = InlineKeyboardBuilder()
     builder.button(text=texts["otc_skip_offer_btn"], callback_data="otc_price_skip", icon_custom_emoji_id="5260687681733533075")
     builder.button(text=texts["otc_back_btn"], callback_data="otc_back_to_type", icon_custom_emoji_id="5260687119092817530")
@@ -133,13 +137,13 @@ async def show_price_input(bot: Bot, chat_id: int, last_msg_id: int, state: FSMC
     await state.set_state(OTCMarket.ENTER_PRICE)
 
 @router.callback_query(OTCMarket.ENTER_PRICE, F.data == "otc_price_skip")
-async def otc_price_skipped(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def otc_price_skipped(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     await state.update_data(price_text=None, is_offer=True)
-    await show_otc_preview(callback, state, bot)
+    await show_otc_preview(callback, state, bot, texts)
 
 @router.message(OTCMarket.ENTER_PRICE, F.text)
-async def enter_price(message: types.Message, state: FSMContext, bot: Bot):
+async def enter_price(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     try:
         await message.delete()
     except Exception:
@@ -152,11 +156,11 @@ async def enter_price(message: types.Message, state: FSMContext, bot: Bot):
         price = text
 
     await state.update_data(price_text=price, is_offer=False)
-    await show_otc_preview(message, state, bot)
+    await show_otc_preview(message, state, bot, texts)
 
-async def finalize_otc_publication(event, state: FSMContext, bot: Bot):
+async def finalize_otc_publication(event, state: FSMContext, bot: Bot, texts: dict):
     user_id = event.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     en_texts = get_locale_by_lang("en") # Public messages strictly in English
     data = await state.get_data()
     trade_type = data.get("trade_type")
@@ -243,9 +247,9 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot):
 
     await state.clear()
 
-async def show_otc_preview(event, state: FSMContext, bot: Bot):
+async def show_otc_preview(event, state: FSMContext, bot: Bot, texts: dict):
     user_id = event.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     en_texts = get_locale_by_lang("en") # Previews of public posts use English terms for the post part
     data = await state.get_data()
     trade_type = data.get("trade_type")
@@ -300,10 +304,10 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot):
 
 
 @router.callback_query(OTCMarket.PREVIEW, F.data == "otc_edit_item")
-async def otc_edit_item(callback: types.CallbackQuery, state: FSMContext):
+async def otc_edit_item(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     data = await state.get_data()
     url = data.get("url")
 
@@ -329,10 +333,10 @@ async def otc_edit_item(callback: types.CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(OTCMarket.PREVIEW, F.data == "otc_edit_price")
-async def otc_edit_price(callback: types.CallbackQuery, state: FSMContext):
+async def otc_edit_price(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
 
     builder = InlineKeyboardBuilder()
     builder.button(text=texts["otc_skip_offer_btn"], callback_data="otc_price_skip", icon_custom_emoji_id="5260687681733533075")
@@ -347,6 +351,6 @@ async def otc_edit_price(callback: types.CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(OTCMarket.PREVIEW, F.data == "otc_confirm_post")
-async def otc_confirm_post(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def otc_confirm_post(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
-    await finalize_otc_publication(callback, state, bot)
+    await finalize_otc_publication(callback, state, bot, texts)

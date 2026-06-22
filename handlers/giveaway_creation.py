@@ -137,19 +137,19 @@ async def get_edit_params_keyboard(texts):
     return builder.as_markup()
 
 @router.callback_query(F.data.startswith("chat_"))
-async def process_chat_selection(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def process_chat_selection(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     chat_id = int(callback.data.split("_")[1])
     await state.update_data(chat_id=chat_id)
     await safe_edit_text(callback, texts["giveaway_enter_title"], reply_markup=await get_nav_keyboard(texts), parse_mode=ParseMode.HTML)
     await state.set_state(GiveawayCreation.ENTER_NAME)
 
 @router.message(GiveawayCreation.ENTER_NAME, F.text)
-async def process_title_input(message: types.Message, state: FSMContext, bot: Bot):
+async def process_title_input(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     user_id = message.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     try: await message.delete()
     except: pass
     await state.update_data(title=message.text)
@@ -167,10 +167,10 @@ async def process_title_input(message: types.Message, state: FSMContext, bot: Bo
         await state.set_state(GiveawayCreation.SELECT_GIVEAWAY_KIND)
 
 @router.callback_query(F.data.startswith("kind_"))
-async def process_kind(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def process_kind(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     kind = callback.data.split("_")[1]
     await state.update_data(kind=kind)
 
@@ -179,12 +179,12 @@ async def process_kind(callback: types.CallbackQuery, state: FSMContext, bot: Bo
         await state.set_state(GiveawayCreation.ENTER_CHANNELS)
     else:
         await state.update_data(mandatory_channels=None)
-        await ask_access_type(callback.message, state, bot)
+        await ask_access_type(callback.message, state, bot, texts)
 
 @router.message(GiveawayCreation.ENTER_CHANNELS, F.text)
-async def process_channels(message: types.Message, state: FSMContext, bot: Bot):
+async def process_channels(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     user_id = message.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     try: await message.delete()
     except: pass
 
@@ -197,7 +197,7 @@ async def process_channels(message: types.Message, state: FSMContext, bot: Bot):
 
 async def check_bot_admin_in_channels(message: types.Message | types.CallbackQuery, state: FSMContext, bot: Bot):
     user_id = message.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     data = await state.get_data()
     channels = data.get("mandatory_channels", [])
     last_msg_id = data.get('last_msg_id')
@@ -228,13 +228,13 @@ async def callback_answer_wrapper(event, text):
         await event.answer(text)
 
 @router.callback_query(F.data == "recheck_admin")
-async def recheck_admin(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def recheck_admin(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     await check_bot_admin_in_channels(callback, state, bot)
 
-async def ask_access_type(message: types.Message, state: FSMContext, bot: Bot):
+async def ask_access_type(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     user_id = message.chat.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     data = await state.get_data()
     last_msg_id = data.get('last_msg_id')
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
@@ -245,10 +245,10 @@ async def ask_access_type(message: types.Message, state: FSMContext, bot: Bot):
     await state.set_state(GiveawayCreation.WAITING_FOR_ACCESS_TYPE)
 
 @router.callback_query(GiveawayCreation.WAITING_FOR_ACCESS_TYPE, F.data.in_({"access_all", "access_whitelist"}))
-async def process_access_choice(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def process_access_choice(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     answered = False
     if callback.data == "access_all":
         await state.update_data(allowed_users=None)
@@ -272,9 +272,9 @@ async def process_access_choice(callback: types.CallbackQuery, state: FSMContext
         )
         await state.set_state(GiveawayCreation.WAITING_FOR_WHITELIST)
 @router.message(GiveawayCreation.WAITING_FOR_WHITELIST)
-async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot):
+async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     user_id = message.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     try: await message.delete()
     except: pass
 
@@ -297,10 +297,10 @@ async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot)
         await state.set_state(GiveawayCreation.SELECT_TYPE)
 
 @router.callback_query(F.data.startswith("type_"))
-async def select_type(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def select_type(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     gtype = callback.data.split("_")[1]
     await state.update_data(gtype=gtype)
 
@@ -313,10 +313,10 @@ async def select_type(callback: types.CallbackQuery, state: FSMContext, bot: Bot
     await state.set_state(GiveawayCreation.SELECT_MODE_VALUE)
 
 @router.callback_query(F.data.startswith("val_"), GiveawayCreation.SELECT_MODE_VALUE)
-async def select_mode_value(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def select_mode_value(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     val = callback.data.split("_")[1]
     if val == "custom":
         await safe_edit_text(callback, texts["enter_value_prompt"], parse_mode=ParseMode.HTML)
@@ -335,9 +335,9 @@ async def select_mode_value(callback: types.CallbackQuery, state: FSMContext, bo
             await state.set_state(GiveawayCreation.SELECT_WINNERS_COUNT)
 
 @router.message(GiveawayCreation.CUSTOM_MODE_VALUE)
-async def enter_custom_mode_value(message: types.Message, state: FSMContext, bot: Bot):
+async def enter_custom_mode_value(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     user_id = message.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     try: await message.delete()
     except: pass
 
@@ -367,10 +367,10 @@ async def enter_custom_mode_value(message: types.Message, state: FSMContext, bot
         await state.set_state(GiveawayCreation.SELECT_WINNERS_COUNT)
 
 @router.callback_query(F.data.startswith("win_"), GiveawayCreation.SELECT_WINNERS_COUNT)
-async def select_winners_count(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def select_winners_count(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     val = callback.data.split("_")[1]
     if val == "custom":
         await safe_edit_text(callback, texts["giveaway_enter_winners_count"], parse_mode=ParseMode.HTML)
@@ -389,9 +389,9 @@ async def select_winners_count(callback: types.CallbackQuery, state: FSMContext,
             await state.set_state(GiveawayCreation.ENTER_PRIZES)
 
 @router.message(GiveawayCreation.CUSTOM_WINNERS_COUNT)
-async def enter_custom_winners_count(message: types.Message, state: FSMContext, bot: Bot):
+async def enter_custom_winners_count(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     user_id = message.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     try: await message.delete()
     except: pass
 
@@ -414,9 +414,9 @@ async def enter_custom_winners_count(message: types.Message, state: FSMContext, 
         await state.set_state(GiveawayCreation.ENTER_PRIZES)
 
 @router.message(GiveawayCreation.ENTER_PRIZES, F.text)
-async def process_prizes(message: types.Message, state: FSMContext, bot: Bot):
+async def process_prizes(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     user_id = message.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     try: await message.delete()
     except: pass
 
@@ -434,13 +434,13 @@ async def process_prizes(message: types.Message, state: FSMContext, bot: Bot):
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id, text, reply_markup=await get_prizes_keyboard(prizes, texts), parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data == "confirm_prizes")
-async def confirm_prizes(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def confirm_prizes(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     await show_edit_params(callback, state, bot)
 
 async def show_edit_params(event, state: FSMContext, bot: Bot):
     user_id = event.from_user.id if isinstance(event, types.CallbackQuery) else event.chat.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     data = await state.get_data()
 
     preview_text = await generate_preview(data, texts)
@@ -482,9 +482,9 @@ async def generate_preview(data, texts):
     return preview
 
 @router.callback_query(F.data == "confirm_giveaway", GiveawayCreation.CONFIRMATION)
-async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     data = await state.get_data()
 
     mode = data["gtype"]
@@ -588,10 +588,10 @@ async def is_bot_admin(chat_id: int | str, bot: Bot) -> bool:
         return False
 
 @router.callback_query(F.data.startswith("make_announcement_"))
-async def make_announcement_select_chat(callback: types.CallbackQuery, bot: Bot):
+async def make_announcement_select_chat(callback: types.CallbackQuery, bot: Bot, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     giveaway_id = int(callback.data.split("_")[-1])
 
     chats = await db.get_tracked_groups()
@@ -611,9 +611,9 @@ async def make_announcement_select_chat(callback: types.CallbackQuery, bot: Bot)
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data.startswith("ann_to_"))
-async def execute_announcement(callback: types.CallbackQuery, bot: Bot):
+async def execute_announcement(callback: types.CallbackQuery, bot: Bot, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     await callback.answer()
     parts = callback.data.split("_")
     giveaway_id = int(parts[2])
@@ -671,10 +671,10 @@ async def execute_announcement(callback: types.CallbackQuery, bot: Bot):
         await callback.message.answer(f"{texts['giveaway_error_msg']}: {e}", parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data == "back")
-async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     current_state = await state.get_state()
     data = await state.get_data()
 
@@ -705,7 +705,7 @@ async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bo
             await safe_edit_text(callback, texts["giveaway_title"], reply_markup=await get_giveaway_kind_keyboard(texts), parse_mode=ParseMode.HTML)
             await state.set_state(GiveawayCreation.SELECT_GIVEAWAY_KIND)
     elif current_state in [GiveawayCreation.WAITING_FOR_WHITELIST.state, GiveawayCreation.SELECT_TYPE.state]:
-        await ask_access_type(callback.message, state, bot)
+        await ask_access_type(callback.message, state, bot, texts)
     elif current_state in [GiveawayCreation.SELECT_MODE_VALUE.state, GiveawayCreation.CUSTOM_MODE_VALUE.state]:
         await safe_edit_text(callback, texts["giveaway_select_type"], reply_markup=await get_type_keyboard(texts), parse_mode=ParseMode.HTML)
         await state.set_state(GiveawayCreation.SELECT_TYPE)
@@ -730,10 +730,10 @@ async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bo
         )
 
 @router.callback_query(GiveawayCreation.CONFIRMATION, F.data.startswith("edit_"))
-async def edit_param_handler(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def edit_param_handler(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     param = callback.data.replace("edit_", "")
     await state.update_data(is_editing=True)
 

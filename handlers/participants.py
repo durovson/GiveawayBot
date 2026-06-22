@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 @router.callback_query(F.data == "history_created")
-async def history_created(callback: types.CallbackQuery):
+async def history_created(callback: types.CallbackQuery, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     await callback.answer()
     giveaways = await db.get_user_created_giveaways(user_id)
 
@@ -61,10 +61,10 @@ async def history_created(callback: types.CallbackQuery):
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data.startswith("join_"))
-async def join_giveaway(callback: types.CallbackQuery):
+async def join_giveaway(callback: types.CallbackQuery, texts: dict):
     giveaway_id = int(callback.data.split("_")[1])
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     # Если у пользователя есть юзернейм, приводим его к нижнему регистру.
     # Если юзернейма нет (используется full_name), оставляем как есть.
     username = callback.from_user.username or callback.from_user.full_name

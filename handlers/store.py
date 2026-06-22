@@ -14,9 +14,9 @@ router = Router()
 
 TICKET_COST = 50
 
-async def show_store_menu(callback: types.CallbackQuery, state: FSMContext):
+async def show_store_menu(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
 
     # Get user data and points
     user = await db.get_user_by_telegram_id(user_id)
@@ -41,15 +41,15 @@ async def show_store_menu(callback: types.CallbackQuery, state: FSMContext):
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
 @router.callback_query(F.data == "store_menu")
-async def store_menu_handler(callback: types.CallbackQuery, state: FSMContext):
+async def store_menu_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
-    await show_store_menu(callback, state)
+    await show_store_menu(callback, state, texts)
 
 @router.callback_query(F.data.startswith("buy_tickets_"))
-async def buy_tickets_handler(callback: types.CallbackQuery, state: FSMContext):
+async def buy_tickets_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     amount = int(callback.data.split("_")[-1])
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
 
     cost = amount * TICKET_COST
 
@@ -72,4 +72,4 @@ async def buy_tickets_handler(callback: types.CallbackQuery, state: FSMContext):
     await PointsService.recalculate_points(user_id)
 
     await callback.answer(texts["purchase_success"].format(amount=amount), show_alert=True)
-    await show_store_menu(callback, state)
+    await show_store_menu(callback, state, texts)

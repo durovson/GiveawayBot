@@ -19,9 +19,9 @@ from services.localization import get_locale
 logger = logging.getLogger(__name__)
 router = Router()
 
-async def show_game_menu(message: types.Message | types.CallbackQuery, state: FSMContext):
+async def show_game_menu(message: types.Message | types.CallbackQuery, state: FSMContext, texts: dict):
     user_id = message.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
 
     # Parallelize independent DB calls
     points_data, refs = await asyncio.gather(
@@ -51,15 +51,15 @@ async def show_game_menu(message: types.Message | types.CallbackQuery, state: FS
         await message.answer(text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data == "game_menu")
-async def game_menu_handler(callback: types.CallbackQuery, state: FSMContext):
+async def game_menu_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
-    await show_game_menu(callback, state)
+    await show_game_menu(callback, state, texts)
 
 @router.callback_query(F.data == "referral_menu")
-async def referral_menu_handler(callback: types.CallbackQuery, state: FSMContext):
+async def referral_menu_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
 
     results = await asyncio.gather(
         ReferralService.get_or_create_ref_code(user_id),
@@ -84,10 +84,10 @@ async def referral_menu_handler(callback: types.CallbackQuery, state: FSMContext
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
 @router.callback_query(F.data == "leaderboard")
-async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
+async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
 
     # Use points table for leaderboard
     top_points = await db.get_leaderboard(limit=10)
@@ -148,10 +148,10 @@ async def leaderboard_handler(callback: types.CallbackQuery, state: FSMContext):
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
 @router.callback_query(F.data == "holders_chat")
-async def holders_chat_handler(callback: types.CallbackQuery, state: FSMContext):
+async def holders_chat_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
 
     # Verify holder status via HolderService
     await HolderService.verify_holder_status(user_id)
@@ -170,9 +170,9 @@ async def holders_chat_handler(callback: types.CallbackQuery, state: FSMContext)
     await safe_edit_text(callback, text, reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
 @router.callback_query(F.data == "check_holders_chat_access")
-async def check_holders_chat_access(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def check_holders_chat_access(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
 
     # Get packs from points table
     points_data = await db.get_points(user_id)
@@ -215,6 +215,6 @@ async def check_holders_chat_access(callback: types.CallbackQuery, state: FSMCon
         await callback.answer(texts["holders_chat_error"], show_alert=True)
 
 @router.callback_query(F.data == "join_holders_chat")
-async def join_holders_chat_handler(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+async def join_holders_chat_handler(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     await check_holders_chat_access(callback, state, bot)
