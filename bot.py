@@ -15,6 +15,7 @@ from services.ton_connect_service import TonConnectService
 from services.leaderboard import LeaderboardService
 from services.localization import get_locale
 from middleware.referral_validator import ReferralValidatorMiddleware
+from middleware.localization import LocalizationMiddleware
 
 # Import handlers
 from handlers.main_menu import router as main_menu_router
@@ -46,7 +47,9 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
         if not is_tracked and update.new_chat_member.status == "administrator":
             try:
                 admin_id = update.from_user.id
-                texts = await get_locale(admin_id)
+                from services.localization import get_locale_by_lang
+                lang = await db.get_user_language(admin_id)
+                texts = get_locale_by_lang(lang)
                 await bot.send_message(
                     admin_id,
                     texts["bot_ready"],
@@ -58,6 +61,8 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
 # Middleware
 dp.message.middleware(ReferralValidatorMiddleware())
 dp.callback_query.middleware(ReferralValidatorMiddleware())
+dp.message.middleware(LocalizationMiddleware())
+dp.callback_query.middleware(LocalizationMiddleware())
 
 # Registration
 dp.include_router(admin_router)

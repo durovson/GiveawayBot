@@ -1,3 +1,4 @@
+import asyncio
 import re
 import logging
 from loader import bot
@@ -28,10 +29,16 @@ async def is_any_admin(user_id: int) -> bool:
         return True
 
     chats = await db.get_tracked_chats()
-    for chat in chats:
-        if await is_admin(chat['chat_id'], user_id):
-            return True
-    return False
+
+    checks = await asyncio.gather(
+        *[
+            is_admin(chat["chat_id"], user_id)
+            for chat in chats
+        ],
+        return_exceptions=True
+    )
+
+    return any(result is True for result in checks)
 
 async def is_holder(user_id: int) -> bool:
     try:

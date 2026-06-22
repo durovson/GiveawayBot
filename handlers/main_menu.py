@@ -23,7 +23,7 @@ router = Router()
 class OnboardingStates(StatesGroup):
     SELECT_LANGUAGE = State()
 
-async def get_main_menu_keyboard(user_id: int, texts: dict):
+async def get_main_menu_keyboard(user_id: int, texts: dict, is_holder_res: bool = None):
     builder = InlineKeyboardBuilder()
     
     if user_id == 786080766:
@@ -45,7 +45,7 @@ async def get_main_menu_keyboard(user_id: int, texts: dict):
         builder.button(text=texts["chat_btn"], url="https://t.me/notapeschat", icon_custom_emoji_id="5258513401784573443", style="success")
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522", style="primary")
         builder.adjust(2, 2, 2, 2, 2)
-    elif await is_holder(user_id):
+    elif is_holder_res if is_holder_res is not None else await is_holder(user_id):
         builder.button(text=texts["game_btn"], callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
         builder.button(text=texts["otc_btn"], callback_data="otc_market", icon_custom_emoji_id="5260687681733533075")
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
@@ -115,20 +115,27 @@ async def show_rules_screen(
             parse_mode=ParseMode.HTML
         )
 
-async def build_main_menu_text(texts: dict):
-    stats = await get_collection_stats()
+async def build_main_menu_text(texts: dict, stats: dict = None):
+    if not stats: stats = await get_collection_stats()
     return texts["main_menu_text"].format(
         floor=stats["floor"],
         volume=stats["volume"]
     )
 
-async def show_main_menu_message(message: types.Message, texts: dict = None):
+async def show_main_menu_message(message: types.Message, texts: dict):
     user_id = message.from_user.id
-    if not texts:
-        texts = await get_locale(user_id)
 
-    keyboard = await get_main_menu_keyboard(user_id, texts)
-    menu_text = await build_main_menu_text(texts)
+    # Parallelize independent operations
+    is_holder_task = is_holder(user_id)
+    stats_task = get_collection_stats()
+
+    is_holder_res, stats = await asyncio.gather(
+        is_holder_task,
+        stats_task
+    )
+
+    keyboard = await get_main_menu_keyboard(user_id, texts, is_holder_res=is_holder_res)
+    menu_text = await build_main_menu_text(texts, stats=stats)
 
     await safe_answer(
         message,
@@ -137,13 +144,20 @@ async def show_main_menu_message(message: types.Message, texts: dict = None):
         parse_mode=ParseMode.HTML
     )
 
-async def show_main_menu_callback(callback: types.CallbackQuery, texts: dict = None):
+async def show_main_menu_callback(callback: types.CallbackQuery, texts: dict):
     user_id = callback.from_user.id
-    if not texts:
-        texts = await get_locale(user_id)
 
-    keyboard = await get_main_menu_keyboard(user_id, texts)
-    menu_text = await build_main_menu_text(texts)
+    # Parallelize independent operations
+    is_holder_task = is_holder(user_id)
+    stats_task = get_collection_stats()
+
+    is_holder_res, stats = await asyncio.gather(
+        is_holder_task,
+        stats_task
+    )
+
+    keyboard = await get_main_menu_keyboard(user_id, texts, is_holder_res=is_holder_res)
+    menu_text = await build_main_menu_text(texts, stats=stats)
 
     await safe_edit_text(
         callback,
@@ -153,15 +167,15 @@ async def show_main_menu_callback(callback: types.CallbackQuery, texts: dict = N
     )
 
 @router.message(Command("start"))
-async def cmd_start(message: types.Message, command: CommandObject, state: FSMContext):
+async def cmd_start(message: types.Message, command: CommandObject, state: FSMContext, texts: dict):
     user_id = message.from_user.id
-    texts = await get_locale(user_id)
+    # texts provided by middleware
 
-    # 1. Ensure user exists
-    await db.ensure_user_exists(user_id)
-
-    # 2. Sync profile for leaderboard
-    await PointsService.update_username(user_id, message.from_user.username, message.from_user.first_name)
+    # 1 & 2. Parallelize user registration and profile sync
+    await asyncio.gather(
+        db.ensure_user_exists(user_id),
+        PointsService.update_username(user_id, message.from_user.username, message.from_user.first_name)
+    )
 
     # 3. Process referral parameter
     if command.args:
@@ -192,10 +206,10 @@ async def cmd_start(message: types.Message, command: CommandObject, state: FSMCo
     await show_main_menu_message(message, texts)
 
 @router.callback_query(F.data == "accept_terms")
-async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext):
+async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts provided by middleware
 
     current_policy_version = await db.get_setting("Privacy Policy") or "v1"
 
@@ -212,8 +226,8 @@ async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext)
     await show_main_menu_callback(callback, texts)
 
 @router.message(Command("setup"), F.chat.type.in_({"group", "supergroup"}))
-async def cmd_setup(message: types.Message):
-    texts = await get_locale(message.from_user.id)
+async def cmd_setup(message: types.Message, texts: dict):
+    # texts from middleware
     if await is_admin(message.chat.id, message.from_user.id):
         await db.track_chat(message.chat.id, message.chat.title, message.chat.type)
         safe_title = html.escape(message.chat.title)
@@ -226,14 +240,14 @@ async def cmd_setup(message: types.Message):
         await safe_answer(message, texts["setup_admin_only"], parse_mode=ParseMode.HTML)
 
 @router.callback_query(F.data == "main_menu")
-async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext):
+async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     await state.clear()
-    await show_main_menu_callback(callback)
+    await show_main_menu_callback(callback, texts)
 
 @router.callback_query(F.data == "create_giveaway")
-async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMContext):
-    texts = await get_locale(callback.from_user.id)
+async def create_giveaway_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
+    # texts from middleware
     await callback.answer()
     chats = await db.get_tracked_groups()
     if not chats:
@@ -281,25 +295,26 @@ async def show_language_selection(event: types.Message | types.CallbackQuery, te
         )
 
 @router.callback_query(F.data == "select_language")
-async def select_language_handler(callback: types.CallbackQuery):
+async def select_language_handler(callback: types.CallbackQuery, texts: dict):
     await callback.answer()
-    texts = await get_locale(callback.from_user.id)
+    # texts from middleware
     await show_language_selection(callback, texts)
 
 @router.callback_query(F.data == "show_rules")
-async def show_rules_callback(callback: types.CallbackQuery):
+async def show_rules_callback(callback: types.CallbackQuery, texts: dict):
     await callback.answer()
-    texts = await get_locale(callback.from_user.id)
+    # texts from middleware
     await show_rules_screen(callback, texts)
 
 @router.callback_query(F.data.startswith("set_lang_"))
-async def set_language_handler(callback: types.CallbackQuery, state: FSMContext):
+async def set_language_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     lang = callback.data.replace("set_lang_", "")
     await db.update_user_language(callback.from_user.id, lang)
 
-    # Reload texts
-    texts = await get_locale(callback.from_user.id)
+        # Reload texts
+    from services.localization import get_locale_by_lang
+    texts = get_locale_by_lang(lang)
 
     # Check if we are in onboarding flow
     current_state = await state.get_state()

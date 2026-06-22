@@ -18,7 +18,7 @@ class UpdateGifStates(StatesGroup):
 
 # Клавиатура выбора типа медиа
 async def get_gif_type_kb(user_id: int):
-    texts = await get_locale(user_id)
+    # texts from middleware
     buttons = [
         [InlineKeyboardButton(text=texts["admin_giveaways_label"], callback_data="set_type_main", icon_custom_emoji_id="6032644646587338669")],
         [InlineKeyboardButton(text=texts["admin_cancel_btn"], callback_data="cancel_update", icon_custom_emoji_id="5877629862306385808")]
@@ -27,9 +27,9 @@ async def get_gif_type_kb(user_id: int):
 
 # 2. Обработка нажатия на кнопку "Update GIF" из главного меню
 @router.callback_query(F.data == "admin_update_gif")
-async def start_gif_update(callback: types.CallbackQuery, state: FSMContext):
+async def start_gif_update(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     # Жесткая проверка ID
     if user_id != 786080766:
         await callback.answer(texts["admin_only_alert"], show_alert=True)
@@ -47,9 +47,9 @@ async def start_gif_update(callback: types.CallbackQuery, state: FSMContext):
 
 # 3. Выбор типа (куда ставим GIF)
 @router.callback_query(UpdateGifStates.choosing_type, F.data.startswith("set_type_"))
-async def process_type_choice(callback: types.CallbackQuery, state: FSMContext):
+async def process_type_choice(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     gif_type = callback.data.replace("set_type_", "")
     await state.update_data(chosen_type=gif_type)
     
@@ -66,9 +66,9 @@ async def process_type_choice(callback: types.CallbackQuery, state: FSMContext):
 
 # 4. Прием и сохранение файла (ловим анимации и видео)
 @router.message(UpdateGifStates.waiting_for_media, F.animation | F.video)
-async def process_gif_file(message: types.Message, state: FSMContext):
+async def process_gif_file(message: types.Message, state: FSMContext, texts: dict):
     user_id = message.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     data = await state.get_data()
     gif_type = data.get("chosen_type")
     
@@ -96,9 +96,9 @@ async def process_gif_file(message: types.Message, state: FSMContext):
 
 # 5. Обработка отмены
 @router.callback_query(F.data == "cancel_update")
-async def cancel_handler(callback: types.CallbackQuery, state: FSMContext):
+async def cancel_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     await state.clear()
     await safe_edit_text(callback, texts["admin_update_cancelled"])
     await callback.answer()

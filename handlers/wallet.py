@@ -31,10 +31,10 @@ async def cleanup_connect(user_id: int):
         logger.exception("CLEANUP_CONNECT_FAILED user_id=%s", user_id)
 
 @router.callback_query(F.data == "wallet_menu")
-async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
+async def wallet_menu(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     await db.ensure_user_exists(user_id)
     try:
         wallet = await db.get_user_wallet(user_id)
@@ -61,9 +61,9 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer(texts["wallet_menu_error"], show_alert=True)
 
 @router.callback_query(F.data == "disconnect_wallet")
-async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext):
+async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     await db.ensure_user_exists(user_id)
     try:
         await db.update_user_wallet(user_id, None)
@@ -78,9 +78,9 @@ async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext):
     await wallet_menu(callback, state)
 
 @router.callback_query(F.data == "connect_wallet")
-async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
+async def connect_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     await db.ensure_user_exists(user_id)
     try:
         connector = await TonConnectService.connector(user_id)
@@ -112,10 +112,10 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext):
     await remember_message(state, msg, category=MessageCategory.TEMPORARY)
 
 @router.callback_query(F.data.startswith("select_wallet_"))
-async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
+async def select_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     wallet_name = callback.data.replace("select_wallet_", "")
     user_id = callback.from_user.id
-    texts = await get_locale(user_id)
+    # texts from middleware
     await db.ensure_user_exists(user_id)
     try:
         connector = await TonConnectService.connector(user_id)
@@ -150,13 +150,13 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext):
     msg = await safe_answer(callback.message, text, reply_markup=kb, parse_mode=ParseMode.HTML)
     await remember_message(state, msg, category=MessageCategory.TEMPORARY)
 
-    task = asyncio.create_task(wait_for_connection_with_timeout(user_id, connector, state))
+    task = asyncio.create_task(wait_for_connection_with_timeout(user_id, connector, state, texts))
     wallet_tasks.add(task)
     task.add_done_callback(wallet_tasks.discard)
 
-async def wait_for_connection_with_timeout(user_id: int, connector: TonConnect, state: FSMContext):
+async def wait_for_connection_with_timeout(user_id: int, connector: TonConnect, state: FSMContext, texts: dict):
     try:
-        await asyncio.wait_for(wait_for_connection(user_id, connector, state), timeout=190)
+        await asyncio.wait_for(wait_for_connection(user_id, connector, state, texts), timeout=190)
     except asyncio.TimeoutError:
         logger.warning("WALLET_CONNECTION_TIMEOUT user_id=%s", user_id)
         await cleanup_connect(user_id)
@@ -164,7 +164,7 @@ async def wait_for_connection_with_timeout(user_id: int, connector: TonConnect, 
         logger.exception("WAIT_FOR_CONNECTION_WITH_TIMEOUT_CRASH user_id=%s", user_id)
         await cleanup_connect(user_id)
 
-async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMContext):
+async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMContext, texts: dict):
     def status_changed(wallet_info):
         pass
 
@@ -184,7 +184,7 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
 
         if raw_address:
             try:
-                texts = await get_locale(user_id)
+                # texts from middleware
                 # 1. Clear temporary messages (connect menus)
                 await clear_messages(user_id, state, category=MessageCategory.TEMPORARY)
 
