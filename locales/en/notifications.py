@@ -6,8 +6,8 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option:</b> /"
     ),
-    "notif_add_new_btn": "Add New",
-    "notif_main_menu_btn": "Main Menu",
+    "notif_add_new_btn": "ADD NEW",
+    "notif_main_menu_btn": "MAIN MENU",
     "notif_enter_title": (
         "┏┅<tg-emoji emoji-id=\"5778299625370817409\">📝</tg-emoji>┅ / <b>Notification Title</b> /\n"
         "┋\n"
@@ -28,8 +28,8 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Example:</b> Buy - https://t.me/shop /"
     ),
-    "notif_skip_btn": "Skip",
-    "notif_back_btn": "Back",
+    "notif_skip_btn": "SKIP",
+    "notif_back_btn": "BACK",
     "notif_enter_interval": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅ / <b>Sending Interval</b> /\n"
         "┋\n"
@@ -55,13 +55,13 @@ TEXTS = {
     ),
     "notif_preview_header": "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>Preview</b> /\n┋\n",
     "notif_preview_footer": "\n┋\n┗┅┅┅/ <b>Confirm or edit your notification:</b> /",
-    "notif_edit_title_btn": "Edit Title",
-    "notif_edit_text_btn": "Edit Text",
-    "notif_edit_buttons_btn": "Edit Buttons",
-    "notif_edit_interval_btn": "Edit Interval",
-    "notif_edit_chat_btn": "Edit Chat",
-    "notif_toggle_status_btn": "Status: {status}",
-    "notif_save_btn": "Save",
+    "notif_edit_title_btn": "EDIT TITLE",
+    "notif_edit_text_btn": "EDIT TEXT",
+    "notif_edit_buttons_btn": "EDIT BUTTONS",
+    "notif_edit_interval_btn": "EDIT INTERVAL",
+    "notif_edit_chat_btn": "EDIT CHAT",
+    "notif_toggle_status_btn": "STATUS: {STATUS}",
+    "notif_save_btn": "SAVE",
     "notif_active": "Active",
     "notif_paused": "Paused",
     "notif_save_success": (

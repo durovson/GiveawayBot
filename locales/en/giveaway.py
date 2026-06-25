@@ -6,10 +6,10 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "giveaway_fast_btn": "Fast (No channels)",
-    "giveaway_partner_btn": "Partner (Required channels)",
-    "giveaway_back_btn": "Back",
-    "giveaway_main_menu_btn": "Main Menu",
+    "giveaway_fast_btn": "FAST (NO CHANNELS)",
+    "giveaway_partner_btn": "PARTNER (REQUIRED CHANNELS)",
+    "giveaway_back_btn": "BACK",
+    "giveaway_main_menu_btn": "MAIN MENU",
     "giveaway_enter_title": (
         "┏┅<tg-emoji emoji-id=\"5778299625370817409\">📝</tg-emoji>┅ / <b>Giveaway Title</b> /\n"
         "┋\n"
@@ -29,7 +29,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Please add the bot to these channels and grant administrator rights, then click the button below</b> /"
     ),
-    "giveaway_i_added_btn": "I added!",
+    "giveaway_i_added_btn": "I ADDED!",
     "giveaway_select_type": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅ / <b>Giveaway Type</b> /\n"
         "┋\n"
@@ -37,8 +37,8 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "giveaway_timed_btn": "Certain time",
-    "giveaway_limited_btn": "By participants",
+    "giveaway_timed_btn": "CERTAIN TIME",
+    "giveaway_limited_btn": "BY PARTICIPANTS",
     "giveaway_enter_time": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏰</tg-emoji>┅ / <b>Finish Time</b> /\n"
         "┋\n"
@@ -51,7 +51,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select or enter a number</b> /"
     ),
-    "giveaway_custom_option_btn": "Your own option",
+    "giveaway_custom_option_btn": "YOUR OWN OPTION",
     "giveaway_enter_winners_count": (
         "┏┅<tg-emoji emoji-id=\"5805553606635559688\">🏆</tg-emoji>┅ / <b>Number of Winners</b> /\n"
         "┋\n"
@@ -67,7 +67,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Example:</b> 100 GRAM /"
     ),
-    "giveaway_confirm_prizes_btn": "Confirm Prizes",
+    "giveaway_confirm_prizes_btn": "CONFIRM PRIZES",
     "giveaway_select_access": (
         "┏┅<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji>┅ / <b>Access Mode</b> /\n"
         "┋\n"
@@ -75,8 +75,8 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Choose an option</b> /"
     ),
-    "giveaway_access_all_btn": "Public",
-    "giveaway_access_whitelist_btn": "Whitelist (Users/IDs)",
+    "giveaway_access_all_btn": "PUBLIC",
+    "giveaway_access_whitelist_btn": "WHITELIST (USERS/IDS)",
     "giveaway_enter_whitelist": (
         "┏┅<tg-emoji emoji-id=\"5258476306152038031\">📝</tg-emoji>┅ / <b>Whitelist</b> /\n"
         "┋\n"
@@ -91,13 +91,13 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Check everything and confirm</b> /"
     ),
-    "giveaway_edit_name_btn": "Name",
-    "giveaway_edit_channels_btn": "Channels",
-    "giveaway_edit_type_btn": "Type",
-    "giveaway_edit_mode_btn": "Mode",
-    "giveaway_edit_winners_btn": "Winners",
-    "giveaway_edit_prizes_btn": "Prizes",
-    "giveaway_confirm_btn": "Confirm",
+    "giveaway_edit_name_btn": "NAME",
+    "giveaway_edit_channels_btn": "CHANNELS",
+    "giveaway_edit_type_btn": "TYPE",
+    "giveaway_edit_mode_btn": "MODE",
+    "giveaway_edit_winners_btn": "WINNERS",
+    "giveaway_edit_prizes_btn": "PRIZES",
+    "giveaway_confirm_btn": "CONFIRM",
     "giveaway_start_btn": "START",
     "giveaway_join_btn": "JOIN",
     "giveaway_created": (
@@ -105,7 +105,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>It will be automatically published in the group.</b> /"
     ),
-    "giveaway_make_announcement_btn": "Make Announcement",
+    "giveaway_make_announcement_btn": "MAKE ANNOUNCEMENT",
     "giveaway_select_announcement_chat": "Select a group for the announcement:",
     "giveaway_prizes": "Rewards",
     "giveaway_winners": "Winners",
@@ -158,7 +158,7 @@ TEXTS = {
     "giveaway_status_label": "Status",
     "giveaway_not_completed": "Not Completed",
     "giveaway_completed": "Completed",
-    "giveaway_announcement_btn": "Announcement: {title}",
+    "giveaway_announcement_btn": "ANNOUNCEMENT: {TITLE}",
     "giveaway_participation_prohibited_admin": "❌ Participation is prohibited, you are the leader.",
     "giveaway_removed": "❌ The giveaway has been removed.",
     "giveaway_current_prizes": "Current prizes",

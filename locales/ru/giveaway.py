@@ -6,10 +6,10 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию:</b> /"
     ),
-    "giveaway_fast_btn": "Быстрый (Без каналов)",
-    "giveaway_partner_btn": "Партнерский (С каналами)",
-    "giveaway_back_btn": "Назад",
-    "giveaway_main_menu_btn": "Главное меню",
+    "giveaway_fast_btn": "БЫСТРЫЙ (БЕЗ КАНАЛОВ)",
+    "giveaway_partner_btn": "ПАРТНЕРСКИЙ (С КАНАЛАМИ)",
+    "giveaway_back_btn": "НАЗАД",
+    "giveaway_main_menu_btn": "ГЛАВНОЕ МЕНЮ",
     "giveaway_enter_title": (
         "┏┅<tg-emoji emoji-id=\"5778299625370817409\">📝</tg-emoji>┅ / <b>Название розыгрыша</b> /\n"
         "┋\n"
@@ -29,7 +29,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Пожалуйста, добавьте бота в эти каналы и дайте права администратора, затем нажмите кнопку ниже</b> /"
     ),
-    "giveaway_i_added_btn": "Я добавил!",
+    "giveaway_i_added_btn": "Я ДОБАВИЛ!",
     "giveaway_select_type": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅ / <b>Тип розыгрыша</b> /\n"
         "┋\n"
@@ -37,8 +37,8 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию:</b> /"
     ),
-    "giveaway_timed_btn": "Определенное время",
-    "giveaway_limited_btn": "По количеству участников",
+    "giveaway_timed_btn": "ОПРЕДЕЛЕННОЕ ВРЕМЯ",
+    "giveaway_limited_btn": "ПО КОЛИЧЕСТВУ УЧАСТНИКОВ",
     "giveaway_enter_time": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏰</tg-emoji>┅ / <b>Время завершения</b> /\n"
         "┋\n"
@@ -51,7 +51,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите или введите число:</b> /"
     ),
-    "giveaway_custom_option_btn": "Свой вариант",
+    "giveaway_custom_option_btn": "СВОЙ ВАРИАНТ",
     "giveaway_enter_winners_count": (
         "┏┅<tg-emoji emoji-id=\"5805553606635559688\">🏆</tg-emoji>┅ / <b>Количество победителей</b> /\n"
         "┋\n"
@@ -67,7 +67,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Пример:</b> 100 GRAM /"
     ),
-    "giveaway_confirm_prizes_btn": "Подтвердить призы",
+    "giveaway_confirm_prizes_btn": "ПОДТВЕРДИТЬ ПРИЗЫ",
     "giveaway_select_access": (
         "┏┅<tg-emoji emoji-id=\"5258476306152038031\">🔒</tg-emoji>┅ / <b>Режим доступа</b> /\n"
         "┋\n"
@@ -75,8 +75,8 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию:</b> /"
     ),
-    "giveaway_access_all_btn": "Публичный",
-    "giveaway_access_whitelist_btn": "Вайтлист (Юзеры/ID)",
+    "giveaway_access_all_btn": "ПУБЛИЧНЫЙ",
+    "giveaway_access_whitelist_btn": "ВАЙТЛИСТ (ЮЗЕРЫ/ID)",
     "giveaway_enter_whitelist": (
         "┏┅<tg-emoji emoji-id=\"5258476306152038031\">📝</tg-emoji>┅ / <b>Вайтлист</b> /\n"
         "┋\n"
@@ -91,13 +91,13 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Проверьте все и подтвердите:</b> /"
     ),
-    "giveaway_edit_name_btn": "Имя",
-    "giveaway_edit_channels_btn": "Каналы",
-    "giveaway_edit_type_btn": "Тип",
-    "giveaway_edit_mode_btn": "Режим",
-    "giveaway_edit_winners_btn": "Победители",
-    "giveaway_edit_prizes_btn": "Призы",
-    "giveaway_confirm_btn": "Подтвердить",
+    "giveaway_edit_name_btn": "ИМЯ",
+    "giveaway_edit_channels_btn": "КАНАЛЫ",
+    "giveaway_edit_type_btn": "ТИП",
+    "giveaway_edit_mode_btn": "РЕЖИМ",
+    "giveaway_edit_winners_btn": "ПОБЕДИТЕЛИ",
+    "giveaway_edit_prizes_btn": "ПРИЗЫ",
+    "giveaway_confirm_btn": "ПОДТВЕРДИТЬ",
     "giveaway_start_btn": "START",
     "giveaway_join_btn": "ПОДПИСАТЬСЯ",
     "giveaway_created": (
@@ -105,7 +105,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Он будет автоматически опубликован в группе</b> /"
     ),
-    "giveaway_make_announcement_btn": "Сделать анонс",
+    "giveaway_make_announcement_btn": "СДЕЛАТЬ АНОНС",
     "giveaway_select_announcement_chat": "Выберите группу для анонса:",
     "giveaway_prizes": "Rewards",
     "giveaway_winners": "Winners",
@@ -158,7 +158,7 @@ TEXTS = {
     "giveaway_status_label": "Статус",
     "giveaway_not_completed": "Не завершен",
     "giveaway_completed": "Завершен",
-    "giveaway_announcement_btn": "Анонс: {title}",
+    "giveaway_announcement_btn": "АНОНС: {TITLE}",
     "giveaway_participation_prohibited_admin": "❌ Участие запрещено, вы ведущий.",
     "giveaway_removed": "❌ Розыгрыш был удален.",
     "giveaway_current_prizes": "Текущие призы",

@@ -16,7 +16,7 @@ def wallet_menu_keyboard(is_connected: bool, texts: dict) -> InlineKeyboardMarku
 def wallet_selection_keyboard(available_wallets: list, texts: dict) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for w in available_wallets:
-        builder.button(text=w['name'], callback_data=f"select_wallet_{w['name']}")
+        builder.button(text=w['name'].upper(), callback_data=f"select_wallet_{w['name']}")
     builder.button(text=texts["game_back_btn"], callback_data="wallet_menu", icon_custom_emoji_id="5877629862306385808")
     builder.adjust(1)
     return builder.as_markup()

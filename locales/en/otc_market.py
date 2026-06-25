@@ -10,9 +10,9 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option:</b> /"
     ),
-    "otc_wts_btn": "WTS (Sell)",
-    "otc_wtb_btn": "WTB (Buy)",
-    "otc_main_menu_btn": "Main Menu",
+    "otc_wts_btn": "WTS (SELL)",
+    "otc_wtb_btn": "WTB (BUY)",
+    "otc_main_menu_btn": "MAIN MENU",
     "otc_item_details_title": (
         "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅ / <b>Item Details</b> /\n"
         "┋\n"
@@ -20,8 +20,8 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Example:</b> Rare NFT https://t.me/nft_link /"
     ),
-    "otc_no_link_btn": "No-link",
-    "otc_back_btn": "Back",
+    "otc_no_link_btn": "NO-LINK",
+    "otc_back_btn": "BACK",
     "otc_item_name_title": (
         "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅ / <b>Item Name</b> /\n"
         "┋\n"
@@ -32,11 +32,11 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Enter the price in GRAM or click the \"Skip (Offer)\" button</b> /"
     ),
-    "otc_skip_offer_btn": "Skip (Offer)",
+    "otc_skip_offer_btn": "SKIP (OFFER)",
     "otc_offer": "Offer",
     "otc_item": "Item",
     "otc_price": "Price",
-    "otc_contact_btn": "Contact",
+    "otc_contact_btn": "CONTACT",
     "otc_post_success": "<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji> <b>Post published successfully!</b>\n\n<blockquote>Your order has been sent to the OTC channel.</blockquote>",
     "otc_preview_title": (
         "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>Preview</b> /\n"
@@ -45,7 +45,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Confirm or edit your post:</b> /"
     ),
-    "otc_edit_item_btn": "Edit Item",
-    "otc_edit_price_btn": "Edit Price",
-    "otc_confirm_post_btn": "Confirm & Post"
+    "otc_edit_item_btn": "EDIT ITEM",
+    "otc_edit_price_btn": "EDIT PRICE",
+    "otc_confirm_post_btn": "CONFIRM & POST"
 }

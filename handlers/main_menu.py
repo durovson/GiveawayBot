@@ -9,6 +9,7 @@ import html
 import logging
 from datetime import datetime
 
+from loader import bot
 from database import db
 from handlers.giveaway_creation import GiveawayCreation
 from utils import is_admin, is_any_admin, safe_answer, safe_edit_text, is_holder
@@ -22,6 +23,12 @@ router = Router()
 
 class OnboardingStates(StatesGroup):
     SELECT_LANGUAGE = State()
+    CHECK_COMMUNITY = State()
+
+REQUIRED_COMMUNITIES = [
+    "@notapes",
+    "@notapeschat"
+]
 
 async def get_main_menu_keyboard(user_id: int, texts: dict, is_holder_res: bool = None):
     builder = InlineKeyboardBuilder()
@@ -63,6 +70,80 @@ async def get_main_menu_keyboard(user_id: int, texts: dict, is_holder_res: bool 
         builder.adjust(1, 2, 2)
 
     return builder.as_markup()
+
+
+def get_community_keyboard(texts: dict):
+    builder = InlineKeyboardBuilder()
+
+    builder.button(
+        text=texts["join_notapes_btn"],
+        url="https://t.me/notapes"
+    )
+
+    builder.button(
+        text=texts["join_notapes_chat_btn"],
+        url="https://t.me/notapeschat"
+    )
+
+    builder.button(
+        text=texts["check_join_btn"],
+        callback_data="check_community"
+    )
+
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+async def show_community_screen(
+    event: types.Message | types.CallbackQuery,
+    texts: dict
+):
+    text = texts["community_screen_text"]
+    keyboard = get_community_keyboard(texts)
+
+    if isinstance(event, types.Message):
+        await safe_answer(
+            event,
+            text,
+            reply_markup=keyboard,
+            parse_mode=ParseMode.HTML
+        )
+    else:
+        await safe_edit_text(
+            event,
+            text,
+            reply_markup=keyboard,
+            parse_mode=ParseMode.HTML
+        )
+
+async def is_member(chat_id: str, user_id: int) -> bool:
+    try:
+        member = await bot.get_chat_member(
+            chat_id,
+            user_id
+        )
+
+        return member.status in {
+            "member",
+            "administrator",
+            "creator"
+        }
+
+    except Exception:
+        return False
+
+async def validate_community(user_id: int) -> bool:
+    for community in REQUIRED_COMMUNITIES:
+
+        ok = await is_member(
+            community,
+            user_id
+        )
+
+        if not ok:
+            return False
+
+    return True
 
 async def show_rules_screen(
     event: types.Message | types.CallbackQuery,
@@ -202,8 +283,46 @@ async def cmd_start(message: types.Message, command: CommandObject, state: FSMCo
         await show_language_selection(message, texts)
         return
 
+    # 5.5 Check Community
+    community_joined = bool(user_data.get("community_joined_at"))
+    if not community_joined:
+        await state.set_state(OnboardingStates.CHECK_COMMUNITY)
+        await show_community_screen(message, texts)
+        return
+
     # 6. Show Main Menu
     await show_main_menu_message(message, texts)
+
+
+@router.callback_query(F.data == "check_community")
+async def check_community_handler(
+    callback: types.CallbackQuery,
+    state: FSMContext,
+    texts: dict
+):
+    user_id = callback.from_user.id
+
+    joined = await validate_community(
+        user_id
+    )
+
+    if not joined:
+        await callback.answer(
+            texts["community_not_joined_alert"],
+            show_alert=True
+        )
+        return
+
+    await db.mark_community_joined(
+        user_id
+    )
+
+    await state.clear()
+
+    await show_rules_screen(
+        callback,
+        texts
+    )
 
 @router.callback_query(F.data == "accept_terms")
 async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
@@ -319,8 +438,9 @@ async def set_language_handler(callback: types.CallbackQuery, state: FSMContext,
     # Check if we are in onboarding flow
     current_state = await state.get_state()
     if current_state == OnboardingStates.SELECT_LANGUAGE:
-        await state.clear()
-        await show_rules_screen(callback, texts)
+        await state.set_state(OnboardingStates.CHECK_COMMUNITY)
+        await show_community_screen(callback, texts)
+        return
     else:
         await callback.answer(texts["giveaway_success_msg"])
         await show_main_menu_callback(callback, texts)
