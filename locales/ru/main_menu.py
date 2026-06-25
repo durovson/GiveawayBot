@@ -8,9 +8,9 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
-    "join_notapes_btn": "ВСТУПИТЬ В NOTAPES",
+    "join_notapes_btn": "ВПРИСОЕДИНИТЬСЯ К NOTAPES",
     "join_notapes_chat_btn": "ВСТУПИТЬ В NOTAPES ЧАТ",
-    "check_join_btn": "ПРОВЕРИТЬ И ВСТУПИТЬ",
+    "check_join_btn": "ПРОВЕРИТЬ И ПРОДОЛЖИТЬ",
     "community_not_joined_alert": "Вы еще не являетесь участником канала/чата.",
 
     "main_menu_text": (
