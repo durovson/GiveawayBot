@@ -13,9 +13,9 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "buy_1_btn": "Buy 1",
-    "buy_5_btn": "Buy 5",
-    "buy_10_btn": "Buy 10",
+    "buy_1_btn": "BUY 1",
+    "buy_5_btn": "BUY 5",
+    "buy_10_btn": "BUY 10",
     "not_enough_points": "❌ Not enough RP to buy tickets.",
     "purchase_success": "✅ Successfully purchased {amount} tickets!",
     "lucky_tickets_applied": "✅ Lucky Tickets Applied!\n\nYou joined with {tickets} tickets.\n\nYour tickets were consumed automatically.",
@@ -34,11 +34,11 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "game_leaderboard_btn": "Leaderboard",
-    "game_wallet_btn": "Wallet",
-    "game_stickers_btn": "Stickers",
-    "game_main_menu_btn": "Main Menu",
-    "game_back_btn": "Back",
+    "game_leaderboard_btn": "LEADERBOARD",
+    "game_wallet_btn": "WALLET",
+    "game_stickers_btn": "STICKERS",
+    "game_main_menu_btn": "MAIN MENU",
+    "game_back_btn": "BACK",
     "game_leaderboard_waiting": (
         "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
         "┋\n"
@@ -63,7 +63,7 @@ TEXTS = {
     "game_wallet_not_linked": "┋ Wallet not linked\n┋",
     "game_you": "You",
     "game_packs": "packs",
-    "holders_chat_btn": "Holders Chat",
+    "holders_chat_btn": "HOLDERS CHAT",
     "holders_chat_title": (
         "┏┅┅<tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji>┅ / <b>HOLDERS</b> /\n"
         "┋\n"
@@ -108,11 +108,11 @@ TEXTS = {
         "┋ \n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
-    "terms_btn": "Terms of Service",
-    "privacy_btn": "Privacy Policy",
-    "referral_rules_btn": "Referral Rules",
-    "giveaway_rules_btn": "Giveaway Rules",
-    "continue_btn": "Continue",
+    "terms_btn": "TERMS OF SERVICE",
+    "privacy_btn": "PRIVACY POLICY",
+    "referral_rules_btn": "REFERRAL RULES",
+    "giveaway_rules_btn": "GIVEAWAY RULES",
+    "continue_btn": "CONTINUE",
     "highscore_btn": "HIGHSCORE",
     "referral_btn": "REFERRAL",
     "holders_btn": "HOLDERS",

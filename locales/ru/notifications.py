@@ -6,8 +6,8 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию:</b> /"
     ),
-    "notif_add_new_btn": "Добавить",
-    "notif_main_menu_btn": "Главное меню",
+    "notif_add_new_btn": "ДОБАВИТЬ",
+    "notif_main_menu_btn": "ГЛАВНОЕ МЕНЮ",
     "notif_enter_title": (
         "┏┅<tg-emoji emoji-id=\"5778299625370817409\">📝</tg-emoji>┅ / <b>Название уведомления</b> /\n"
         "┋\n"
@@ -28,8 +28,8 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Пример:</b> Купить - https://t.me/shop /"
     ),
-    "notif_skip_btn": "Пропустить",
-    "notif_back_btn": "Назад",
+    "notif_skip_btn": "ПРОПУСТИТЬ",
+    "notif_back_btn": "НАЗАД",
     "notif_enter_interval": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅ / <b>Интервал отправки</b> /\n"
         "┋\n"
@@ -55,13 +55,13 @@ TEXTS = {
     ),
     "notif_preview_header": "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>Предпросмотр</b> /\n┋\n",
     "notif_preview_footer": "\n┋\n┗┅┅┅/ <b>Подтвердите или отредактируйте уведомление:</b> /",
-    "notif_edit_title_btn": "Изм. название",
-    "notif_edit_text_btn": "Изм. текст",
-    "notif_edit_buttons_btn": "Изм. кнопки",
-    "notif_edit_interval_btn": "Изм. интервал",
-    "notif_edit_chat_btn": "Изм. чат",
-    "notif_toggle_status_btn": "Статус: {status}",
-    "notif_save_btn": "Сохранить",
+    "notif_edit_title_btn": "ИЗМ. НАЗВАНИЕ",
+    "notif_edit_text_btn": "ИЗМ. ТЕКСТ",
+    "notif_edit_buttons_btn": "ИЗМ. КНОПКИ",
+    "notif_edit_interval_btn": "ИЗМ. ИНТЕРВАЛ",
+    "notif_edit_chat_btn": "ИЗМ. ЧАТ",
+    "notif_toggle_status_btn": "СТАТУС: {STATUS}",
+    "notif_save_btn": "СОХРАНИТЬ",
     "notif_active": "Активно",
     "notif_paused": "Приостановлено",
     "notif_save_success": (

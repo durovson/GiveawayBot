@@ -34,11 +34,11 @@ async def get_notification_nav_keyboard(user_id: int):
 
 def get_interval_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.button(text="3h", callback_data="interval_180")
-    builder.button(text="8h", callback_data="interval_480")
-    builder.button(text="12h", callback_data="interval_720")
-    builder.button(text="Custom", callback_data="interval_custom")
-    builder.button(text="Back", callback_data="notif_back")
+    builder.button(text="3H", callback_data="interval_180")
+    builder.button(text="8H", callback_data="interval_480")
+    builder.button(text="12H", callback_data="interval_720")
+    builder.button(text="CUSTOM", callback_data="interval_custom")
+    builder.button(text="BACK", callback_data="notif_back")
     builder.adjust(3, 1, 1)
     return builder.as_markup()
 

@@ -438,11 +438,39 @@ class Database:
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[Dict]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, terms_version, username, first_name, og_bonus_awarded_at, og_bonus_amount, holder_verified_at, active_tickets").eq("telegram_id", telegram_id).execute()
+            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, terms_version, community_joined_at, username, first_name, og_bonus_awarded_at, og_bonus_amount, holder_verified_at, active_tickets").eq("telegram_id", telegram_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error getting user by telegram_id: {e}")
             return None
+
+    async def is_community_joined(self, telegram_id: int) -> bool:
+        if not self._check_client():
+            return False
+
+        try:
+            response = (
+                await self.client
+                .table("users")
+                .select("community_joined_at")
+                .eq("telegram_id", telegram_id)
+                .execute()
+            )
+
+            if not response.data:
+                return False
+
+            return bool(response.data[0].get("community_joined_at"))
+
+        except Exception as e:
+            logger.error(f"Error checking community status: {e}")
+            return False
+
+    async def mark_community_joined(self, telegram_id: int):
+        await self.update_user_fields(
+            telegram_id,
+            community_joined_at=datetime.utcnow().isoformat()
+        )
 
     async def get_user_by_ref_code(self, ref_code: str) -> Optional[Dict]:
         if not self._check_client(): return None

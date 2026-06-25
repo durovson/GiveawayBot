@@ -1,4 +1,18 @@
 TEXTS = {
+    "community_screen_text": (
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>┅ / YOU ARE APE? /\n"
+        "┋\n"
+        "┣ <b>To use this bot, please join:</b>\n"
+        "┣ @notapes\n"
+        "┣ @notapeschat\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Select an option</b> /"
+    ),
+    "join_notapes_btn": "JOIN NOTAPES",
+    "join_notapes_chat_btn": "JOIN NOTAPES CHAT",
+    "check_join_btn": "CHECK & JOIN",
+    "community_not_joined_alert": "You are not yet a member of the channel/chat.",
+
     "main_menu_text": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258260149037965799\">💼</tg-emoji>┅ / <b>NOTAPES | HUB</b> / \n"
         "┋\n"

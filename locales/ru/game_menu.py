@@ -13,9 +13,9 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
-    "buy_1_btn": "Купить 1",
-    "buy_5_btn": "Купить 5",
-    "buy_10_btn": "Купить 10",
+    "buy_1_btn": "КУПИТЬ 1",
+    "buy_5_btn": "КУПИТЬ 5",
+    "buy_10_btn": "КУПИТЬ 10",
     "not_enough_points": "❌ Недостаточно RP для покупки билетов.",
     "purchase_success": "✅ Успешно куплено {amount} билетов!",
     "lucky_tickets_applied": "✅ Билеты удачи применены!\n\nВы вступили с {tickets} билетами.\n\nВаши билеты были списаны автоматически.",
@@ -34,11 +34,11 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
-    "game_leaderboard_btn": "Таблица лидеров",
-    "game_wallet_btn": "Кошелек",
-    "game_stickers_btn": "Стикеры",
-    "game_main_menu_btn": "Главное меню",
-    "game_back_btn": "Назад",
+    "game_leaderboard_btn": "ТАБЛИЦА ЛИДЕРОВ",
+    "game_wallet_btn": "КОШЕЛЕК",
+    "game_stickers_btn": "СТИКЕРЫ",
+    "game_main_menu_btn": "ГЛАВНОЕ МЕНЮ",
+    "game_back_btn": "НАЗАД",
     "game_leaderboard_waiting": (
         "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ / <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
         "┋\n"
@@ -63,7 +63,7 @@ TEXTS = {
     "game_wallet_not_linked": "┋ Кошелек не привязан\n┋",
     "game_you": "Вы",
     "game_packs": "паков",
-    "holders_chat_btn": "Чат холдеров",
+    "holders_chat_btn": "ЧАТ ХОЛДЕРОВ",
     "holders_chat_title": (
         "┏┅┅<tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji>┅ / <b>HOLDERS</b> /\n"
         "┋\n"
@@ -108,11 +108,11 @@ TEXTS = {
         "┋ \n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
-    "terms_btn": "Условия использовани",
-    "privacy_btn": "Политика приватности",
-    "referral_rules_btn": "Правила рефералов",
-    "giveaway_rules_btn": "Правила розыгрышей",
-    "continue_btn": "Продолжить",
+    "terms_btn": "УСЛОВИЯ ИСПОЛЬЗОВАНИ",
+    "privacy_btn": "ПОЛИТИКА ПРИВАТНОСТИ",
+    "referral_rules_btn": "ПРАВИЛА РЕФЕРАЛОВ",
+    "giveaway_rules_btn": "ПРАВИЛА РОЗЫГРЫШЕЙ",
+    "continue_btn": "ПРОДОЛЖИТЬ",
     "highscore_btn": "HIGHSCORE",
     "referral_btn": "REFERRAL",
     "holders_btn": "HOLDERS",
