@@ -10,7 +10,7 @@ TEXTS = {
     ),
     "join_notapes_btn": "JOIN NOTAPES",
     "join_notapes_chat_btn": "JOIN NOTAPES CHAT",
-    "check_join_btn": "CHECK & JOIN",
+    "check_join_btn": "CHECK & CONTINUE",
     "community_not_joined_alert": "You are not yet a member of the channel/chat.",
 
     "main_menu_text": (
