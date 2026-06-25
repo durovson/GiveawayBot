@@ -1,6 +1,6 @@
 TEXTS = {
     "community_screen_text": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>┅ / YOU ARE APE? /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>┅ / <b>YOU ARE APE?</b> /\n"
         "┋\n"
         "┣ <b>To use this bot, please join:</b>\n"
         "┣ @notapes\n"
