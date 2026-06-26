@@ -1,7 +1,7 @@
 TEXTS = {
     "store_btn": "STORE",
     "store_menu_title": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5983399041197675256\">🏪</tg-emoji>┅ / <b>STORE</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5983399041197675256\">🏪</tg-emoji>┅/ <b>STORE</b> /\n"
         "┋\n"
         "┣ <b>Your RP:</b> {rp}\n"
         "┣ <b>Active Tickets:</b> {tickets}\n"
@@ -20,7 +20,7 @@ TEXTS = {
     "purchase_success": "✅ Successfully purchased {amount} tickets!",
     "lucky_tickets_applied": "✅ Lucky Tickets Applied!\n\nYou joined with {tickets} tickets.\n\nYour tickets were consumed automatically.",
     "game_menu_title": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>GAME MENU</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅/ <b>GAME MENU</b> /\n"
         "┋\n"
         "┣ Ready to play?\n"
         "┋\n"
@@ -47,7 +47,7 @@ TEXTS = {
         "┗┅┅┅/ Wating... /"
     ),
     "game_leaderboard_title": (
-        "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ / <b>LEADERBOARD</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅/ <b>LEADERBOARD</b> /\n"
         "┋\n"
         "┣ Global ranking by Rating Points (RP).\n"
         "┋\n"
@@ -65,7 +65,7 @@ TEXTS = {
     "game_packs": "packs",
     "holders_chat_btn": "HOLDERS CHAT",
     "holders_chat_title": (
-        "┏┅┅<tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji>┅ / <b>HOLDERS</b> /\n"
+        "┏┅┅<tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji>┅/ <b>HOLDERS</b> /\n"
         "┋\n"
         "┣ Want to join the closed holders chat?\n"
         "┣ Access is available from 10 packs!\n"
@@ -87,7 +87,7 @@ TEXTS = {
     ),
     "holders_chat_error": "❌ Error generating invite link. Please try again later.",
     "referral_menu_title": (
-        "┏┅┅<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>┅ / <b>REFERRAL</b> /\n"
+        "┏┅┅<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>┅/ <b>REFERRAL</b> /\n"
         "┋\n"
         "┣ <b>Your referral link:</b>\n"
         "┣ {ref_link}\n"
@@ -99,7 +99,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "rules_screen_text": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258328383183396223\">📖</tg-emoji>┅ / <b>DOCS</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258328383183396223\">📖</tg-emoji>┅/ <b>DOCS</b> /\n"
         "┋ \n"
         "┣ [<tg-emoji emoji-id=\"5258477770735885832\">📄</tg-emoji>] Terms of Service \n"
         "┣ [<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>] Privacy Policy \n"
