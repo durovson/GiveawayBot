@@ -1,6 +1,6 @@
 TEXTS = {
     "otc_title": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260687681733533075\">🤝</tg-emoji>┅ / <b>OTC MARKET</b> / \n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260687681733533075\">🤝</tg-emoji>┅/ <b>OTC MARKET</b> /\n"
         "┋\n"
         "┣ Welcome to the P2P Trade Hub.\n"
         "┋\n"
@@ -14,7 +14,7 @@ TEXTS = {
     "otc_wtb_btn": "WTB (BUY)",
     "otc_main_menu_btn": "MAIN MENU",
     "otc_item_details_title": (
-        "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅ / <b>Item Details</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅/ <b>Item Details</b> /\n"
         "┋\n"
         "┣ Please send the name of the item and a link to it.\n"
         "┋\n"
@@ -23,12 +23,12 @@ TEXTS = {
     "otc_no_link_btn": "NO-LINK",
     "otc_back_btn": "BACK",
     "otc_item_name_title": (
-        "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅ / <b>Item Name</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5257965174979042426\">📝</tg-emoji>┅/ <b>Item Name</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>Please send only the name of the item</b> /"
     ),
     "otc_price_title": (
-        "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅ / <b>Price</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>┅/ <b>Price</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>Enter the price in GRAM or click the \"Skip (Offer)\" button</b> /"
     ),
@@ -39,7 +39,7 @@ TEXTS = {
     "otc_contact_btn": "CONTACT",
     "otc_post_success": "<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji> <b>Post published successfully!</b>\n\n<blockquote>Your order has been sent to the OTC channel.</blockquote>",
     "otc_preview_title": (
-        "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅ / <b>Preview</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅/ <b>Preview</b> /\n"
         "┋\n"
         "┣ {post_text}\n"
         "┋\n"
