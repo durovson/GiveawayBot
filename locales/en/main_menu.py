@@ -1,6 +1,6 @@
 TEXTS = {
     "community_screen_text": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>┅ / <b>YOU ARE APE?</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>┅/ <b>YOU ARE APE?</b> /\n"
         "┋\n"
         "┣ <b>To use this bot, please join:</b>\n"
         "┣ @notapes\n"
@@ -14,7 +14,7 @@ TEXTS = {
     "community_not_joined_alert": "You are not yet a member of the channel/chat.",
 
     "main_menu_text": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258260149037965799\">💼</tg-emoji>┅ / <b>NOTAPES | HUB</b> / \n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258260149037965799\">💼</tg-emoji>┅/ <b>NOTAPES | HUB</b> /\n"
         "┋\n"
         "┣ Hub Online.\n"
         "┣ <tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji> FL: <b>{floor}</b> GRAM\n"
@@ -48,14 +48,14 @@ TEXTS = {
     "no_groups_available": "<tg-emoji emoji-id=\"5273876254989246882\">🤬</tg-emoji> <b>There are no available groups. Add the bot to the group and make it an administrator.</b>",
     "no_admin_rights": "❌ You do not have administrator rights in connected chats.",
     "select_language": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260512129240276089\">📚</tg-emoji>┅ / <b>Language</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260512129240276089\">📚</tg-emoji>┅/ <b>Language</b> /\n"
         "┋\n"
         "┣ Please select your preferred language\n"
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "bot_ready": (
-        "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅ / <b>The bot is ready to work!</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5273741156792951269\">🤓</tg-emoji>┅/ <b>The bot is ready to work!</b> /\n"
         "┋\n"
         "┣ The group has been automatically registered. Now you can create giveaways via private messages with the bot.\n"
         "┋\n"
