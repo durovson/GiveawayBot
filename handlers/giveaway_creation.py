@@ -157,7 +157,7 @@ async def process_title_input(message: types.Message, state: FSMContext, bot: Bo
     last_msg_id = data.get('last_msg_id')
 
     if data.get('is_editing'):
-        await show_edit_params(message, state, bot)
+        await show_edit_params(message, state, bot, texts)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
             texts["giveaway_title"],
@@ -193,9 +193,9 @@ async def process_channels(message: types.Message, state: FSMContext, bot: Bot, 
     channels = [c.replace("https://t.me/", "@").strip() for c in channels if c.strip()]
 
     await state.update_data(mandatory_channels=channels)
-    await check_bot_admin_in_channels(message, state, bot)
+    await check_bot_admin_in_channels(message, state, bot, texts)
 
-async def check_bot_admin_in_channels(message: types.Message | types.CallbackQuery, state: FSMContext, bot: Bot):
+async def check_bot_admin_in_channels(message: types.Message | types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     user_id = message.from_user.id
     # texts from middleware
     data = await state.get_data()
@@ -219,9 +219,9 @@ async def check_bot_admin_in_channels(message: types.Message | types.CallbackQue
 
     await callback_answer_wrapper(message, texts["giveaway_channels_verified_alert"])
     if data.get('is_editing'):
-        await show_edit_params(message, state, bot)
+        await show_edit_params(message, state, bot, texts)
     else:
-        await ask_access_type(message if isinstance(message, types.Message) else message.message, state, bot)
+        await ask_access_type(message if isinstance(message, types.Message) else message.message, state, bot, texts)
 
 async def callback_answer_wrapper(event, text):
     if isinstance(event, types.CallbackQuery):
@@ -230,7 +230,7 @@ async def callback_answer_wrapper(event, text):
 @router.callback_query(F.data == "recheck_admin")
 async def recheck_admin(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
-    await check_bot_admin_in_channels(callback, state, bot)
+    await check_bot_admin_in_channels(callback, state, bot, texts)
 
 async def ask_access_type(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
     user_id = message.chat.id
@@ -256,7 +256,7 @@ async def process_access_choice(callback: types.CallbackQuery, state: FSMContext
         answered = True
         data = await state.get_data()
         if data.get('is_editing'):
-            await show_edit_params(callback, state, bot)
+            await show_edit_params(callback, state, bot, texts)
         else:
             await safe_edit_text(callback,
                 texts["giveaway_select_type"],
@@ -287,7 +287,7 @@ async def process_whitelist(message: types.Message, state: FSMContext, bot: Bot,
     last_msg_id = data.get('last_msg_id')
 
     if data.get('is_editing'):
-        await show_edit_params(message, state, bot)
+        await show_edit_params(message, state, bot, texts)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
             texts["giveaway_select_type"],
@@ -325,7 +325,7 @@ async def select_mode_value(callback: types.CallbackQuery, state: FSMContext, bo
         await state.update_data(mode_value=val)
         data = await state.get_data()
         if data.get('is_editing'):
-            await show_edit_params(callback, state, bot)
+            await show_edit_params(callback, state, bot, texts)
         else:
             await safe_edit_text(callback,
                 texts["giveaway_enter_winners_count"],
@@ -357,7 +357,7 @@ async def enter_custom_mode_value(message: types.Message, state: FSMContext, bot
     last_msg_id = data.get('last_msg_id')
 
     if data.get('is_editing'):
-        await show_edit_params(message, state, bot)
+        await show_edit_params(message, state, bot, texts)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
             texts["giveaway_enter_winners_count"],
@@ -379,7 +379,7 @@ async def select_winners_count(callback: types.CallbackQuery, state: FSMContext,
         await state.update_data(winners_count=int(val))
         data = await state.get_data()
         if data.get('is_editing'):
-            await show_edit_params(callback, state, bot)
+            await show_edit_params(callback, state, bot, texts)
         else:
             await safe_edit_text(callback,
                 texts["giveaway_enter_prizes"],
@@ -404,7 +404,7 @@ async def enter_custom_winners_count(message: types.Message, state: FSMContext, 
     last_msg_id = data.get('last_msg_id')
 
     if data.get('is_editing'):
-        await show_edit_params(message, state, bot)
+        await show_edit_params(message, state, bot, texts)
     else:
         await safe_bot_edit_text(bot, message.chat.id, last_msg_id,
             texts["giveaway_enter_prizes"],
@@ -436,9 +436,9 @@ async def process_prizes(message: types.Message, state: FSMContext, bot: Bot, te
 @router.callback_query(F.data == "confirm_prizes")
 async def confirm_prizes(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
-    await show_edit_params(callback, state, bot)
+    await show_edit_params(callback, state, bot, texts)
 
-async def show_edit_params(event, state: FSMContext, bot: Bot):
+async def show_edit_params(event, state: FSMContext, bot: Bot, texts: dict):
     user_id = event.from_user.id if isinstance(event, types.CallbackQuery) else event.chat.id
     # texts from middleware
     data = await state.get_data()

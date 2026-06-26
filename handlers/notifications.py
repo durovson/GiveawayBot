@@ -24,7 +24,7 @@ class NotificationStates(StatesGroup):
     ENTER_CUSTOM_INTERVAL = State()
     PREVIEW = State()
 
-async def get_notification_nav_keyboard(user_id: int):
+async def get_notification_nav_keyboard(user_id: int, texts: dict):
     # texts from middleware
     builder = InlineKeyboardBuilder()
     builder.button(text=texts["notif_back_btn"], callback_data="notif_back", icon_custom_emoji_id="5260687119092817530")
@@ -69,7 +69,7 @@ async def add_new_notification(callback: types.CallbackQuery, state: FSMContext,
     user_id = callback.from_user.id
     # texts from middleware
     text = texts["notif_enter_title"]
-    await safe_edit_text(callback, text, reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML, state=state)
+    await safe_edit_text(callback, text, reply_markup=await get_notification_nav_keyboard(user_id, texts), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(NotificationStates.ENTER_TITLE)
 
 @router.callback_query(F.data.startswith("notif_view_"))
@@ -104,7 +104,7 @@ async def process_title(message: types.Message, state: FSMContext, bot: Bot, tex
         await show_notification_preview(message, state, bot, texts)
     else:
         text = texts["notif_enter_text"]
-        msg = await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'], text, reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML)
+        msg = await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'], text, reply_markup=await get_notification_nav_keyboard(user_id, texts), parse_mode=ParseMode.HTML)
         if msg: await state.update_data(last_msg_id=msg.message_id)
         await state.set_state(NotificationStates.ENTER_TEXT)
 
@@ -195,7 +195,7 @@ async def process_interval(callback: types.CallbackQuery, state: FSMContext, bot
         user_id = callback.from_user.id
         # texts from middleware
         text = texts["notif_custom_interval_title"]
-        await safe_edit_text(callback, text, reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML, state=state)
+        await safe_edit_text(callback, text, reply_markup=await get_notification_nav_keyboard(user_id, texts), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.ENTER_CUSTOM_INTERVAL)
     else:
         await state.update_data(interval_minutes=float(val))
@@ -225,7 +225,7 @@ async def process_custom_interval(message: types.Message, state: FSMContext, bot
             await show_chat_selector(message, state, bot, texts)
     except ValueError:
         text = texts["notif_invalid_interval"]
-        msg = await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'], text, reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML)
+        msg = await safe_bot_edit_text(bot, message.chat.id, data['last_msg_id'], text, reply_markup=await get_notification_nav_keyboard(user_id, texts), parse_mode=ParseMode.HTML)
         if msg: await state.update_data(last_msg_id=msg.message_id)
 
 async def show_chat_selector(event, state: FSMContext, bot: Bot, texts: dict):
@@ -297,7 +297,7 @@ async def edit_title(callback: types.CallbackQuery, state: FSMContext, texts: di
     user_id = callback.from_user.id
     # texts from middleware
     await state.update_data(is_editing=True)
-    await safe_edit_text(callback, texts["notif_enter_title"], reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML, state=state)
+    await safe_edit_text(callback, texts["notif_enter_title"], reply_markup=await get_notification_nav_keyboard(user_id, texts), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(NotificationStates.ENTER_TITLE)
 
 @router.callback_query(NotificationStates.PREVIEW, F.data == "notif_edit_text")
@@ -306,7 +306,7 @@ async def edit_text(callback: types.CallbackQuery, state: FSMContext, texts: dic
     user_id = callback.from_user.id
     # texts from middleware
     await state.update_data(is_editing=True)
-    await safe_edit_text(callback, texts["notif_enter_text"], reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML, state=state)
+    await safe_edit_text(callback, texts["notif_enter_text"], reply_markup=await get_notification_nav_keyboard(user_id, texts), parse_mode=ParseMode.HTML, state=state)
     await state.set_state(NotificationStates.ENTER_TEXT)
 
 @router.callback_query(NotificationStates.PREVIEW, F.data == "notif_edit_btns")
@@ -391,7 +391,7 @@ async def handle_notif_back(callback: types.CallbackQuery, state: FSMContext, bo
     elif current_state == NotificationStates.ENTER_BUTTONS.state:
         user_id = callback.from_user.id
         # texts from middleware
-        await safe_edit_text(callback, texts["notif_enter_text"], reply_markup=await get_notification_nav_keyboard(user_id), parse_mode=ParseMode.HTML, state=state)
+        await safe_edit_text(callback, texts["notif_enter_text"], reply_markup=await get_notification_nav_keyboard(user_id, texts), parse_mode=ParseMode.HTML, state=state)
         await state.set_state(NotificationStates.ENTER_TEXT)
     elif current_state == NotificationStates.ENTER_INTERVAL.state:
         await show_btn_input_screen(callback, state, bot, texts)
