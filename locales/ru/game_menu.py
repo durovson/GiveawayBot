@@ -1,7 +1,7 @@
 TEXTS = {
     "store_btn": "МАГАЗИН",
     "store_menu_title": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5983399041197675256\">🏪</tg-emoji>┅ / <b>МАГАЗИН</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5983399041197675256\">🏪</tg-emoji>┅/ <b>МАГАЗИН</b> /\n"
         "┋\n"
         "┣ <b>Ваши RP:</b> {rp}\n"
         "┣ <b>Активные билеты:</b> {tickets}\n"
@@ -20,7 +20,7 @@ TEXTS = {
     "purchase_success": "✅ Успешно куплено {amount} билетов!",
     "lucky_tickets_applied": "✅ Билеты удачи применены!\n\nВы вступили с {tickets} билетами.\n\nВаши билеты были списаны автоматически.",
     "game_menu_title": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅ / <b>ИГРОВОЕ МЕНЮ</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258508428212445001\">🎮</tg-emoji>┅/ <b>ИГРОВОЕ МЕНЮ</b> /\n"
         "┋\n"
         "┣ Готовы играть?\n"
         "┋\n"
@@ -40,14 +40,14 @@ TEXTS = {
     "game_main_menu_btn": "ГЛАВНОЕ МЕНЮ",
     "game_back_btn": "НАЗАД",
     "game_leaderboard_waiting": (
-        "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ / <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅/ <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
         "┋\n"
         "┣ Данные рейтинга пока недоступны.\n"
         "┋\n"
         "┗┅┅┅/ Ожидание... /"
     ),
     "game_leaderboard_title": (
-        "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅ / <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258330865674494479\">🍑</tg-emoji>┅/ <b>ТАБЛИЦА ЛИДЕРОВ</b> /\n"
         "┋\n"
         "┣ Глобальный рейтинг по Rating Points (RP).\n"
         "┋\n"
@@ -65,7 +65,7 @@ TEXTS = {
     "game_packs": "паков",
     "holders_chat_btn": "ЧАТ ХОЛДЕРОВ",
     "holders_chat_title": (
-        "┏┅┅<tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji>┅ / <b>HOLDERS</b> /\n"
+        "┏┅┅<tg-emoji emoji-id=\"5260535596941582167\">💬</tg-emoji>┅/ <b>HOLDERS</b> /\n"
         "┋\n"
         "┣ Хотите вступить в закрытый чат холдеров?\n"
         "┣ Доступ открыт от 10 паков!\n"
@@ -87,7 +87,7 @@ TEXTS = {
     ),
     "holders_chat_error": "❌ Ошибка при создании ссылки. Пожалуйста, попробуйте позже.",
     "referral_menu_title": (
-        "┏┅┅<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>┅ / <b>РЕФЕРАЛЫ</b> /\n"
+        "┏┅┅<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>┅/ <b>РЕФЕРАЛЫ</b> /\n"
         "┋\n"
         "┣ <b>Ваша реферальная ссылка:</b>\n"
         "┣ {ref_link}\n"
@@ -99,7 +99,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
     "rules_screen_text": (
-        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258328383183396223\">📖</tg-emoji>┅ / <b>ДОКУМЕНТЫ</b> /\n"
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258328383183396223\">📖</tg-emoji>┅/ <b>ДОКУМЕНТЫ</b> /\n"
         "┋ \n"
         "┣ [<tg-emoji emoji-id=\"5258477770735885832\">📄</tg-emoji>] Условия использования \n"
         "┣ [<tg-emoji emoji-id=\"5260249440450520061\">🤚</tg-emoji>] Политика приватности \n"
