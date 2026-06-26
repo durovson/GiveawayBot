@@ -165,7 +165,7 @@ async def wait_for_connection_with_timeout(user_id: int, connector: TonConnect, 
         await cleanup_connect(user_id)
 
 async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMContext, texts: dict):
-    def status_changed(wallet_info):
+    def status_changed(wallet_info, texts=texts):
         pass
 
     unsubscribe = connector.on_status_change(status_changed)

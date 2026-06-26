@@ -31,14 +31,14 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
         safe_title = html.escape(giveaway["title"])
 
         # Public results strictly in English as requested
-        texts = get_locale_by_lang("en")
+        en_texts = get_locale_by_lang("en") # Public results forced to English
 
         if not participants:
-            results_text = texts["giveaway_no_participants_results"].format(title=safe_title)
+            results_text = en_texts["giveaway_no_participants_results"].format(title=safe_title)
         else:
             winners_count_target = min(len(participants), giveaway["winners_count"])
             if winners_count_target <= 0:
-                results_text = texts["giveaway_no_participants_results"].format(title=safe_title)
+                results_text = en_texts["giveaway_no_participants_results"].format(title=safe_title)
                 winners = []
                 prizes = []
             else:
@@ -85,7 +85,7 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
             if winners_to_save:
                 await db.save_winners(giveaway_id, winners_to_save)
 
-                results_text = texts["giveaway_winners_results"].format(
+                results_text = en_texts["giveaway_winners_results"].format(
                     title=safe_title,
                     winners_list=winners_list_str
                 )

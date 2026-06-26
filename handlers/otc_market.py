@@ -96,7 +96,7 @@ async def enter_name_only(message: types.Message, state: FSMContext, bot: Bot, t
 
     item_name = message.text.strip()
     await state.update_data(item_name=item_name, url=None)
-    await show_price_input(bot, message.chat.id, last_msg_id, state)
+    await show_price_input(bot, message.chat.id, last_msg_id, state, texts)
 
 @router.message(OTCMarket.ENTER_ITEM, F.text)
 async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
@@ -121,9 +121,9 @@ async def enter_item_details(message: types.Message, state: FSMContext, bot: Bot
         url = None
 
     await state.update_data(item_name=item_name, url=url)
-    await show_price_input(bot, message.chat.id, last_msg_id, state)
+    await show_price_input(bot, message.chat.id, last_msg_id, state, texts)
 
-async def show_price_input(bot: Bot, chat_id: int, last_msg_id: int, state: FSMContext):
+async def show_price_input(bot: Bot, chat_id: int, last_msg_id: int, state: FSMContext, texts: dict):
     # texts from middleware
     builder = InlineKeyboardBuilder()
     builder.button(text=texts["otc_skip_offer_btn"], callback_data="otc_price_skip", icon_custom_emoji_id="5260687681733533075")

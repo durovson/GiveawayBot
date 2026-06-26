@@ -17,7 +17,7 @@ class UpdateGifStates(StatesGroup):
     waiting_for_media = State() # Ожидание самой гифки или видео
 
 # Клавиатура выбора типа медиа
-async def get_gif_type_kb(user_id: int):
+async def get_gif_type_kb(user_id: int, texts: dict):
     # texts from middleware
     buttons = [
         [InlineKeyboardButton(text=texts["admin_giveaways_label"], callback_data="set_type_main", icon_custom_emoji_id="6032644646587338669")],
@@ -40,7 +40,7 @@ async def start_gif_update(callback: types.CallbackQuery, state: FSMContext, tex
     await safe_edit_text(
         callback,
         texts["admin_gif_mgmt_title"],
-        reply_markup=await get_gif_type_kb(user_id),
+        reply_markup=await get_gif_type_kb(user_id, texts),
         parse_mode=ParseMode.HTML
     )
     await callback.answer()
