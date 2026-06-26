@@ -75,7 +75,7 @@ async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext, te
         logger.exception("DISCONNECT_WALLET_FAILED user_id=%s", user_id)
 
     await callback.answer(texts["wallet_disconnected_alert"], show_alert=True)
-    await wallet_menu(callback, state)
+    await wallet_menu(callback, state, texts)
 
 @router.callback_query(F.data == "connect_wallet")
 async def connect_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
