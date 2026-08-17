@@ -9,6 +9,7 @@ from aiogram.enums import ParseMode
 from database import db
 from utils import safe_edit_text, safe_bot_edit_text, strip_custom_emojis
 from services.localization import get_locale
+from config import ADMIN_IDS
 import logging
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,9 @@ def get_interval_keyboard():
 
 @router.callback_query(F.data == "manage_notifications")
 async def start_notification_management(callback: types.CallbackQuery, state: FSMContext, texts: dict):
+    if callback.from_user.id not in ADMIN_IDS:
+        await callback.answer(texts["access_denied"], show_alert=True)
+        return
     await callback.answer()
     user_id = callback.from_user.id
     # texts from middleware
@@ -65,6 +69,9 @@ async def start_notification_management(callback: types.CallbackQuery, state: FS
 
 @router.callback_query(F.data == "notif_add")
 async def add_new_notification(callback: types.CallbackQuery, state: FSMContext, texts: dict):
+    if callback.from_user.id not in ADMIN_IDS:
+        await callback.answer(texts["access_denied"], show_alert=True)
+        return
     await callback.answer()
     user_id = callback.from_user.id
     # texts from middleware
@@ -74,6 +81,9 @@ async def add_new_notification(callback: types.CallbackQuery, state: FSMContext,
 
 @router.callback_query(F.data.startswith("notif_view_"))
 async def view_notification(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
+    if callback.from_user.id not in ADMIN_IDS:
+        await callback.answer(texts["access_denied"], show_alert=True)
+        return
     await callback.answer()
     notif_id = int(callback.data.split("_")[-1])
     notifs = await db.get_notifications()
@@ -339,6 +349,9 @@ async def toggle_status(callback: types.CallbackQuery, state: FSMContext, bot: B
 
 @router.callback_query(NotificationStates.PREVIEW, F.data == "notif_confirm_save")
 async def confirm_save(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
+    if callback.from_user.id not in ADMIN_IDS:
+        await callback.answer(texts["access_denied"], show_alert=True)
+        return
     user_id = callback.from_user.id
     # texts from middleware
     data = await state.get_data()

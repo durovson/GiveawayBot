@@ -1,6 +1,6 @@
 import logging
+
 from database import db
-from datetime import datetime
 from utils import normalize_to_raw
 
 logger = logging.getLogger(__name__)
@@ -51,12 +51,13 @@ class PointsService:
                         ms_map = {m["milestone"]: m["data"] for m in milestones}
 
                         def get_bal(ms_data, w):
-                            if not ms_data: return 0
+                            if not ms_data:
+                                return None
                             # Snapshot data is a list of {"wallet": "...", "packs": ...}
                             for item in ms_data:
                                 if item.get("wallet") == w:
                                     return item.get("packs", 0)
-                            return 0
+                            return None
 
                         # Snapshot #3 (1000 sold)
                         if 1000 in ms_map and 666 in ms_map and 333 in ms_map:
@@ -65,14 +66,26 @@ class PointsService:
                             bal_1000 = get_bal(ms_map[1000], normalized_wallet)
 
                             # Rule: continuous retention from 1 to 3
-                            if bal_666 >= bal_333 and bal_1000 >= bal_666:
+                            if (
+                                bal_333 is not None
+                                and bal_666 is not None
+                                and bal_1000 is not None
+                                and bal_333 > 0
+                                and bal_666 >= bal_333
+                                and bal_1000 >= bal_666
+                            ):
                                 multiplier = 1.5
                         # Snapshot #2 (666 sold)
                         elif 666 in ms_map and 333 in ms_map:
                             bal_333 = get_bal(ms_map[333], normalized_wallet)
                             bal_666 = get_bal(ms_map[666], normalized_wallet)
 
-                            if bal_666 >= bal_333:
+                            if (
+                                bal_333 is not None
+                                and bal_666 is not None
+                                and bal_333 > 0
+                                and bal_666 >= bal_333
+                            ):
                                 multiplier = 1.2
                 except Exception as ex:
                     logger.error(f"Error calculating retention for user {user_id}: {ex}")

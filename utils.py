@@ -1,11 +1,13 @@
 import asyncio
 import re
 import logging
+import os
 from loader import bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram import types
 from aiogram.enums import ParseMode
 from pytoniq_core import Address
+from config import ADMIN_IDS, HOLDER_CHAT_ID
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +27,7 @@ async def is_admin(chat_id: int, user_id: int) -> bool:
 
 async def is_any_admin(user_id: int) -> bool:
     from database import db
-    if user_id in [786080766, 734720997]:
+    if user_id in ADMIN_IDS:
         return True
 
     chats = await db.get_tracked_chats()
@@ -42,7 +44,8 @@ async def is_any_admin(user_id: int) -> bool:
 
 async def is_holder(user_id: int) -> bool:
     try:
-        member = await bot.get_chat_member(-1001944951957, user_id)
+        chat_id = int(os.getenv("OTC_CHAT_ID", str(HOLDER_CHAT_ID)))
+        member = await bot.get_chat_member(chat_id, user_id)
         return member.status in ("member", "administrator", "creator")
     except Exception:
         return False

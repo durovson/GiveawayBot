@@ -116,16 +116,15 @@ async def join_giveaway(callback: types.CallbackQuery, texts: dict):
         await callback.answer(f"{texts['giveaway_not_subscribed']} ({channels_str})", show_alert=True)
         return
 
-    # Check active tickets
-    user = await db.get_user_by_telegram_id(user_id)
-    active_tickets = user.get("active_tickets", 0) if user else 0
-    tickets_used = max(1, active_tickets)
-
-    success = await db.add_participant(giveaway_id, user_id, username, tickets_used=tickets_used)
-    if success:
-        if active_tickets > 0:
-            await db.reset_active_tickets(user_id)
-            await callback.answer(texts["lucky_tickets_applied"].format(tickets=active_tickets), show_alert=True)
+    # Participant creation and ticket consumption are one database transaction.
+    join_result = await db.join_giveaway_atomic(giveaway_id, user_id, username)
+    if join_result.get("ok"):
+        consumed_tickets = join_result.get("bonus_tickets_consumed", 0)
+        if consumed_tickets > 0:
+            await callback.answer(
+                texts["lucky_tickets_applied"].format(tickets=consumed_tickets),
+                show_alert=True,
+            )
         else:
             await callback.answer(texts["giveaway_success_join"], show_alert=True)
         if giveaway['mode'] == 'limited':
@@ -137,5 +136,10 @@ async def join_giveaway(callback: types.CallbackQuery, texts: dict):
                     await complete_giveaway(giveaway_id, callback.bot)
             except ValueError:
                 pass
-    else:
+    elif join_result.get("error") == "ALREADY_JOINED":
         await callback.answer(texts["giveaway_already_joined"], show_alert=True)
+    elif join_result.get("error") in {"GIVEAWAY_NOT_FOUND", "GIVEAWAY_NOT_ACTIVE"}:
+        await callback.answer(texts["giveaway_finished"], show_alert=True)
+    else:
+        logger.error("Atomic join failed for giveaway %s: %s", giveaway_id, join_result)
+        await callback.answer(texts.get("error_occurred", "Error"), show_alert=True)
