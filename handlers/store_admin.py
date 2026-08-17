@@ -331,17 +331,17 @@ async def store_admin_lots(callback: types.CallbackQuery, state: FSMContext, tex
     )
 
 
-@router.callback_query(F.data.startswith("store_admin_view_"))
-async def store_admin_view_lot(
+async def _show_store_admin_lot(
     callback: types.CallbackQuery,
     state: FSMContext,
     texts: dict,
-    answer: bool = True,
+    lot_id: int,
+    *,
+    answer: bool,
 ):
     if not _is_admin(callback.from_user.id):
         await callback.answer(texts["access_denied"], show_alert=True)
         return
-    lot_id = int(callback.data.rsplit("_", 1)[-1])
     lot = await db.get_store_lot(lot_id)
     if not lot:
         if answer:
@@ -373,6 +373,22 @@ async def store_admin_view_lot(
     )
 
 
+@router.callback_query(F.data.startswith("store_admin_view_"))
+async def store_admin_view_lot(
+    callback: types.CallbackQuery,
+    state: FSMContext,
+    texts: dict,
+):
+    lot_id = int(callback.data.rsplit("_", 1)[-1])
+    await _show_store_admin_lot(
+        callback,
+        state,
+        texts,
+        lot_id,
+        answer=True,
+    )
+
+
 @router.callback_query(F.data.startswith("store_admin_status_"))
 async def store_admin_status(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     if not _is_admin(callback.from_user.id):
@@ -384,7 +400,13 @@ async def store_admin_status(callback: types.CallbackQuery, state: FSMContext, t
         texts["store_admin_status_saved"] if ok else texts["store_admin_create_error"],
         show_alert=True,
     )
-    await store_admin_view_lot(callback, state, texts, answer=False)
+    await _show_store_admin_lot(
+        callback,
+        state,
+        texts,
+        int(lot_id),
+        answer=False,
+    )
 
 
 @router.callback_query(F.data == "store_admin_orders")
