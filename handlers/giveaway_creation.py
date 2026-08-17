@@ -3,7 +3,7 @@ import html
 import re
 import secrets
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 from aiogram import Router, types, F, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -109,8 +109,13 @@ async def get_prizes_keyboard(prizes, texts):
 def build_timed_end_at(value: str):
     try:
         hours, minutes = map(int, value.strip().split(":", 1))
+        if not (0 <= hours <= 23 and 0 <= minutes <= 59):
+            return None
         now = datetime.now(pytz.UTC)
-        return now.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+        end_at = now.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+        if end_at <= now:
+            end_at += timedelta(days=1)
+        return end_at
     except (AttributeError, TypeError, ValueError):
         return None
 

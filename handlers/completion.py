@@ -16,15 +16,23 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from database import db
 from utils import strip_custom_emojis
 from services.localization import get_locale, get_locale_by_lang
+from config import PRIMARY_ADMIN_ID
 
 logger = logging.getLogger(__name__)
 
-ADMIN_ID = 786080766
+ADMIN_ID = PRIMARY_ADMIN_ID
 
 async def complete_giveaway(giveaway_id: int, bot: Bot):
+    claimed = False
+    completed = False
     try:
         giveaway = await db.get_giveaway(giveaway_id)
         if not giveaway or giveaway["status"] != "active":
+            return
+
+        # Only one worker/callback may complete a giveaway.
+        claimed = await db.claim_giveaway_completion(giveaway_id)
+        if not claimed:
             return
 
         participants = await db.get_participants(giveaway_id)
@@ -149,10 +157,17 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
             except Exception:
                 pass
 
+        completed = True
+
     except Exception as e:
         logger.error(f"Error in complete_giveaway for {giveaway_id}: {e}")
     finally:
-        await db.finish_giveaway(giveaway_id)
+        if claimed:
+            if completed:
+                await db.finish_giveaway(giveaway_id)
+            else:
+                # Allow the background worker to retry after a transient failure.
+                await db.update_giveaway_status(giveaway_id, "active")
 
 async def check_timed_giveaways(bot: Bot):
     while True:

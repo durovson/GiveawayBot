@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from config import ADMIN_IDS
+
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN is not set in environment variables")
-
-ADMIN_IDS = [786080766, 734720997]
 
 # Shared sets for background task tracking
 bg_tasks = set()

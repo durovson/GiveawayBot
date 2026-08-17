@@ -438,7 +438,7 @@ class Database:
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[Dict]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, terms_version, community_joined_at, username, first_name, og_bonus_awarded_at, og_bonus_amount, holder_verified_at, active_tickets").eq("telegram_id", telegram_id).execute()
+            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, wallet_connected_at, referral_validated_at, terms_version, community_joined_at, username, first_name, og_bonus_awarded_at, og_bonus_amount, holder_verified_at, active_tickets").eq("telegram_id", telegram_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error getting user by telegram_id: {e}")
@@ -702,6 +702,211 @@ class Database:
             }).execute()
         except Exception as e:
             logger.error(f"Error adding spent points: {e}")
+
+    # --- Atomic store and giveaway operations ---
+
+    @staticmethod
+    def _rpc_payload(data: Any) -> Dict:
+        if isinstance(data, dict):
+            return data
+        if isinstance(data, list) and data and isinstance(data[0], dict):
+            return data[0]
+        return {}
+
+    async def purchase_tickets_atomic(
+        self,
+        user_id: int,
+        amount: int,
+        unit_cost: int,
+        idempotency_key: str,
+    ) -> Dict:
+        if not self._check_client():
+            return {"ok": False, "error": "DATABASE_UNAVAILABLE"}
+        try:
+            response = await self.client.rpc("purchase_store_tickets", {
+                "p_user_id": user_id,
+                "p_amount": amount,
+                "p_unit_cost": unit_cost,
+                "p_idempotency_key": idempotency_key,
+            }).execute()
+            return self._rpc_payload(response.data)
+        except Exception as e:
+            logger.error(f"Atomic ticket purchase failed: {e}")
+            return {"ok": False, "error": "PURCHASE_FAILED"}
+
+    async def get_active_store_lots(self, limit: int = 20) -> List[Dict]:
+        if not self._check_client():
+            return []
+        try:
+            response = await self.client.table("store_lots") \
+                .select("id, title, description, price_rp, total_quantity, sold_quantity, image_url, reward_type, reward_payload, per_user_limit, status, created_at") \
+                .eq("status", "active") \
+                .order("created_at", desc=True) \
+                .limit(limit) \
+                .execute()
+            return response.data or []
+        except Exception as e:
+            logger.error(f"Error getting active store lots: {e}")
+            return []
+
+    async def get_store_lot(self, lot_id: int) -> Optional[Dict]:
+        if not self._check_client():
+            return None
+        try:
+            response = await self.client.table("store_lots") \
+                .select("*") \
+                .eq("id", lot_id) \
+                .limit(1) \
+                .execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error getting store lot {lot_id}: {e}")
+            return None
+
+    async def purchase_store_lot_atomic(
+        self,
+        user_id: int,
+        lot_id: int,
+        idempotency_key: str,
+    ) -> Dict:
+        if not self._check_client():
+            return {"ok": False, "error": "DATABASE_UNAVAILABLE"}
+        try:
+            response = await self.client.rpc("purchase_store_lot", {
+                "p_user_id": user_id,
+                "p_lot_id": lot_id,
+                "p_idempotency_key": idempotency_key,
+            }).execute()
+            return self._rpc_payload(response.data)
+        except Exception as e:
+            logger.error(f"Atomic lot purchase failed: {e}")
+            return {"ok": False, "error": "PURCHASE_FAILED"}
+
+    async def create_store_lot(self, data: Dict) -> Optional[Dict]:
+        if not self._check_client():
+            return None
+        try:
+            response = await self.client.table("store_lots").insert(data).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error creating store lot: {e}")
+            return None
+
+    async def get_store_lots_admin(self, limit: int = 30) -> List[Dict]:
+        if not self._check_client():
+            return []
+        try:
+            response = await self.client.table("store_lots") \
+                .select("*") \
+                .order("created_at", desc=True) \
+                .limit(limit) \
+                .execute()
+            return response.data or []
+        except Exception as e:
+            logger.error(f"Error getting admin store lots: {e}")
+            return []
+
+    async def set_store_lot_status(self, lot_id: int, status: str) -> bool:
+        if not self._check_client():
+            return False
+        try:
+            if status == "active":
+                lot = await self.get_store_lot(lot_id)
+                if not lot or lot.get("sold_quantity", 0) >= lot.get("total_quantity", 0):
+                    return False
+            response = await self.client.table("store_lots") \
+                .update({"status": status}) \
+                .eq("id", lot_id) \
+                .execute()
+            return bool(response.data)
+        except Exception as e:
+            logger.error(f"Error updating store lot status: {e}")
+            return False
+
+    async def get_pending_store_purchases(self, limit: int = 30) -> List[Dict]:
+        if not self._check_client():
+            return []
+        try:
+            response = await self.client.table("store_purchases") \
+                .select("id, lot_id, user_id, price_rp, status, created_at, store_lots(title)") \
+                .eq("status", "paid") \
+                .order("created_at", desc=False) \
+                .limit(limit) \
+                .execute()
+            return response.data or []
+        except Exception as e:
+            logger.error(f"Error getting pending purchases: {e}")
+            return []
+
+    async def get_store_purchase(self, purchase_id: int) -> Optional[Dict]:
+        if not self._check_client():
+            return None
+        try:
+            response = await self.client.table("store_purchases") \
+                .select("id, lot_id, user_id, price_rp, status, created_at, store_lots(title, reward_type, reward_payload), users(username, first_name)") \
+                .eq("id", purchase_id) \
+                .limit(1) \
+                .execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error getting store purchase {purchase_id}: {e}")
+            return None
+
+    async def fulfill_store_purchase(
+        self,
+        purchase_id: int,
+        admin_id: int,
+        note: str = "",
+    ) -> Optional[Dict]:
+        if not self._check_client():
+            return None
+        try:
+            response = await self.client.table("store_purchases") \
+                .update({
+                    "status": "fulfilled",
+                    "fulfilled_at": datetime.now().isoformat(),
+                    "fulfilled_by": admin_id,
+                    "fulfillment_note": note or None,
+                }) \
+                .eq("id", purchase_id) \
+                .eq("status", "paid") \
+                .execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error fulfilling store purchase: {e}")
+            return None
+
+    async def join_giveaway_atomic(
+        self,
+        giveaway_id: int,
+        user_id: int,
+        username: Optional[str],
+    ) -> Dict:
+        if not self._check_client():
+            return {"ok": False, "error": "DATABASE_UNAVAILABLE"}
+        try:
+            await self.ensure_user_exists(user_id)
+            response = await self.client.rpc("join_giveaway_atomic", {
+                "p_giveaway_id": giveaway_id,
+                "p_user_id": user_id,
+                "p_username": username,
+            }).execute()
+            return self._rpc_payload(response.data)
+        except Exception as e:
+            logger.error(f"Atomic giveaway join failed: {e}")
+            return {"ok": False, "error": "JOIN_FAILED"}
+
+    async def claim_giveaway_completion(self, giveaway_id: int) -> bool:
+        if not self._check_client():
+            return False
+        try:
+            response = await self.client.rpc("claim_giveaway_completion", {
+                "p_giveaway_id": giveaway_id,
+            }).execute()
+            return bool(response.data)
+        except Exception as e:
+            logger.error(f"Error claiming giveaway completion: {e}")
+            return False
 
 
 db = Database()

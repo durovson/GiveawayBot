@@ -1,5 +1,9 @@
 import os
+import time
+
 import aiohttp
+
+import loader
 
 COLLECTION_ADDRESS = "EQDwLDJcRXegHyvvRHXouGrUODuF0eagnWzLvUMUSTw8tv3Y"
 
@@ -9,6 +13,10 @@ API_URL = (
     f"https://api.getgems.io/public-api/v1/collection/stats/"
     f"{COLLECTION_ADDRESS}"
 )
+
+_stats_cache = None
+_stats_cache_at = 0.0
+CACHE_TTL_SECONDS = 60
 
 
 def format_floor(value):
@@ -32,6 +40,11 @@ def format_volume(value):
 
 
 async def get_collection_stats():
+    global _stats_cache, _stats_cache_at
+    now = time.monotonic()
+    if _stats_cache and now - _stats_cache_at < CACHE_TTL_SECONDS:
+        return _stats_cache.copy()
+
     headers = {
         "accept": "application/json"
     }
@@ -39,7 +52,11 @@ async def get_collection_stats():
         headers["Authorization"] = GETGEMS_API_KEY
 
     try:
-        async with aiohttp.ClientSession() as session:
+        session = loader.http_session
+        owns_session = session is None or session.closed
+        if owns_session:
+            session = aiohttp.ClientSession()
+        try:
             async with session.get(
                 API_URL,
                 headers=headers,
@@ -50,7 +67,7 @@ async def get_collection_stats():
 
                 stats = data["response"]
 
-                return {
+                result = {
                     "floor": format_floor(
                         stats["floorPrice"]
                     ),
@@ -58,8 +75,16 @@ async def get_collection_stats():
                         stats["totalVolumeSold"]
                     )
                 }
+                _stats_cache = result
+                _stats_cache_at = now
+                return result.copy()
+        finally:
+            if owns_session:
+                await session.close()
 
     except Exception:
+        if _stats_cache:
+            return _stats_cache.copy()
         return {
             "floor": "?",
             "volume": "?"

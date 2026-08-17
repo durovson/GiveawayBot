@@ -17,6 +17,7 @@ from services.localization import get_locale
 from services.referral_service import ReferralService
 from services.points_service import PointsService
 from services.getgems_service import get_collection_stats
+from config import ADMIN_IDS
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -33,7 +34,7 @@ REQUIRED_COMMUNITIES = [
 async def get_main_menu_keyboard(user_id: int, texts: dict, is_holder_res: bool = None):
     builder = InlineKeyboardBuilder()
     
-    if user_id in {786080766, 734720997}:
+    if user_id in ADMIN_IDS:
         # Row 1
         builder.button(text=texts["game_btn"], callback_data="game_menu", icon_custom_emoji_id="5258508428212445001")
         builder.button(text=texts["otc_btn"], callback_data="otc_market", icon_custom_emoji_id="5260687681733533075")

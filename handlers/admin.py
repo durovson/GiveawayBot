@@ -7,6 +7,7 @@ from aiogram.enums import ParseMode
 from database import db
 from utils import is_any_admin, safe_edit_text, safe_answer
 from services.localization import get_locale
+from config import PRIMARY_ADMIN_ID
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -31,7 +32,7 @@ async def start_gif_update(callback: types.CallbackQuery, state: FSMContext, tex
     user_id = callback.from_user.id
     # texts from middleware
     # Жесткая проверка ID
-    if user_id != 786080766:
+    if user_id != PRIMARY_ADMIN_ID:
         await callback.answer(texts["admin_only_alert"], show_alert=True)
         return
 
