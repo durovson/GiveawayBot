@@ -41,6 +41,9 @@ async def boost_menu(callback: types.CallbackQuery, state: FSMContext, texts: di
 async def boost_check(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     before = (await db.get_points(callback.from_user.id) or {}).get("total_points", 0)
     credited = await GramDepositService.sync()
+    if GramDepositService.last_sync_error():
+        await callback.answer(texts["boost_check_failed"], show_alert=True)
+        return
     after = (await db.get_points(callback.from_user.id) or {}).get("total_points", 0)
     await callback.answer(texts["boost_check_result"].format(added=max(0, after - before), processed=credited), show_alert=True)
     await show_boost(callback, state, texts)
