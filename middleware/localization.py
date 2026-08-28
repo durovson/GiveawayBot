@@ -15,7 +15,8 @@ class LocalizationMiddleware(BaseMiddleware):
         user = data.get("event_from_user")
 
         if user:
-            lang = await db.get_user_language(user.id)
+            cached_user = data.get("user_data") or {}
+            lang = cached_user.get("language") or await db.get_user_language(user.id)
             data["texts"] = get_locale_by_lang(lang)
             data["lang"] = lang
         else:

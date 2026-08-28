@@ -10,6 +10,13 @@ from pytoniq_core import Address
 from config import ADMIN_IDS, HOLDER_CHAT_ID
 
 logger = logging.getLogger(__name__)
+_bot_username = None
+
+async def bot_deep_link(payload: str) -> str:
+    global _bot_username
+    if not _bot_username:
+        _bot_username = (await bot.get_me()).username
+    return f"https://t.me/{_bot_username}?start={payload}"
 
 def strip_custom_emojis(text: str) -> str:
     return re.sub(r'<tg-emoji emoji-id=["\'].*?["\']>(.*?)</tg-emoji>', r'\1', text)

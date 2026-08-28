@@ -1,15 +1,22 @@
 TEXTS = {
     "store_hub_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5983399041197675256\">🏪</tg-emoji>┅/ <b>STORE HUB</b> /\n"
-        "┋\n┣ <b>Your RP:</b> {rp}\n┣ <b>Active tickets:</b> {tickets}\n┋\n"
+        "┋\n┣ <b>Your RP:</b> {rp}\n┋\n"
         "┣ [1] Lucky tickets\n┣ [2] Lots and rewards\n┋\n"
         "┗┅┅┅/ <b>Select a section</b> /"
     ),
     "store_tickets_btn": "TICKETS", "store_lots_btn": "LOTS", "store_admin_btn": "STORE ADMIN", "store_back_btn": "BACK",
+    "ticket_choose_title": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY TICKETS</b> /\n┋\n┣ <b>Your RP:</b> {rp}\n{content}\n┋\n┗┅┅┅/ <b>Select a giveaway</b> /",
+    "ticket_choose_hint": "┣ Tickets belong only to the selected giveaway.\n┣ Every participant already has 1 free ticket.",
+    "ticket_choose_empty": "┣ There are no active giveaways.",
+    "ticket_giveaway_detail": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY #{id}</b> /\n┋\n┣ <b>{title}</b>\n┣ Prize: {prizes}\n┣ Tickets: <b>{tickets} / 10</b>\n┣ Your RP: <b>{rp}</b>\n┋\n┣ Tickets are used only when you enter.\n┗┅┅┅/ <b>Choose an action</b> /",
+    "ticket_offer_add": "+{count} TICKETS · {price} RP", "ticket_offer_max": "FILL TO 10 · {price} RP",
+    "ticket_enter_btn": "ENTER GIVEAWAY", "ticket_limit": "❌ This giveaway already has the maximum of 10 tickets.",
+    "ticket_purchase_success": "✅ Added {added} ticket(s) for {cost} RP.",
     "store_lots_title": "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅/ <b>LOTS</b> /\n┋\n┣ <b>Your RP:</b> {rp}\n┋\n{content}\n┋\n┗┅┅┅/ <b>Select a lot</b> /",
     "store_lots_hint": "┣ Available rewards are published by the admins.", "store_lots_empty": "┣ There are no active lots yet.",
     "store_lot_button": "{title} · {price} RP · {remaining} left",
-    "store_lot_detail": "┏┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅/ <b>{title}</b> /\n┋\n┣ {description}\n┋\n┣ <b>Price:</b> {price} RP\n┣ <b>Left:</b> {remaining} / {total}\n┋\n┗┅┅┅/ <b>Select an action</b> /",
+    "store_lot_detail": "┏┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅/ <b>{title}</b> /\n┋\n┣ {description}\n┋\n┣ <b>Price:</b> {price} RP\n┣ <b>Your RP:</b> {rp}\n┣ <b>Left:</b> {remaining} / {total}\n┋\n┗┅┅┅/ <b>Select an action</b> /",
     "store_no_description": "No description.", "store_buy_lot_btn": "BUY FOR {price} RP", "store_open_media_btn": "OPEN IMAGE",
     "store_lot_unavailable": "❌ This lot is no longer available.", "store_lot_not_enough_rp": "❌ Not enough RP for this lot.",
     "store_lot_sold_out": "❌ This lot is sold out.", "store_lot_limit_reached": "❌ You reached the purchase limit for this lot.",
@@ -32,8 +39,9 @@ TEXTS = {
     "store_admin_enter_reward_payload": "┏┅/ <b>FULFILLMENT INSTRUCTIONS</b> /\n┗┅┅┅/ Describe what the admin should deliver /",
     "store_admin_enter_limit": "┏┅/ <b>PER-USER LIMIT</b> /\n┗┅┅┅/ Enter the number of purchases /",
     "store_admin_invalid_number": "❌ Enter a positive integer.", "store_admin_invalid_url": "❌ Enter an http(s) URL or -.",
-    "store_admin_preview": "┏┅/ <b>LOT PREVIEW</b> /\n┣ <b>{title}</b>\n┣ {description}\n┣ Price: {price} RP\n┣ Quantity: {quantity}\n┣ Reward: {reward}\n┣ Limit: {limit}\n┗┅┅┅/ <b>Publish?</b> /",
+    "store_admin_preview": "┏┅/ <b>LOT PREVIEW</b> /\n┣ <b>{title}</b>\n┣ {description}\n┣ Price: {price} RP\n┗┅┅┅/ <b>Publish?</b> /",
     "store_admin_publish_btn": "PUBLISH", "store_admin_created_alert": "✅ Lot created and published.",
+    "store_admin_lot_link": "🔗 <b>Public lot link:</b>\n{link}",
     "store_admin_create_error": "❌ Could not save changes.", "store_admin_lots_title": "┏┅/ <b>ALL LOTS</b> /\n┣ Found: {count}\n┗┅┅┅/ Select a lot /",
     "store_admin_lot_detail": "┏┅/ <b>LOT #{id}</b> /\n┣ {title}\n┣ Status: {status}\n┣ Price: {price} RP\n┣ Sold: {sold}/{total}\n┗┅┅┅/ Select an action /",
     "store_admin_disable_btn": "DISABLE", "store_admin_activate_btn": "ACTIVATE", "store_admin_status_saved": "✅ Status updated.",

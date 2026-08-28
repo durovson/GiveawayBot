@@ -1,7 +1,7 @@
 TEXTS = {
     "store_hub_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5983399041197675256\">🏪</tg-emoji>┅/ <b>STORE HUB</b> /\n"
-        "┋\n┣ <b>Ваши RP:</b> {rp}\n┣ <b>Активные билеты:</b> {tickets}\n┋\n"
+        "┋\n┣ <b>Ваши RP:</b> {rp}\n┋\n"
         "┣ [1] Билеты удачи\n┣ [2] Лоты и награды\n┋\n"
         "┗┅┅┅/ <b>Выберите раздел</b> /"
     ),
@@ -9,6 +9,13 @@ TEXTS = {
     "store_lots_btn": "ЛОТЫ",
     "store_admin_btn": "УПРАВЛЕНИЕ STORE",
     "store_back_btn": "НАЗАД",
+    "ticket_choose_title": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>БИЛЕТЫ GIVEAWAY</b> /\n┋\n┣ <b>Ваши RP:</b> {rp}\n{content}\n┋\n┗┅┅┅/ <b>Выберите розыгрыш</b> /",
+    "ticket_choose_hint": "┣ Билеты действуют только в выбранном розыгрыше.\n┣ У каждого участника уже есть 1 бесплатный билет.",
+    "ticket_choose_empty": "┣ Активных розыгрышей сейчас нет.",
+    "ticket_giveaway_detail": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY #{id}</b> /\n┋\n┣ <b>{title}</b>\n┣ Приз: {prizes}\n┣ Билеты: <b>{tickets} / 10</b>\n┣ Ваши RP: <b>{rp}</b>\n┋\n┣ Билеты сгорят только при входе.\n┗┅┅┅/ <b>Выберите действие</b> /",
+    "ticket_offer_add": "+{count} БИЛЕТОВ · {price} RP", "ticket_offer_max": "ДО 10 · {price} RP",
+    "ticket_enter_btn": "УЧАСТВОВАТЬ", "ticket_limit": "❌ Для этого розыгрыша уже достигнут максимум 10 билетов.",
+    "ticket_purchase_success": "✅ Добавлено билетов: {added}. Списано: {cost} RP.",
     "store_lots_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅/ <b>ЛОТЫ</b> /\n"
         "┋\n┣ <b>Ваши RP:</b> {rp}\n┋\n{content}\n┋\n"
@@ -20,7 +27,7 @@ TEXTS = {
     "store_lot_detail": (
         "┏┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅/ <b>{title}</b> /\n"
         "┋\n┣ {description}\n┋\n┣ <b>Цена:</b> {price} RP\n"
-        "┣ <b>Осталось:</b> {remaining} / {total}\n┋\n"
+        "┣ <b>Ваши RP:</b> {rp}\n┣ <b>Осталось:</b> {remaining} / {total}\n┋\n"
         "┗┅┅┅/ <b>Выберите действие</b> /"
     ),
     "store_no_description": "Описание не указано.",
@@ -63,11 +70,11 @@ TEXTS = {
     "store_admin_invalid_url": "❌ Нужна ссылка http(s) или символ -.",
     "store_admin_preview": (
         "┏┅/ <b>ПРЕДПРОСМОТР ЛОТА</b> /\n┣ <b>{title}</b>\n┣ {description}\n"
-        "┣ Цена: {price} RP\n┣ Количество: {quantity}\n"
-        "┣ Награда: {reward}\n┣ Лимит: {limit}\n┗┅┅┅/ <b>Опубликовать?</b> /"
+        "┣ Цена: {price} RP\n┗┅┅┅/ <b>Опубликовать?</b> /"
     ),
     "store_admin_publish_btn": "ОПУБЛИКОВАТЬ",
     "store_admin_created_alert": "✅ Лот создан и опубликован.",
+    "store_admin_lot_link": "🔗 <b>Публичная ссылка на лот:</b>\n{link}",
     "store_admin_create_error": "❌ Не удалось сохранить изменения.",
     "store_admin_lots_title": "┏┅/ <b>ВСЕ ЛОТЫ</b> /\n┣ Найдено: {count}\n┗┅┅┅/ Выберите лот /",
     "store_admin_lot_detail": (

@@ -522,8 +522,9 @@ async def finalize_giveaway(callback: types.CallbackQuery, state: FSMContext, bo
     en_texts = get_locale_by_lang("en")
     post_text, gif_to_send = await get_giveaway_post_data(giveaway, en_texts)
 
+    from utils import bot_deep_link
     kb = InlineKeyboardBuilder()
-    kb.button(text=en_texts["giveaway_join_btn"], callback_data=f"join_{giveaway_id}", icon_custom_emoji_id="5260726538302660868", style="success")
+    kb.button(text=en_texts["giveaway_join_btn"], url=await bot_deep_link(f"giveaway_{giveaway_id}"), icon_custom_emoji_id="5260726538302660868", style="success")
 
     try:
         try:
@@ -640,19 +641,10 @@ async def execute_announcement(callback: types.CallbackQuery, bot: Bot, texts: d
         post_text = strip_custom_emojis(post_text)
 
     join_builder = InlineKeyboardBuilder()
-
-    if target_chat_id != giveaway['chat_id']:
-        orig_chat = await bot.get_chat(giveaway['chat_id'])
-        msgs = await db.get_giveaway_messages(giveaway_id)
-        orig_msg_id = next((m['message_id'] for m in msgs if m['chat_id'] == giveaway['chat_id']), None)
-
-        if orig_msg_id:
-            link = get_message_link(orig_chat, orig_msg_id)
-            join_builder.button(text=en_texts["giveaway_join_btn"], url=link)
-        else:
-            join_builder.button(text=en_texts["giveaway_start_btn"], callback_data=f"join_{giveaway_id}", icon_custom_emoji_id="5260726538302660868", style="success")
-    else:
-        join_builder.button(text=en_texts["giveaway_start_btn"], callback_data=f"join_{giveaway_id}", icon_custom_emoji_id="5260726538302660868", style="success")
+    from utils import bot_deep_link
+    join_builder.button(text=en_texts["giveaway_join_btn"],
+                        url=await bot_deep_link(f"giveaway_{giveaway_id}"),
+                        icon_custom_emoji_id="5260726538302660868", style="success")
 
     try:
         try:
