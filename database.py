@@ -908,5 +908,120 @@ class Database:
             logger.error(f"Error claiming giveaway completion: {e}")
             return False
 
+    async def get_active_giveaways(self, limit: int = 20) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("giveaways").select(
+                "id,title,prizes,mode,value,end_at,status"
+            ).eq("status", "active").order("id", desc=True).limit(limit).execute()
+            return response.data or []
+        except Exception as e:
+            logger.error(f"Error getting active giveaways: {e}")
+            return []
+
+    async def get_giveaway_ticket_balance(self, giveaway_id: int, user_id: int) -> int:
+        if not self._check_client(): return 1
+        try:
+            response = await self.client.table("giveaway_ticket_balances").select(
+                "tickets,consumed_at"
+            ).eq("giveaway_id", giveaway_id).eq("user_id", user_id).limit(1).execute()
+            if not response.data or response.data[0].get("consumed_at"):
+                return 1
+            return max(1, min(10, int(response.data[0].get("tickets", 1))))
+        except Exception as e:
+            logger.error(f"Error getting giveaway ticket balance: {e}")
+            return 1
+
+    async def get_ticket_offers(self) -> List[Dict]:
+        if not self._check_client(): return []
+        try:
+            response = await self.client.table("ticket_offers").select(
+                "code,ticket_count,price_rp,mode,pricing_mode,sort_order"
+            ).eq("active", True).order("sort_order").execute()
+            return response.data or []
+        except Exception as e:
+            logger.error(f"Error getting ticket offers: {e}")
+            return []
+
+    async def purchase_giveaway_tickets(self, user_id: int, giveaway_id: int,
+                                         offer_code: str, idempotency_key: str) -> Dict:
+        if not self._check_client(): return {"ok": False, "error": "DATABASE_UNAVAILABLE"}
+        try:
+            response = await self.client.rpc("purchase_giveaway_tickets", {
+                "p_user_id": user_id, "p_giveaway_id": giveaway_id,
+                "p_offer_code": offer_code, "p_idempotency_key": idempotency_key,
+            }).execute()
+            return self._rpc_payload(response.data)
+        except Exception as e:
+            logger.error(f"Error purchasing giveaway tickets: {e}")
+            return {"ok": False, "error": "PURCHASE_FAILED"}
+
+    async def claim_gram_deposit(self, payload: Dict) -> Dict:
+        if not self._check_client(): return {"ok": False, "error": "DATABASE_UNAVAILABLE"}
+        try:
+            response = await self.client.rpc("claim_gram_deposit", payload).execute()
+            return self._rpc_payload(response.data)
+        except Exception as e:
+            logger.error(f"Error claiming GRAM deposit: {e}")
+            return {"ok": False, "error": "CLAIM_FAILED"}
+
+    async def create_otc_listing(self, data: Dict) -> Optional[Dict]:
+        if not self._check_client(): return None
+        try:
+            response = await self.client.table("otc_listings").insert(data).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error creating OTC listing: {e}")
+            return None
+
+    async def update_otc_listing(self, listing_id: int, data: Dict) -> bool:
+        if not self._check_client(): return False
+        try:
+            response = await self.client.table("otc_listings").update(data).eq("id", listing_id).execute()
+            return bool(response.data)
+        except Exception as e:
+            logger.error(f"Error updating OTC listing: {e}")
+            return False
+
+    async def get_otc_listing(self, listing_id: int) -> Optional[Dict]:
+        if not self._check_client(): return None
+        try:
+            response = await self.client.table("otc_listings").select("*").eq("id", listing_id).limit(1).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error getting OTC listing: {e}")
+            return None
+
+    async def create_otc_offer(self, data: Dict) -> Optional[Dict]:
+        if not self._check_client(): return None
+        try:
+            response = await self.client.table("otc_offers").insert(data).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error creating OTC offer: {e}")
+            return None
+
+    async def get_otc_offer(self, offer_id: int) -> Optional[Dict]:
+        if not self._check_client(): return None
+        try:
+            response = await self.client.table("otc_offers").select(
+                "*,otc_listings(item_name,item_url,price_text,trade_type)"
+            ).eq("id", offer_id).limit(1).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error getting OTC offer: {e}")
+            return None
+
+    async def respond_otc_offer(self, offer_id: int, seller_id: int, status: str) -> Dict:
+        if not self._check_client(): return {"ok": False, "error": "DATABASE_UNAVAILABLE"}
+        try:
+            response = await self.client.rpc("respond_otc_offer", {
+                "p_offer_id": offer_id, "p_seller_id": seller_id, "p_status": status,
+            }).execute()
+            return self._rpc_payload(response.data)
+        except Exception as e:
+            logger.error(f"Error responding to OTC offer: {e}")
+            return {"ok": False, "error": "DATABASE_ERROR"}
+
 
 db = Database()

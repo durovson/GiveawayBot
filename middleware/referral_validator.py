@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Awaitable, Callable, Dict
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject, Message, CallbackQuery
+from aiogram.types import TelegramObject
 from datetime import datetime, timedelta
 import pytz
 
@@ -26,12 +26,13 @@ class ReferralValidatorMiddleware(BaseMiddleware):
 
         try:
             user_data = await db.get_user_by_telegram_id(user_id)
+            data["user_data"] = user_data
 
             if user_data:
                 # FIX #4 — Auto Update Names
                 if user_data.get("username") != user.username or user_data.get("first_name") != user.first_name:
                     await PointsService.update_username(user_id, user.username, user.first_name)
-                    logger.info(f"User {user_id} profile synced: @{user.username} / {user.first_name}")
+                    logger.debug(f"User {user_id} profile synced")
 
                 # Referral Activation Logic
                 if (

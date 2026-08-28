@@ -39,7 +39,7 @@ async def show_game_menu(message: types.Message | types.CallbackQuery, state: FS
 
     builder = InlineKeyboardBuilder()
     builder.button(text=texts["highscore_btn"], callback_data="leaderboard", icon_custom_emoji_id="5258330865674494479")
-    builder.button(text=texts["boost_btn"], url="https://t.me/sticker_bot/?startapp=lid_019e1cac-1e8b-7073-bbad-54f1a29d3544", icon_custom_emoji_id="5260221883940347555")
+    builder.button(text=texts["boost_btn"], callback_data="boost_menu", icon_custom_emoji_id="5260221883940347555")
     builder.button(text=texts["referral_btn"], callback_data="referral_menu", icon_custom_emoji_id="6032594876506312598")
     builder.button(text=texts["login_btn"], callback_data="wallet_menu", icon_custom_emoji_id="5258204546391351475")
     builder.button(text=texts["store_btn"], callback_data="store_menu", icon_custom_emoji_id="5983399041197675256")

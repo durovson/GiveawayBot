@@ -260,7 +260,10 @@ async def cmd_start(message: types.Message, command: CommandObject, state: FSMCo
     )
 
     # 3. Process referral parameter
-    if command.args:
+    deep_link = command.args if command.args and command.args.startswith(("lot_", "giveaway_", "offer_")) else None
+    if deep_link:
+        await state.update_data(pending_deep_link=deep_link)
+    elif command.args:
         await ReferralService.process_start_param(user_id, command.args)
 
     # 4. Ensure user has a referral code (First Login Migration)
@@ -291,8 +294,37 @@ async def cmd_start(message: types.Message, command: CommandObject, state: FSMCo
         await show_community_screen(message, texts)
         return
 
-    # 6. Show Main Menu
-    await show_main_menu_message(message, texts)
+    # 6. Open a requested entity after all access checks, otherwise main menu.
+    if deep_link:
+        await dispatch_deep_link(message, deep_link, state, texts)
+    else:
+        await show_main_menu_message(message, texts)
+
+
+async def dispatch_deep_link(message: types.Message | types.CallbackQuery, payload: str, state: FSMContext, texts: dict):
+    async def fallback():
+        if isinstance(message, types.CallbackQuery):
+            await show_main_menu_callback(message, texts)
+        else:
+            await show_main_menu_message(message, texts)
+    try:
+        kind, raw_id = payload.rsplit("_", 1)
+        entity_id = int(raw_id)
+    except (ValueError, AttributeError):
+        await fallback()
+        return
+    await state.update_data(pending_deep_link=None)
+    if kind == "lot":
+        from handlers.store import show_lot_detail
+        await show_lot_detail(message, entity_id, texts, state)
+    elif kind == "giveaway":
+        from handlers.store import show_giveaway_tickets
+        await show_giveaway_tickets(message, entity_id, texts, state)
+    elif kind == "offer":
+        from handlers.otc_market import start_offer_from_link
+        await start_offer_from_link(message, entity_id, state, texts)
+    else:
+        await fallback()
 
 
 @router.callback_query(F.data == "check_community")
@@ -318,7 +350,10 @@ async def check_community_handler(
         user_id
     )
 
+    pending = (await state.get_data()).get("pending_deep_link")
     await state.clear()
+    if pending:
+        await state.update_data(pending_deep_link=pending)
 
     await show_rules_screen(
         callback,
@@ -342,8 +377,11 @@ async def accept_terms_handler(callback: types.CallbackQuery, state: FSMContext,
 
     logger.info(f"User {user_id} accepted terms {current_policy_version}")
 
-    # Open Main Menu
-    await show_main_menu_callback(callback, texts)
+    pending = (await state.get_data()).get("pending_deep_link")
+    if pending:
+        await dispatch_deep_link(callback, pending, state, texts)
+    else:
+        await show_main_menu_callback(callback, texts)
 
 @router.message(Command("setup"), F.chat.type.in_({"group", "supergroup"}))
 async def cmd_setup(message: types.Message, texts: dict):

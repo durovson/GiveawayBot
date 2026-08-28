@@ -21,11 +21,6 @@ class StoreLotCreation(StatesGroup):
     title = State()
     description = State()
     price = State()
-    quantity = State()
-    image_url = State()
-    reward_type = State()
-    reward_payload = State()
-    per_user_limit = State()
     confirm = State()
 
 
@@ -151,120 +146,6 @@ async def create_lot_price(message: types.Message, state: FSMContext, texts: dic
     except Exception:
         pass
     await state.update_data(price_rp=value)
-    await _edit_flow_message(message, state, texts["store_admin_enter_quantity"], _back_keyboard(texts))
-    await state.set_state(StoreLotCreation.quantity)
-
-
-@router.message(StoreLotCreation.quantity, F.text)
-async def create_lot_quantity(message: types.Message, state: FSMContext, texts: dict):
-    try:
-        value = int(message.text.strip())
-        if value <= 0:
-            raise ValueError
-    except ValueError:
-        await message.answer(texts["store_admin_invalid_number"])
-        return
-    try:
-        await message.delete()
-    except Exception:
-        pass
-    await state.update_data(total_quantity=value)
-    await _edit_flow_message(message, state, texts["store_admin_enter_image"], _back_keyboard(texts))
-    await state.set_state(StoreLotCreation.image_url)
-
-
-@router.message(StoreLotCreation.image_url, F.text)
-async def create_lot_image(message: types.Message, state: FSMContext, texts: dict):
-    image_url = message.text.strip()
-    try:
-        await message.delete()
-    except Exception:
-        pass
-    if image_url == "-":
-        image_url = None
-    elif not image_url.startswith(("https://", "http://")):
-        await message.answer(texts["store_admin_invalid_url"])
-        return
-    await state.update_data(image_url=image_url)
-    builder = InlineKeyboardBuilder()
-    for reward_type, key in (
-        ("manual", "store_reward_manual_btn"),
-        ("ticket", "store_reward_ticket_btn"),
-        ("role", "store_reward_role_btn"),
-        ("channel", "store_reward_channel_btn"),
-        ("sticker", "store_reward_sticker_btn"),
-        ("nft", "store_reward_nft_btn"),
-        ("physical", "store_reward_physical_btn"),
-        ("custom", "store_reward_custom_btn"),
-    ):
-        builder.button(text=texts[key], callback_data=f"store_reward_{reward_type}")
-    builder.button(text=texts["store_back_btn"], callback_data="store_admin")
-    builder.adjust(2)
-    await _edit_flow_message(message, state, texts["store_admin_select_reward"], builder.as_markup())
-    await state.set_state(StoreLotCreation.reward_type)
-
-
-@router.callback_query(StoreLotCreation.reward_type, F.data.startswith("store_reward_"))
-async def create_lot_reward_type(callback: types.CallbackQuery, state: FSMContext, texts: dict):
-    if not _is_admin(callback.from_user.id):
-        await callback.answer(texts["access_denied"], show_alert=True)
-        return
-    reward_type = callback.data.replace("store_reward_", "")
-    await state.update_data(reward_type=reward_type)
-    await callback.answer()
-    prompt = (
-        texts["store_admin_enter_ticket_reward"]
-        if reward_type == "ticket"
-        else texts["store_admin_enter_reward_payload"]
-    )
-    await safe_edit_text(
-        callback,
-        prompt,
-        reply_markup=_back_keyboard(texts),
-        parse_mode=ParseMode.HTML,
-        state=state,
-    )
-    await state.set_state(StoreLotCreation.reward_payload)
-
-
-@router.message(StoreLotCreation.reward_payload, F.text)
-async def create_lot_reward_payload(message: types.Message, state: FSMContext, texts: dict):
-    data = await state.get_data()
-    raw = message.text.strip()
-    if data.get("reward_type") == "ticket":
-        try:
-            tickets = int(raw)
-            if tickets <= 0:
-                raise ValueError
-        except ValueError:
-            await message.answer(texts["store_admin_invalid_number"])
-            return
-        payload = {"tickets": tickets}
-    else:
-        payload = {"instructions": raw[:1000]}
-    try:
-        await message.delete()
-    except Exception:
-        pass
-    await state.update_data(reward_payload=payload)
-    await _edit_flow_message(message, state, texts["store_admin_enter_limit"], _back_keyboard(texts))
-    await state.set_state(StoreLotCreation.per_user_limit)
-
-
-@router.message(StoreLotCreation.per_user_limit, F.text)
-async def create_lot_limit(message: types.Message, state: FSMContext, texts: dict):
-    try:
-        value = int(message.text.strip())
-        if value <= 0:
-            raise ValueError
-    except ValueError:
-        await message.answer(texts["store_admin_invalid_number"])
-        return
-    try:
-        await message.delete()
-    except Exception:
-        pass
-    await state.update_data(per_user_limit=value)
     data = await state.get_data()
     builder = InlineKeyboardBuilder()
     builder.button(text=texts["store_admin_publish_btn"], callback_data="store_admin_publish", style="success")
@@ -274,9 +155,9 @@ async def create_lot_limit(message: types.Message, state: FSMContext, texts: dic
         title=html.escape(data["title"]),
         description=html.escape(data.get("description") or texts["store_no_description"]),
         price=data["price_rp"],
-        quantity=data["total_quantity"],
-        reward=html.escape(data["reward_type"]),
-        limit=value,
+        quantity=1,
+        reward=html.escape("manual"),
+        limit=1,
     )
     await _edit_flow_message(message, state, preview, builder.as_markup())
     await state.set_state(StoreLotCreation.confirm)
@@ -292,11 +173,11 @@ async def create_lot_publish(callback: types.CallbackQuery, state: FSMContext, t
         "title": data["title"],
         "description": data.get("description", ""),
         "price_rp": data["price_rp"],
-        "total_quantity": data["total_quantity"],
-        "image_url": data.get("image_url"),
-        "reward_type": data["reward_type"],
-        "reward_payload": data.get("reward_payload", {}),
-        "per_user_limit": data["per_user_limit"],
+        "total_quantity": 1,
+        "image_url": None,
+        "reward_type": "manual",
+        "reward_payload": {"instructions": data.get("description", "")},
+        "per_user_limit": 1,
         "status": "active",
         "created_by": callback.from_user.id,
     })
@@ -304,6 +185,11 @@ async def create_lot_publish(callback: types.CallbackQuery, state: FSMContext, t
         await callback.answer(texts["store_admin_create_error"], show_alert=True)
         return
     await callback.answer(texts["store_admin_created_alert"], show_alert=True)
+    from utils import bot_deep_link
+    await callback.message.answer(
+        texts["store_admin_lot_link"].format(link=await bot_deep_link(f"lot_{lot['id']}")),
+        parse_mode=ParseMode.HTML,
+    )
     await show_store_admin(callback, state, texts)
 
 

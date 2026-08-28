@@ -3,12 +3,12 @@ import logging
 import loader
 
 holder_sync_lock = asyncio.Lock()
-from typing import List, Dict, Optional
+from typing import List, Dict
 from database import db
 from services.leaderboard import LeaderboardService
 from services.points_service import PointsService
 from utils import normalize_to_raw
-import json
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +56,7 @@ async def fetch_holders():
                         total = payload.get("total", 0) if isinstance(payload, dict) else 0
                         total_held = payload.get("totalHeld", 0) if isinstance(payload, dict) else 0
 
-                        logger.info("HOLDERS_TOTAL=%s", total)
-                        logger.info("HOLDERS_RECEIVED=%s", len(page))
+                        logger.debug("Holders page: total=%s received=%s", total, len(page))
 
                         break
                 except (asyncio.TimeoutError, Exception) as e:
@@ -196,7 +195,8 @@ async def daily_sync_task(bot):
 MILESTONES = (333, 666, 1000)
 
 async def milestone_monitor_task(bot):
-    """Background task to monitor collection growth milestones every 60 seconds."""
+    """Background task to monitor collection milestones at a configurable interval."""
+    interval = max(60, int(os.getenv("MILESTONE_POLL_SECONDS", "300")))
     logger.info("Starting milestone monitor task")
     while True:
         try:
@@ -207,7 +207,7 @@ async def milestone_monitor_task(bot):
 
             if not holders:
                 logger.warning("Milestone monitor: API returned empty dataset")
-                await asyncio.sleep(60)
+                await asyncio.sleep(interval)
                 continue
 
             # 2. Get baseline
@@ -245,4 +245,4 @@ async def milestone_monitor_task(bot):
         except Exception as e:
             logger.error(f"Error in milestone_monitor_task: {e}", exc_info=True)
 
-        await asyncio.sleep(60)
+        await asyncio.sleep(interval)

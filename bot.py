@@ -3,7 +3,6 @@ import logging
 import aiohttp
 import os
 import uvicorn
-from aiogram import F, types
 from aiogram.types import ChatMemberUpdated
 from aiogram.enums import ParseMode
 
@@ -13,7 +12,6 @@ from database import db
 from web_server import app, ping_self
 from services.ton_connect_service import TonConnectService
 from services.leaderboard import LeaderboardService
-from services.localization import get_locale
 from middleware.referral_validator import ReferralValidatorMiddleware
 from middleware.localization import LocalizationMiddleware
 
@@ -29,6 +27,7 @@ from handlers.game_menu import router as game_menu_router
 from handlers.wallet import router as wallet_router
 from handlers.store import router as store_router
 from handlers.store_admin import router as store_admin_router
+from handlers.boost import router as boost_router
 from tasks.og_snapshot import create_og_snapshot_once
 
 # Setup logging
@@ -36,6 +35,8 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+for noisy_logger in ("httpx", "httpcore", "aiogram.event", "uvicorn.access"):
+    logging.getLogger(noisy_logger).setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 @dp.my_chat_member()
@@ -70,6 +71,7 @@ dp.include_router(admin_router)
 dp.include_router(notifications_router)
 dp.include_router(game_menu_router)
 dp.include_router(wallet_router)
+dp.include_router(boost_router)
 dp.include_router(store_admin_router)
 dp.include_router(store_router)
 dp.include_router(main_menu_router)
@@ -112,7 +114,7 @@ async def run_bot():
 async def run_server():
     """Start uvicorn server."""
     port = int(os.environ.get("PORT", 10000))
-    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="info")
+    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="warning", access_log=False)
     server = uvicorn.Server(config)
     logger.info("Starting FastAPI server on port %s...", port)
     await server.serve()
@@ -129,6 +131,7 @@ async def main():
     # 3. Start background tasks
     from handlers.completion import check_timed_giveaways, check_periodic_notifications
     from tasks.sync_holders import daily_sync_task, milestone_monitor_task
+    from services.gram_service import GramDepositService
 
     t1 = asyncio.create_task(check_timed_giveaways(bot))
     bg_tasks.add(t1)
@@ -141,6 +144,10 @@ async def main():
 
     t5 = asyncio.create_task(milestone_monitor_task(bot))
     bg_tasks.add(t5)
+
+    if GramDepositService.configured():
+        gram_task = asyncio.create_task(GramDepositService.poll_forever())
+        bg_tasks.add(gram_task)
 
     # 4. Start self-ping task
     t4 = asyncio.create_task(ping_self())

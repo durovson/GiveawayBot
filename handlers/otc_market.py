@@ -1,15 +1,18 @@
 import os
 import html
 import re
+from decimal import Decimal, InvalidOperation
 from aiogram import Router, types, F, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.enums import ParseMode, ChatType
 from database import db
-from utils import safe_bot_edit_text, safe_answer, safe_edit_text, strip_custom_emojis, is_holder
+from utils import safe_bot_edit_text, safe_edit_text, strip_custom_emojis, is_holder
 import logging
-from services.localization import get_locale, get_locale_by_lang
+from services.localization import get_locale_by_lang
+from services.offer_cooldown import OfferCooldown
+from utils import bot_deep_link
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +24,7 @@ class OTCMarket(StatesGroup):
     ENTER_PRICE = State()
     ENTER_NAME_ONLY = State()
     PREVIEW = State()
+    OFFER_AMOUNT = State()
 
 @router.callback_query(F.data == "otc_market")
 async def start_otc_market(callback: types.CallbackQuery, state: FSMContext, texts: dict):
@@ -51,12 +55,11 @@ async def start_otc_market(callback: types.CallbackQuery, state: FSMContext, tex
 @router.callback_query(F.data == "otc_back_to_type")
 async def otc_back_to_type(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
-    await start_otc_market(callback, state)
+    await start_otc_market(callback, state, texts)
 
 @router.callback_query(OTCMarket.SELECT_TYPE, F.data.startswith("otc_type_"))
 async def select_trade_type(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
-    user_id = callback.from_user.id
     # texts from middleware
     trade_type = callback.data.split("_")[-1]
     await state.update_data(trade_type=trade_type)
@@ -74,7 +77,6 @@ async def select_trade_type(callback: types.CallbackQuery, state: FSMContext, te
 @router.callback_query(F.data == "otc_no_link")
 async def otc_no_link_selected(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
-    user_id = callback.from_user.id
     # texts from middleware
 
     builder = InlineKeyboardBuilder()
@@ -206,8 +208,21 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot, texts: di
             await event.answer(msg_text)
         return
 
+    await db.ensure_user_exists(user_id)
+    listing = await db.create_otc_listing({
+        "seller_id": user_id, "trade_type": trade_type,
+        "item_name": data.get("item_name"), "item_url": url,
+        "price_text": price_text, "status": "draft",
+    })
+    if not listing:
+        await event.answer(texts["otc_publish_error"])
+        return
     builder = InlineKeyboardBuilder()
-    builder.button(text=en_texts["otc_contact_btn"], url=f"tg://user?id={user_id}", icon_custom_emoji_id="5260535596941582167")
+    builder.button(text=en_texts["otc_make_offer_btn"], url=await bot_deep_link(f"offer_{listing['id']}"),
+                   icon_custom_emoji_id="5260687681733533075", style="success")
+    builder.button(text=en_texts["otc_profile_btn"], url=f"tg://user?id={user_id}",
+                   icon_custom_emoji_id="5260535596941582167")
+    builder.adjust(2)
 
     try:
         target_chat = await bot.get_chat(otc_chat_id)
@@ -226,7 +241,10 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot, texts: di
         send_kwargs["message_thread_id"] = int(otc_topic_id)
 
     try:
-        await bot.send_message(text=post_text, **send_kwargs)
+        sent = await bot.send_message(text=post_text, **send_kwargs)
+        await db.update_otc_listing(listing["id"], {
+            "chat_id": sent.chat.id, "message_id": sent.message_id, "status": "active",
+        })
         success_builder = InlineKeyboardBuilder()
         success_builder.button(text=texts["otc_main_menu_btn"], callback_data="main_menu", icon_custom_emoji_id="6042137469204303531")
 
@@ -238,6 +256,7 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot, texts: di
             await safe_bot_edit_text(bot, event.chat.id, last_msg_id, success_text, reply_markup=success_builder.as_markup(), parse_mode=ParseMode.HTML)
 
     except Exception as e:
+        await db.update_otc_listing(listing["id"], {"status": "deleted"})
         logger.error(f"OTC Publication error: {e}")
         error_text = f"❌ Error sending to channel: {e}"
         if isinstance(event, types.CallbackQuery):
@@ -248,7 +267,6 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot, texts: di
     await state.clear()
 
 async def show_otc_preview(event, state: FSMContext, bot: Bot, texts: dict):
-    user_id = event.from_user.id
     # texts from middleware
     en_texts = get_locale_by_lang("en") # Previews of public posts use English terms for the post part
     data = await state.get_data()
@@ -306,7 +324,6 @@ async def show_otc_preview(event, state: FSMContext, bot: Bot, texts: dict):
 @router.callback_query(OTCMarket.PREVIEW, F.data == "otc_edit_item")
 async def otc_edit_item(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
-    user_id = callback.from_user.id
     # texts from middleware
     data = await state.get_data()
     url = data.get("url")
@@ -335,7 +352,6 @@ async def otc_edit_item(callback: types.CallbackQuery, state: FSMContext, texts:
 @router.callback_query(OTCMarket.PREVIEW, F.data == "otc_edit_price")
 async def otc_edit_price(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
-    user_id = callback.from_user.id
     # texts from middleware
 
     builder = InlineKeyboardBuilder()
@@ -354,3 +370,93 @@ async def otc_edit_price(callback: types.CallbackQuery, state: FSMContext, texts
 async def otc_confirm_post(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
     await callback.answer()
     await finalize_otc_publication(callback, state, bot, texts)
+
+
+async def start_offer_from_link(event: types.Message | types.CallbackQuery, listing_id: int,
+                                state: FSMContext, texts: dict):
+    blocked = {int(x) for x in os.getenv("OTC_OFFER_BLOCKED_USER_IDS", "").split(",") if x.strip().isdigit()}
+    if event.from_user.id in blocked:
+        await event.answer(texts["otc_offer_blocked"])
+        return
+    listing = await db.get_otc_listing(listing_id)
+    if not listing or listing.get("status") != "active":
+        await event.answer(texts["otc_offer_unavailable"])
+        return
+    if listing["seller_id"] == event.from_user.id:
+        await event.answer(texts["otc_offer_own"])
+        return
+    remaining = OfferCooldown.remaining(event.from_user.id, listing_id)
+    if remaining:
+        await event.answer(texts["otc_offer_cooldown"].format(seconds=remaining))
+        return
+    await state.set_state(OTCMarket.OFFER_AMOUNT)
+    await state.update_data(offer_listing_id=listing_id)
+    text = texts["otc_offer_amount_prompt"].format(item=html.escape(listing["item_name"]))
+    if isinstance(event, types.CallbackQuery):
+        await safe_edit_text(event, text, parse_mode=ParseMode.HTML, state=state)
+    else:
+        await event.answer(text, parse_mode=ParseMode.HTML)
+
+
+@router.message(OTCMarket.OFFER_AMOUNT, F.text)
+async def submit_offer(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
+    data = await state.get_data()
+    listing_id = int(data.get("offer_listing_id", 0))
+    listing = await db.get_otc_listing(listing_id)
+    if not listing or listing.get("status") != "active" or listing["seller_id"] == message.from_user.id:
+        await message.answer(texts["otc_offer_unavailable"])
+        await state.clear()
+        return
+    remaining = OfferCooldown.remaining(message.from_user.id, listing_id)
+    if remaining:
+        await message.answer(texts["otc_offer_cooldown"].format(seconds=remaining))
+        return
+    try:
+        amount = Decimal(message.text.strip().replace(",", "."))
+        if amount <= 0 or amount.as_tuple().exponent < -9:
+            raise InvalidOperation
+    except (InvalidOperation, ValueError):
+        await message.answer(texts["otc_offer_invalid"])
+        return
+    await db.ensure_user_exists(message.from_user.id)
+    offer = await db.create_otc_offer({
+        "listing_id": listing_id, "buyer_id": message.from_user.id,
+        "seller_id": listing["seller_id"], "amount_ton": str(amount),
+    })
+    if not offer:
+        await message.answer(texts["otc_offer_error"])
+        return
+    OfferCooldown.mark(message.from_user.id, listing_id)
+    seller_keyboard = InlineKeyboardBuilder()
+    seller_keyboard.button(text=texts["otc_offer_accept_btn"], callback_data=f"offer_accept_{offer['id']}", style="success")
+    seller_keyboard.button(text=texts["otc_offer_decline_btn"], callback_data=f"offer_decline_{offer['id']}", style="danger")
+    seller_keyboard.button(text=texts["otc_profile_btn"], url=f"tg://user?id={message.from_user.id}")
+    seller_keyboard.adjust(2, 1)
+    await bot.send_message(listing["seller_id"], texts["otc_offer_seller_notice"].format(
+        amount=amount, item=html.escape(listing["item_name"]),
+        buyer=html.escape("@" + (message.from_user.username or str(message.from_user.id))),
+    ), reply_markup=seller_keyboard.as_markup(), parse_mode=ParseMode.HTML)
+    await message.answer(texts["otc_offer_sent"].format(amount=amount), parse_mode=ParseMode.HTML)
+    await state.clear()
+
+
+@router.callback_query(F.data.regexp(r"^offer_(accept|decline)_\d+$"))
+async def respond_offer(callback: types.CallbackQuery, bot: Bot, texts: dict):
+    parts = callback.data.split("_")
+    status = "accepted" if parts[1] == "accept" else "declined"
+    result = await db.respond_otc_offer(int(parts[2]), callback.from_user.id, status)
+    if not result.get("ok"):
+        await callback.answer(texts["otc_offer_unavailable"], show_alert=True)
+        return
+    await callback.answer(texts[f"otc_offer_{status}"], show_alert=True)
+    try:
+        lang = await db.get_user_language(result["buyer_id"])
+        buyer_texts = get_locale_by_lang(lang)
+        buyer_keyboard = InlineKeyboardBuilder()
+        buyer_keyboard.button(text=buyer_texts["otc_profile_btn"],
+                              url=f"tg://user?id={result['seller_id']}")
+        await bot.send_message(result["buyer_id"], buyer_texts["otc_offer_buyer_result"].format(
+            status=buyer_texts[f"otc_offer_status_{status}"], amount=result["amount_ton"]),
+            reply_markup=buyer_keyboard.as_markup(), parse_mode=ParseMode.HTML)
+    except Exception:
+        logger.exception("Could not notify OTC offer buyer")

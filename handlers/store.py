@@ -1,6 +1,5 @@
 import asyncio
 import html
-import logging
 
 from aiogram import F, Router, types
 from aiogram.enums import ParseMode
@@ -10,163 +9,124 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from config import ADMIN_IDS
 from database import db
 from services.points_service import PointsService
-from utils import safe_edit_text
+from utils import safe_answer, safe_edit_text
 
-logger = logging.getLogger(__name__)
 router = Router()
 
-TICKET_COST = 50
 
-
-async def _wallet_snapshot(user_id: int) -> tuple[int, int]:
-    user, points_data = await asyncio.gather(
-        db.get_user_by_telegram_id(user_id),
-        db.get_points(user_id),
-    )
-    if not points_data:
+async def _rp(user_id: int) -> int:
+    points = await db.get_points(user_id)
+    if not points:
         await PointsService.recalculate_points(user_id)
-        points_data = await db.get_points(user_id)
-    return (
-        points_data.get("total_points", 0) if points_data else 0,
-        user.get("active_tickets", 0) if user else 0,
-    )
+        points = await db.get_points(user_id)
+    return int(points.get("total_points", 0)) if points else 0
+
+
+async def _render(event, text: str, keyboard, state: FSMContext | None = None):
+    if isinstance(event, types.CallbackQuery):
+        return await safe_edit_text(event, text, reply_markup=keyboard,
+                                    parse_mode=ParseMode.HTML, state=state)
+    return await safe_answer(event, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
 
 async def show_store_menu(callback: types.CallbackQuery, state: FSMContext, texts: dict):
-    rp, tickets = await _wallet_snapshot(callback.from_user.id)
+    rp = await _rp(callback.from_user.id)
     builder = InlineKeyboardBuilder()
-    builder.button(
-        text=texts["store_tickets_btn"],
-        callback_data="store_tickets",
-        icon_custom_emoji_id="5260726538302660868",
-    )
-    builder.button(
-        text=texts["store_lots_btn"],
-        callback_data="store_lots",
-        icon_custom_emoji_id="5983399041197675256",
-    )
+    builder.button(text=texts["store_tickets_btn"], callback_data="store_tickets",
+                   icon_custom_emoji_id="5260726538302660868")
+    builder.button(text=texts["store_lots_btn"], callback_data="store_lots",
+                   icon_custom_emoji_id="5983399041197675256")
     if callback.from_user.id in ADMIN_IDS:
-        builder.button(
-            text=texts["store_admin_btn"],
-            callback_data="store_admin",
-            icon_custom_emoji_id="5258096772776991776",
-        )
-    builder.button(
-        text=texts["game_main_menu_btn"],
-        callback_data="game_menu",
-        icon_custom_emoji_id="6042137469204303531",
-        style="danger",
-    )
+        builder.button(text=texts["store_admin_btn"], callback_data="store_admin",
+                       icon_custom_emoji_id="5258096772776991776")
+    builder.button(text=texts["game_main_menu_btn"], callback_data="game_menu",
+                   icon_custom_emoji_id="6042137469204303531", style="danger")
     builder.adjust(2, 1, 1)
-    await safe_edit_text(
-        callback,
-        texts["store_hub_title"].format(rp=rp, tickets=tickets),
-        reply_markup=builder.as_markup(),
-        parse_mode=ParseMode.HTML,
-        state=state,
-    )
+    await _render(callback, texts["store_hub_title"].format(rp=rp, tickets="—"),
+                  builder.as_markup(), state)
 
 
 async def show_ticket_store(callback: types.CallbackQuery, state: FSMContext, texts: dict):
-    rp, tickets = await _wallet_snapshot(callback.from_user.id)
+    rp, giveaways = await asyncio.gather(_rp(callback.from_user.id), db.get_active_giveaways())
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["buy_1_btn"], callback_data="buy_tickets_1")
-    builder.button(text=texts["buy_5_btn"], callback_data="buy_tickets_5")
-    builder.button(text=texts["buy_10_btn"], callback_data="buy_tickets_10")
-    builder.button(
-        text=texts["store_back_btn"],
-        callback_data="store_menu",
-        icon_custom_emoji_id="5877629862306385808",
+    for giveaway in giveaways:
+        builder.button(text=f"#{giveaway['id']} · {giveaway['title'][:38]}",
+                       callback_data=f"store_tg_{giveaway['id']}")
+    builder.button(text=texts["store_back_btn"], callback_data="store_menu",
+                   icon_custom_emoji_id="5877629862306385808")
+    builder.adjust(1)
+    content = texts["ticket_choose_empty"] if not giveaways else texts["ticket_choose_hint"]
+    await _render(callback, texts["ticket_choose_title"].format(rp=rp, content=content),
+                  builder.as_markup(), state)
+
+
+async def show_giveaway_tickets(event, giveaway_id: int, texts: dict,
+                                state: FSMContext | None = None):
+    user_id = event.from_user.id
+    giveaway, rp, tickets, offers = await asyncio.gather(
+        db.get_giveaway(giveaway_id), _rp(user_id),
+        db.get_giveaway_ticket_balance(giveaway_id, user_id), db.get_ticket_offers(),
     )
-    builder.adjust(3, 1)
-    await safe_edit_text(
-        callback,
-        texts["store_menu_title"].format(rp=rp, tickets=tickets),
-        reply_markup=builder.as_markup(),
-        parse_mode=ParseMode.HTML,
-        state=state,
-    )
+    if not giveaway or giveaway.get("status") != "active":
+        if isinstance(event, types.CallbackQuery):
+            await event.answer(texts["giveaway_finished"], show_alert=True)
+        return
+    builder = InlineKeyboardBuilder()
+    for offer in offers:
+        if offer["mode"] == "fill":
+            added = max(0, offer["ticket_count"] - tickets)
+            price = offer["price_rp"] * added if offer["pricing_mode"] == "per_ticket" else offer["price_rp"]
+            label = texts["ticket_offer_max"].format(price=price)
+        else:
+            price = offer["price_rp"]
+            label = texts["ticket_offer_add"].format(count=offer["ticket_count"], price=price)
+        builder.button(text=label, callback_data=f"buy_gt_{giveaway_id}_{offer['code']}")
+    builder.button(text=texts["ticket_enter_btn"], callback_data=f"join_{giveaway_id}", style="success")
+    builder.button(text=texts["store_back_btn"], callback_data="store_tickets",
+                   icon_custom_emoji_id="5877629862306385808")
+    builder.adjust(1)
+    prizes = ", ".join(map(str, giveaway.get("prizes") or [])) or "—"
+    await _render(event, texts["ticket_giveaway_detail"].format(
+        id=giveaway_id, title=html.escape(giveaway["title"]),
+        prizes=html.escape(prizes), tickets=tickets, rp=rp,
+    ), builder.as_markup(), state)
 
 
 async def show_lots_store(callback: types.CallbackQuery, state: FSMContext, texts: dict):
-    (rp, _), lots = await asyncio.gather(
-        _wallet_snapshot(callback.from_user.id),
-        db.get_active_store_lots(),
-    )
+    rp, lots = await asyncio.gather(_rp(callback.from_user.id), db.get_active_store_lots())
     builder = InlineKeyboardBuilder()
-
     for lot in lots:
         remaining = max(0, lot["total_quantity"] - lot["sold_quantity"])
-        builder.button(
-            text=texts["store_lot_button"].format(
-                title=lot["title"][:30],
-                price=lot["price_rp"],
-                remaining=remaining,
-            ),
-            callback_data=f"store_lot_{lot['id']}",
-        )
-
-    builder.button(
-        text=texts["store_back_btn"],
-        callback_data="store_menu",
-        icon_custom_emoji_id="5877629862306385808",
-    )
+        builder.button(text=texts["store_lot_button"].format(
+            title=lot["title"][:30], price=lot["price_rp"], remaining=remaining),
+            callback_data=f"store_lot_{lot['id']}")
+    builder.button(text=texts["store_back_btn"], callback_data="store_menu",
+                   icon_custom_emoji_id="5877629862306385808")
     builder.adjust(1)
-
     content = texts["store_lots_empty"] if not lots else texts["store_lots_hint"]
-    await safe_edit_text(
-        callback,
-        texts["store_lots_title"].format(rp=rp, content=content),
-        reply_markup=builder.as_markup(),
-        parse_mode=ParseMode.HTML,
-        state=state,
-    )
+    await _render(callback, texts["store_lots_title"].format(rp=rp, content=content),
+                  builder.as_markup(), state)
 
 
-async def show_lot_detail(
-    callback: types.CallbackQuery,
-    state: FSMContext,
-    texts: dict,
-    lot_id: int,
-):
-    lot = await db.get_store_lot(lot_id)
+async def show_lot_detail(event, lot_id: int, texts: dict, state: FSMContext | None = None):
+    lot, rp = await asyncio.gather(db.get_store_lot(lot_id), _rp(event.from_user.id))
     if not lot or lot.get("status") not in {"active", "sold_out"}:
-        await callback.answer(texts["store_lot_unavailable"], show_alert=True)
-        await show_lots_store(callback, state, texts)
+        if isinstance(event, types.CallbackQuery):
+            await event.answer(texts["store_lot_unavailable"], show_alert=True)
         return
-
     remaining = max(0, lot["total_quantity"] - lot["sold_quantity"])
-    description = html.escape(lot.get("description") or texts["store_no_description"])
     builder = InlineKeyboardBuilder()
-    if remaining > 0 and lot["status"] == "active":
-        builder.button(
-            text=texts["store_buy_lot_btn"].format(price=lot["price_rp"]),
-            callback_data=f"store_buy_lot_{lot_id}",
-            style="success",
-        )
-    image_url = (lot.get("image_url") or "").strip()
-    if image_url.startswith(("https://", "http://")):
-        builder.button(text=texts["store_open_media_btn"], url=image_url)
-    builder.button(
-        text=texts["store_back_btn"],
-        callback_data="store_lots",
-        icon_custom_emoji_id="5877629862306385808",
-    )
+    if remaining and lot["status"] == "active":
+        builder.button(text=texts["store_buy_lot_btn"].format(price=lot["price_rp"]),
+                       callback_data=f"store_buy_lot_{lot_id}", style="success")
+    builder.button(text=texts["store_back_btn"], callback_data="store_lots",
+                   icon_custom_emoji_id="5877629862306385808")
     builder.adjust(1)
-
-    await safe_edit_text(
-        callback,
-        texts["store_lot_detail"].format(
-            title=html.escape(lot["title"]),
-            description=description,
-            price=lot["price_rp"],
-            remaining=remaining,
-            total=lot["total_quantity"],
-        ),
-        reply_markup=builder.as_markup(),
-        parse_mode=ParseMode.HTML,
-        state=state,
-    )
+    await _render(event, texts["store_lot_detail"].format(
+        title=html.escape(lot["title"]),
+        description=html.escape(lot.get("description") or texts["store_no_description"]),
+        price=lot["price_rp"], remaining=remaining, total=lot["total_quantity"], rp=rp,
+    ), builder.as_markup(), state)
 
 
 @router.callback_query(F.data == "store_menu")
@@ -181,6 +141,27 @@ async def store_tickets_handler(callback: types.CallbackQuery, state: FSMContext
     await show_ticket_store(callback, state, texts)
 
 
+@router.callback_query(F.data.startswith("store_tg_"))
+async def ticket_giveaway_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
+    await callback.answer()
+    await show_giveaway_tickets(callback, int(callback.data.rsplit("_", 1)[1]), texts, state)
+
+
+@router.callback_query(F.data.startswith("buy_gt_"))
+async def buy_giveaway_tickets(callback: types.CallbackQuery, state: FSMContext, texts: dict):
+    _, _, giveaway_id, code = callback.data.split("_", 3)
+    result = await db.purchase_giveaway_tickets(callback.from_user.id, int(giveaway_id), code, f"tg:{callback.id}")
+    if not result.get("ok"):
+        errors = {"INSUFFICIENT_POINTS": texts["not_enough_points"],
+                  "TICKET_LIMIT_REACHED": texts["ticket_limit"],
+                  "ALREADY_JOINED": texts["giveaway_already_joined"]}
+        await callback.answer(errors.get(result.get("error"), texts["store_purchase_error"]), show_alert=True)
+        return
+    await callback.answer(texts["ticket_purchase_success"].format(
+        added=result.get("added", 0), cost=result.get("cost", 0)), show_alert=True)
+    await show_giveaway_tickets(callback, int(giveaway_id), texts, state)
+
+
 @router.callback_query(F.data == "store_lots")
 async def store_lots_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
@@ -190,66 +171,19 @@ async def store_lots_handler(callback: types.CallbackQuery, state: FSMContext, t
 @router.callback_query(F.data.startswith("store_lot_"))
 async def store_lot_detail_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     await callback.answer()
-    lot_id = int(callback.data.rsplit("_", 1)[-1])
-    await show_lot_detail(callback, state, texts, lot_id)
-
-
-@router.callback_query(F.data.startswith("buy_tickets_"))
-async def buy_tickets_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
-    amount = int(callback.data.rsplit("_", 1)[-1])
-    result = await db.purchase_tickets_atomic(
-        user_id=callback.from_user.id,
-        amount=amount,
-        unit_cost=TICKET_COST,
-        idempotency_key=f"tg:{callback.id}",
-    )
-    if not result.get("ok"):
-        text = (
-            texts["not_enough_points"]
-            if result.get("error") == "INSUFFICIENT_POINTS"
-            else texts["store_purchase_error"]
-        )
-        await callback.answer(text, show_alert=True)
-        return
-
-    await callback.answer(texts["purchase_success"].format(amount=amount), show_alert=True)
-    await show_ticket_store(callback, state, texts)
+    await show_lot_detail(callback, int(callback.data.rsplit("_", 1)[1]), texts, state)
 
 
 @router.callback_query(F.data.startswith("store_buy_lot_"))
 async def buy_lot_handler(callback: types.CallbackQuery, state: FSMContext, texts: dict):
-    lot_id = int(callback.data.rsplit("_", 1)[-1])
-    result = await db.purchase_store_lot_atomic(
-        user_id=callback.from_user.id,
-        lot_id=lot_id,
-        idempotency_key=f"tg:{callback.id}",
-    )
+    lot_id = int(callback.data.rsplit("_", 1)[1])
+    result = await db.purchase_store_lot_atomic(callback.from_user.id, lot_id, f"tg:{callback.id}")
     if not result.get("ok"):
-        errors = {
-            "INSUFFICIENT_POINTS": texts["store_lot_not_enough_rp"],
-            "SOLD_OUT": texts["store_lot_sold_out"],
-            "LOT_NOT_ACTIVE": texts["store_lot_unavailable"],
-            "LOT_NOT_FOUND": texts["store_lot_unavailable"],
-            "USER_LIMIT_REACHED": texts["store_lot_limit_reached"],
-        }
-        await callback.answer(
-            errors.get(result.get("error"), texts["store_purchase_error"]),
-            show_alert=True,
-        )
-        if result.get("error") in {"SOLD_OUT", "LOT_NOT_ACTIVE", "LOT_NOT_FOUND"}:
-            await show_lots_store(callback, state, texts)
+        errors = {"INSUFFICIENT_POINTS": texts["store_lot_not_enough_rp"], "SOLD_OUT": texts["store_lot_sold_out"],
+                  "LOT_NOT_ACTIVE": texts["store_lot_unavailable"], "LOT_NOT_FOUND": texts["store_lot_unavailable"],
+                  "USER_LIMIT_REACHED": texts["store_lot_limit_reached"]}
+        await callback.answer(errors.get(result.get("error"), texts["store_purchase_error"]), show_alert=True)
         return
-
-    success_key = (
-        "store_lot_ticket_success"
-        if result.get("ticket_reward", 0) > 0
-        else "store_lot_purchase_success"
-    )
-    await callback.answer(
-        texts[success_key].format(
-            purchase_id=result.get("purchase_id"),
-            tickets=result.get("ticket_reward", 0),
-        ),
-        show_alert=True,
-    )
-    await show_lot_detail(callback, state, texts, lot_id)
+    await callback.answer(texts["store_lot_purchase_success"].format(
+        purchase_id=result.get("purchase_id")), show_alert=True)
+    await show_lot_detail(callback, lot_id, texts, state)
