@@ -58,10 +58,12 @@ Telegram callback безопасен благодаря `idempotency_key`.
 
 ## GRAM и OTC
 
-Для GRAM задаются `TONAPI_KEY`, `GRAM_DEPOSIT_WALLET` и
-`GRAM_JETTON_MASTER`. Перевод от 0.1 GRAM с комментарием `@username`
-проверяется через TonAPI и может быть начислен только один раз. Курс хранится
-в `settings.gram_rp_per_gram`.
+Для нативного GRAM (бывшего TON) достаточно задать `GRAM_DEPOSIT_WALLET`.
+`TONAPI_KEY` опционален и повышает лимиты TonAPI; при отсутствующем или
+отклонённом ключе используется публичный API. `GRAM_JETTON_MASTER` нужен только
+для дополнительного приёма legacy-токена Grm/GRM. Нативный или jetton-перевод
+от 0.1 GRAM с комментарием `@username` может быть начислен только один раз.
+Курс хранится в `settings.gram_rp_per_gram`.
 
 OTC-публикация содержит deep link Offer и профиль владельца. Оффер сохраняется
 в БД, но пяти минутный cooldown хранится только в памяти процесса. Бот не
