@@ -219,7 +219,7 @@ async def finalize_otc_publication(event, state: FSMContext, bot: Bot, texts: di
         return
     builder = InlineKeyboardBuilder()
     builder.button(text=en_texts["otc_make_offer_btn"], url=await bot_deep_link(f"offer_{listing['id']}"),
-                   icon_custom_emoji_id="5260687681733533075", style="success")
+                   icon_custom_emoji_id="5260687681733533075")
     builder.button(text=en_texts["otc_profile_btn"], url=f"tg://user?id={user_id}",
                    icon_custom_emoji_id="5260535596941582167")
     builder.adjust(2)
@@ -427,12 +427,14 @@ async def submit_offer(message: types.Message, state: FSMContext, bot: Bot, text
         await message.answer(texts["otc_offer_error"])
         return
     OfferCooldown.mark(message.from_user.id, listing_id)
+    seller_lang = await db.get_user_language(listing["seller_id"])
+    seller_texts = get_locale_by_lang(seller_lang)
     seller_keyboard = InlineKeyboardBuilder()
-    seller_keyboard.button(text=texts["otc_offer_accept_btn"], callback_data=f"offer_accept_{offer['id']}", style="success")
-    seller_keyboard.button(text=texts["otc_offer_decline_btn"], callback_data=f"offer_decline_{offer['id']}", style="danger")
-    seller_keyboard.button(text=texts["otc_profile_btn"], url=f"tg://user?id={message.from_user.id}")
+    seller_keyboard.button(text=seller_texts["otc_offer_accept_btn"], callback_data=f"offer_accept_{offer['id']}", style="success")
+    seller_keyboard.button(text=seller_texts["otc_offer_decline_btn"], callback_data=f"offer_decline_{offer['id']}", style="danger")
+    seller_keyboard.button(text=seller_texts["otc_profile_btn"], url=f"tg://user?id={message.from_user.id}")
     seller_keyboard.adjust(2, 1)
-    await bot.send_message(listing["seller_id"], texts["otc_offer_seller_notice"].format(
+    await bot.send_message(listing["seller_id"], seller_texts["otc_offer_seller_notice"].format(
         amount=amount, item=html.escape(listing["item_name"]),
         buyer=html.escape("@" + (message.from_user.username or str(message.from_user.id))),
     ), reply_markup=seller_keyboard.as_markup(), parse_mode=ParseMode.HTML)

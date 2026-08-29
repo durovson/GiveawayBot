@@ -39,8 +39,8 @@ async def show_store_menu(callback: types.CallbackQuery, state: FSMContext, text
     if callback.from_user.id in ADMIN_IDS:
         builder.button(text=texts["store_admin_btn"], callback_data="store_admin",
                        icon_custom_emoji_id="5258096772776991776")
-    builder.button(text=texts["game_main_menu_btn"], callback_data="game_menu",
-                   icon_custom_emoji_id="6042137469204303531", style="danger")
+    builder.button(text=texts["store_back_btn"], callback_data="game_menu",
+                   icon_custom_emoji_id="5877629862306385808")
     builder.adjust(2, 1, 1)
     await _render(callback, texts["store_hub_title"].format(rp=rp, tickets="—"),
                   builder.as_markup(), state)
