@@ -47,11 +47,32 @@ TEXTS = {
     "otc_offer_invalid": "❌ Enter a positive TON amount (up to 9 decimal places).",
     "otc_offer_error": "❌ The offer could not be sent. Try again.",
     "otc_offer_accept_btn": "ACCEPT", "otc_offer_decline_btn": "DECLINE",
-    "otc_offer_seller_notice": "🤝 <b>New OTC offer</b>\n\nItem: {item}\nAmount: <b>{amount} TON</b>\nBuyer: {buyer}\n\nThe bot only connects both parties and does not settle the trade.",
+    "otc_offer_seller_notice": (
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260687681733533075\">🤝</tg-emoji>┅/ <b>NEW OTC OFFER</b> /\n"
+        "┋\n"
+        "┣ <b>Item:</b> {item}\n"
+        "┣ <b>Amount:</b> {amount} TON\n"
+        "┣ <b>Buyer:</b> {buyer}\n"
+        "┋\n"
+        "┣ The bot only connects both parties.\n"
+        "┣ Payment is completed directly between users.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Accept or decline the offer</b> /"
+    ),
     "otc_offer_sent": "✅ Your offer of <b>{amount} TON</b> was sent to the listing owner.",
     "otc_offer_accepted": "✅ Offer accepted.", "otc_offer_declined": "Offer declined.",
     "otc_offer_status_accepted": "accepted", "otc_offer_status_declined": "declined",
-    "otc_offer_buyer_result": "Your OTC offer for <b>{amount} TON</b> was {status}. Contact the other party to complete the trade.",
+    "otc_offer_buyer_result": (
+        "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260687681733533075\">🤝</tg-emoji>┅/ <b>OTC OFFER UPDATE</b> /\n"
+        "┋\n"
+        "┣ <b>Amount:</b> {amount} TON\n"
+        "┣ <b>Status:</b> {status}\n"
+        "┋\n"
+        "┣ Contact the other party to complete the trade.\n"
+        "┣ Payment is completed directly between users.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Open the seller profile below</b> /"
+    ),
     "otc_post_success": "<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji> <b>Post published successfully!</b>\n\n<blockquote>Your order has been sent to the OTC channel.</blockquote>",
     "otc_preview_title": (
         "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅/ <b>Preview</b> /\n"
