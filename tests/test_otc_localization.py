@@ -40,13 +40,16 @@ class FakeBot:
 
 class OTCNotificationTests(unittest.IsolatedAsyncioTestCase):
     async def test_seller_notification_uses_seller_language(self):
+        offer_payloads = []
+
         async def get_listing(_listing_id):
             return {"id": 7, "seller_id": 100, "item_name": "Rare NFT", "status": "active"}
 
         async def ensure_user(_user_id):
             return None
 
-        async def create_offer(_data):
+        async def create_offer(data):
+            offer_payloads.append(data)
             return {"id": 55}
 
         async def get_language(user_id):
@@ -80,6 +83,7 @@ class OTCNotificationTests(unittest.IsolatedAsyncioTestCase):
             OfferCooldown.mark = old_mark
 
         self.assertTrue(state.cleared)
+        self.assertEqual(offer_payloads[0]["amount_ton"], "2.5")
         self.assertEqual(len(bot.messages), 1)
         seller_id, seller_notice, kwargs = bot.messages[0]
         self.assertEqual(seller_id, 100)
@@ -96,6 +100,18 @@ class OTCNotificationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("СТАТУС OTC-ПРЕДЛОЖЕНИЯ", ru)
         self.assertTrue(en.startswith("┏┅⋐"))
         self.assertTrue(ru.startswith("┏┅⋐"))
+
+    def test_all_otc_offer_copy_uses_gram(self):
+        keys = (
+            "otc_offer_amount_prompt", "otc_offer_invalid",
+            "otc_offer_seller_notice", "otc_offer_sent",
+            "otc_offer_buyer_result",
+        )
+        for lang in ("en", "ru"):
+            texts = get_locale_by_lang(lang)
+            for key in keys:
+                self.assertIn("GRAM", texts[key])
+                self.assertNotIn(" TON", texts[key])
 
 
 if __name__ == "__main__":

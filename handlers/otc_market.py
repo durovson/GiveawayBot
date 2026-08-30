@@ -421,6 +421,7 @@ async def submit_offer(message: types.Message, state: FSMContext, bot: Bot, text
     await db.ensure_user_exists(message.from_user.id)
     offer = await db.create_otc_offer({
         "listing_id": listing_id, "buyer_id": message.from_user.id,
+        # Legacy database column name; all user-facing OTC currency is GRAM.
         "seller_id": listing["seller_id"], "amount_ton": str(amount),
     })
     if not offer:
