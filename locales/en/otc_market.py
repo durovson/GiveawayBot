@@ -43,15 +43,15 @@ TEXTS = {
     "otc_offer_own": "❌ You cannot make an offer on your own listing.",
     "otc_offer_blocked": "❌ Offers are unavailable for your account.",
     "otc_offer_cooldown": "⏳ You can send another offer in {seconds} seconds.",
-    "otc_offer_amount_prompt": "┏┅/ <b>MAKE AN OFFER</b> /\n┣ Item: {item}\n┗┅┅┅/ Enter your offer amount in TON /",
-    "otc_offer_invalid": "❌ Enter a positive TON amount (up to 9 decimal places).",
+    "otc_offer_amount_prompt": "┏┅/ <b>MAKE AN OFFER</b> /\n┣ Item: {item}\n┗┅┅┅/ Enter your offer amount in GRAM /",
+    "otc_offer_invalid": "❌ Enter a positive GRAM amount (up to 9 decimal places).",
     "otc_offer_error": "❌ The offer could not be sent. Try again.",
     "otc_offer_accept_btn": "ACCEPT", "otc_offer_decline_btn": "DECLINE",
     "otc_offer_seller_notice": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260687681733533075\">🤝</tg-emoji>┅/ <b>NEW OTC OFFER</b> /\n"
         "┋\n"
         "┣ <b>Item:</b> {item}\n"
-        "┣ <b>Amount:</b> {amount} TON\n"
+        "┣ <b>Amount:</b> {amount} GRAM\n"
         "┣ <b>Buyer:</b> {buyer}\n"
         "┋\n"
         "┣ The bot only connects both parties.\n"
@@ -59,13 +59,13 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Accept or decline the offer</b> /"
     ),
-    "otc_offer_sent": "✅ Your offer of <b>{amount} TON</b> was sent to the listing owner.",
+    "otc_offer_sent": "✅ Your offer of <b>{amount} GRAM</b> was sent to the listing owner.",
     "otc_offer_accepted": "✅ Offer accepted.", "otc_offer_declined": "Offer declined.",
     "otc_offer_status_accepted": "accepted", "otc_offer_status_declined": "declined",
     "otc_offer_buyer_result": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260687681733533075\">🤝</tg-emoji>┅/ <b>OTC OFFER UPDATE</b> /\n"
         "┋\n"
-        "┣ <b>Amount:</b> {amount} TON\n"
+        "┣ <b>Amount:</b> {amount} GRAM\n"
         "┣ <b>Status:</b> {status}\n"
         "┋\n"
         "┣ Contact the other party to complete the trade.\n"
