@@ -16,6 +16,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from database import db
 from utils import strip_custom_emojis
 from services.localization import get_locale, get_locale_by_lang
+from services.giveaway_formatting import format_prizes_html
 from config import PRIMARY_ADMIN_ID
 
 logger = logging.getLogger(__name__)
@@ -88,7 +89,7 @@ async def complete_giveaway(giveaway_id: int, bot: Bot):
                     mention = f"<b>@{safe_username}</b>"
                 else:
                     mention = f"<b><a href=\"tg://user?id={w['user_id']}\">{safe_username}</a></b>"
-                winners_list_str += f"┋ {mention} — {html.escape(prizes_str)}\n"
+                winners_list_str += f"┋ {mention} — {format_prizes_html(allocated_prizes)}\n"
 
             if winners_to_save:
                 await db.save_winners(giveaway_id, winners_to_save)

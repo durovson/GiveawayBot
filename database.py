@@ -925,12 +925,35 @@ class Database:
             response = await self.client.table("giveaway_ticket_balances").select(
                 "tickets,consumed_at"
             ).eq("giveaway_id", giveaway_id).eq("user_id", user_id).limit(1).execute()
-            if not response.data or response.data[0].get("consumed_at"):
+            if not response.data:
                 return 1
-            return max(1, min(10, int(response.data[0].get("tickets", 1))))
+            return max(1, int(response.data[0].get("tickets", 1)))
         except Exception as e:
             logger.error(f"Error getting giveaway ticket balance: {e}")
             return 1
+
+    async def get_giveaway_ticket_ranking(self, giveaway_id: int, user_id: int) -> Dict:
+        if self._check_client():
+            try:
+                response = await self.client.rpc("get_giveaway_ticket_ranking", {
+                    "p_giveaway_id": giveaway_id,
+                    "p_user_id": user_id,
+                }).execute()
+                payload = self._rpc_payload(response.data)
+                if isinstance(payload, dict) and "top" in payload:
+                    return payload
+            except Exception as e:
+                logger.warning("Ticket ranking RPC unavailable, using fallback: %s", e)
+        participants = await self.get_participants(giveaway_id)
+        ordered = sorted(
+            participants,
+            key=lambda row: (-max(1, int(row.get("tickets_used") or 1)), int(row.get("user_id") or 0)),
+        )
+        user_rank = next(
+            (index for index, row in enumerate(ordered, 1) if int(row.get("user_id")) == user_id),
+            None,
+        )
+        return {"top": ordered[:10], "rank": user_rank, "count": len(ordered)}
 
     async def get_ticket_offers(self) -> List[Dict]:
         if not self._check_client(): return []

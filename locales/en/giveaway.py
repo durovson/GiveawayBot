@@ -42,7 +42,7 @@ TEXTS = {
     "giveaway_enter_time": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏰</tg-emoji>┅/ <b>Finish Time</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>Format:</b> 18:00 (Today) /"
+        "┗┅┅┅/ <b>Moscow time:</b> 18:00 or 18:00 04.09 /"
     ),
     "giveaway_enter_participants": (
         "┏┅<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>┅/ <b>Participant Limit</b> /\n"
@@ -158,7 +158,7 @@ TEXTS = {
     "giveaway_status_label": "Status",
     "giveaway_not_completed": "Not Completed",
     "giveaway_completed": "Completed",
-    "giveaway_announcement_btn": "ANNOUNCEMENT: {TITLE}",
+    "giveaway_announcement_btn": "ANNOUNCEMENT: {title}",
     "giveaway_participation_prohibited_admin": "❌ Participation is prohibited, you are the leader.",
     "giveaway_removed": "❌ The giveaway has been removed.",
     "giveaway_current_prizes": "Current prizes",

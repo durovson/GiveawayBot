@@ -2,8 +2,6 @@ import os
 import html
 import re
 import secrets
-import pytz
-from datetime import datetime, timedelta
 from aiogram import Router, types, F, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -13,6 +11,11 @@ from database import db
 from utils import safe_bot_edit_text, safe_answer, safe_edit_text, strip_custom_emojis, get_message_link
 import logging
 from services.localization import get_locale, get_locale_by_lang
+from services.giveaway_formatting import (
+    format_moscow_datetime,
+    format_prizes_html,
+    parse_moscow_giveaway_time,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,17 +110,7 @@ async def get_prizes_keyboard(prizes, texts):
 
 
 def build_timed_end_at(value: str):
-    try:
-        hours, minutes = map(int, value.strip().split(":", 1))
-        if not (0 <= hours <= 23 and 0 <= minutes <= 59):
-            return None
-        now = datetime.now(pytz.UTC)
-        end_at = now.replace(hour=hours, minute=minutes, second=0, microsecond=0)
-        if end_at <= now:
-            end_at += timedelta(days=1)
-        return end_at
-    except (AttributeError, TypeError, ValueError):
-        return None
+    return parse_moscow_giveaway_time(value)
 
 async def get_access_type_keyboard(texts):
     builder = InlineKeyboardBuilder()
@@ -433,7 +426,7 @@ async def process_prizes(message: types.Message, state: FSMContext, bot: Bot, te
     await state.update_data(prizes=prizes)
     last_msg_id = data.get('last_msg_id')
 
-    prizes_list = "\n".join([f"• {p}" for p in prizes])
+    prizes_list = "\n".join([f"• {format_prizes_html([p])}" for p in prizes])
     text = texts["giveaway_enter_prizes"] + f"\n\n<b>{texts['giveaway_current_prizes']}:</b>\n{prizes_list}"
 
     await safe_bot_edit_text(bot, message.chat.id, last_msg_id, text, reply_markup=await get_prizes_keyboard(prizes, texts), parse_mode=ParseMode.HTML)
@@ -479,9 +472,12 @@ async def generate_preview(data, texts):
     if data.get('mandatory_channels'):
         preview += f"<b>{texts['giveaway_channels_label']}:</b> {', '.join(data['mandatory_channels'])}\n"
     preview += f"<b>{texts['giveaway_type_label']}:</b> {type_label}\n"
-    preview += f"<b>{texts['giveaway_value_label']}:</b> {data['mode_value']}\n"
+    mode_value = data['mode_value']
+    if data['gtype'] == 'timed':
+        mode_value = format_moscow_datetime(parse_moscow_giveaway_time(mode_value))
+    preview += f"<b>{texts['giveaway_value_label']}:</b> {mode_value}\n"
     preview += f"<b>{texts['giveaway_winners_label']}:</b> {data['winners_count']}\n"
-    preview += f"<b>{texts['giveaway_prizes_label']}:</b> {', '.join(data['prizes'])}\n"
+    preview += f"<b>{texts['giveaway_prizes_label']}:</b> {format_prizes_html(data['prizes'])}\n"
     preview += f"<b>{texts['giveaway_access_label']}:</b> {texts['giveaway_access_all_btn'] if not data.get('allowed_users') else texts['giveaway_access_whitelist_btn']}"
 
     return preview
@@ -548,11 +544,11 @@ async def get_giveaway_post_data(giveaway, texts=None):
         texts = get_locale_by_lang("en")
 
     title = html.escape(giveaway['title'])
-    prizes = ", ".join([html.escape(p) for p in giveaway['prizes']])
+    prizes = format_prizes_html(giveaway['prizes'])
     winners = giveaway['winners_count']
 
     if giveaway['mode'] == 'timed':
-        cond = f"{texts['giveaway_ends_at']} {giveaway['value']}"
+        cond = f"{texts['giveaway_ends_at']} {format_moscow_datetime(giveaway.get('end_at'))}"
     else:
         cond = f"{texts['giveaway_ends_when']} {giveaway['value']} {texts['giveaway_participants_suffix']}"
 
@@ -681,7 +677,7 @@ async def process_back(callback: types.CallbackQuery, state: FSMContext, bot: Bo
         return
     if current_state == GiveawayCreation.ENTER_NAME.state:
         from handlers.main_menu import create_giveaway_handler
-        await create_giveaway_handler(callback, state)
+        await create_giveaway_handler(callback, state, texts)
         return
 
 

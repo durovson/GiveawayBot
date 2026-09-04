@@ -12,10 +12,11 @@ TEXTS = {
     "ticket_choose_title": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>БИЛЕТЫ GIVEAWAY</b> /\n┋\n┣ <b>Ваши RP:</b> {rp}\n{content}\n┋\n┗┅┅┅/ <b>Выберите розыгрыш</b> /",
     "ticket_choose_hint": "┣ Билеты действуют только в выбранном розыгрыше.\n┣ У каждого участника уже есть 1 бесплатный билет.",
     "ticket_choose_empty": "┣ Активных розыгрышей сейчас нет.",
-    "ticket_giveaway_detail": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY #{id}</b> /\n┋\n┣ <b>{title}</b>\n┣ Приз: {prizes}\n┣ Билеты: <b>{tickets} / 10</b>\n┣ Ваши RP: <b>{rp}</b>\n┋\n┣ Билеты сгорят только при входе.\n┗┅┅┅/ <b>Выберите действие</b> /",
-    "ticket_offer_add": "+{count} БИЛЕТОВ · {price} RP", "ticket_offer_max": "ДО 10 · {price} RP",
-    "ticket_enter_btn": "УЧАСТВОВАТЬ", "ticket_limit": "❌ Для этого розыгрыша уже достигнут максимум 10 билетов.",
-    "ticket_purchase_success": "✅ Добавлено билетов: {added}. Списано: {cost} RP.",
+    "ticket_giveaway_detail": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY #{id}</b> /\n┋ <b>{title}</b>\n┋\n┋Ваши билеты: <b>{tickets}</b>\n┋Ваши RP: <b>{rp}</b>\n┋\n┣ <b>Общий рейтинг по билетам:</b>\n{ranking}\n┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n┋ {your_rank}\n┗┅┅┅/ <b>Выберите действие</b> /",
+    "ticket_offer_add": "+{count} БИЛЕТОВ · {price} RP", "ticket_offer_max": "+10 БИЛЕТОВ · {price} RP",
+    "ticket_enter_btn": "УЧАСТВОВАТЬ", "ticket_limit": "❌ Некорректное количество билетов.",
+    "ticket_ranking_empty": "┋ Участников пока нет.", "ticket_not_ranked": "—. Вы ещё не участвуете",
+    "ticket_purchase_success": "✅ Добавлено билетов: {added}. Списано: {cost} RP. Ваш вес в розыгрыше обновлён.",
     "store_lots_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅/ <b>ЛОТЫ</b> /\n"
         "┋\n┣ <b>Ваши RP:</b> {rp}\n┋\n{content}\n┋\n"
