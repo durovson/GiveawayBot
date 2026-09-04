@@ -118,7 +118,7 @@ TEXTS = {
     "holders_btn": "HOLDERS",
     "login_btn": "LOGIN",
     "boost_btn": "BOOST",
-    "boost_title": "┏┅<tg-emoji emoji-id=\"5260221883940347555\">🚀</tg-emoji>┅/ <b>BOOST RP</b> /\n┋\n┣ Бонус холдера: <b>+{holder} RP</b>\n┣ Покупка NFT: <b>+{nft} RP</b>\n┣ Покупка стикера: <b>+{sticker} RP</b>\n┋\n┣ <b>GRAM → RP</b>: 1 GRAM = {rate} RP\n┣ Минимум: 0.1 GRAM\n┣ Отправьте GRAM на:\n<code>{wallet}</code>\n┣ Обязательный комментарий: <code>{username}</code>\n┋\n┗┅┅┅/ <b>Начисление автоматическое</b> /",
+    "boost_title": "┏┅<tg-emoji emoji-id=\"5260221883940347555\">🚀</tg-emoji>┅/ <b>BOOST RP</b> /\n┋\n┣ Бонус холдера: <b>+{holder} RP</b>\n┣ Рефералы: <b>+{nft} RP</b>\n┣ Покупка стикера: <b>+{sticker} RP</b>\n┋\n┣ <b>GRAM → RP</b>: 1 GRAM = {rate} RP\n┣ Минимум: 0.1 GRAM\n┣ Отправьте GRAM на:\n<code>{wallet}</code>\n┣ Обязательный комментарий: <code>{username}</code>\n┋\n┗┅┅┅/ <b>Начисление автоматическое</b> /",
     "boost_check_btn": "ПРОВЕРИТЬ ПЛАТЁЖ GRAM", "boost_not_configured": "Кошелёк пополнения не настроен",
     "boost_check_result": "Проверка завершена. Вам начислено: {added} RP. Обработано новых депозитов: {processed}.",
     "boost_check_failed": "Сервис блокчейна временно недоступен. Платёж не потерян — повторите проверку немного позже.",

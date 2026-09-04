@@ -118,7 +118,7 @@ TEXTS = {
     "holders_btn": "HOLDERS",
     "login_btn": "LOGIN",
     "boost_btn": "BOOST",
-    "boost_title": "┏┅<tg-emoji emoji-id=\"5260221883940347555\">🚀</tg-emoji>┅/ <b>BOOST RP</b> /\n┋\n┣ Holder bonus: <b>+{holder} RP</b>\n┣ NFT purchase: <b>+{nft} RP</b>\n┣ Sticker purchase: <b>+{sticker} RP</b>\n┋\n┣ <b>GRAM → RP</b>: 1 GRAM = {rate} RP\n┣ Minimum: 0.1 GRAM\n┣ Send GRAM to:\n<code>{wallet}</code>\n┣ Required transfer comment: <code>{username}</code>\n┋\n┗┅┅┅/ <b>Crediting is automatic</b> /",
+    "boost_title": "┏┅<tg-emoji emoji-id=\"5260221883940347555\">🚀</tg-emoji>┅/ <b>BOOST RP</b> /\n┋\n┣ Holder bonus: <b>+{holder} RP</b>\n┣ Referal: <b>+{nft} RP</b>\n┣ Sticker purchase: <b>+{sticker} RP</b>\n┋\n┣ <b>GRAM → RP</b>: 1 GRAM = {rate} RP\n┣ Minimum: 0.1 GRAM\n┣ Send GRAM to:\n<code>{wallet}</code>\n┣ Required transfer comment: <code>{username}</code>\n┋\n┗┅┅┅/ <b>Crediting is automatic</b> /",
     "boost_check_btn": "CHECK GRAM PAYMENT", "boost_not_configured": "Deposit wallet is not configured",
     "boost_check_result": "Check completed. Added to your balance: {added} RP. New deposits processed: {processed}.",
     "boost_check_failed": "The blockchain service is temporarily unavailable. The payment has not been lost; please try again shortly.",
