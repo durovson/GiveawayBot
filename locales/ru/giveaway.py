@@ -42,7 +42,7 @@ TEXTS = {
     "giveaway_enter_time": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏰</tg-emoji>┅/ <b>Время завершения</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>Формат:</b> 18:00 /"
+        "┗┅┅┅/ <b>Время по МСК:</b> 18:00 или 18:00 04.09 /"
     ),
     "giveaway_enter_participants": (
         "┏┅<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>┅/ <b>Лимит участников</b> /\n"
@@ -158,7 +158,7 @@ TEXTS = {
     "giveaway_status_label": "Статус",
     "giveaway_not_completed": "Не завершен",
     "giveaway_completed": "Завершен",
-    "giveaway_announcement_btn": "АНОНС: {TITLE}",
+    "giveaway_announcement_btn": "АНОНС: {title}",
     "giveaway_participation_prohibited_admin": "❌ Участие запрещено, вы ведущий.",
     "giveaway_removed": "❌ Розыгрыш был удален.",
     "giveaway_current_prizes": "Текущие призы",

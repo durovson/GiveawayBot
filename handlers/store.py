@@ -63,9 +63,10 @@ async def show_ticket_store(callback: types.CallbackQuery, state: FSMContext, te
 async def show_giveaway_tickets(event, giveaway_id: int, texts: dict,
                                 state: FSMContext | None = None):
     user_id = event.from_user.id
-    giveaway, rp, tickets, offers = await asyncio.gather(
+    giveaway, rp, tickets, offers, ranking = await asyncio.gather(
         db.get_giveaway(giveaway_id), _rp(user_id),
         db.get_giveaway_ticket_balance(giveaway_id, user_id), db.get_ticket_offers(),
+        db.get_giveaway_ticket_ranking(giveaway_id, user_id),
     )
     if not giveaway or giveaway.get("status") != "active":
         if isinstance(event, types.CallbackQuery):
@@ -73,22 +74,35 @@ async def show_giveaway_tickets(event, giveaway_id: int, texts: dict,
         return
     builder = InlineKeyboardBuilder()
     for offer in offers:
-        if offer["mode"] == "fill":
-            added = max(0, offer["ticket_count"] - tickets)
-            price = offer["price_rp"] * added if offer["pricing_mode"] == "per_ticket" else offer["price_rp"]
-            label = texts["ticket_offer_max"].format(price=price)
-        else:
-            price = offer["price_rp"]
-            label = texts["ticket_offer_add"].format(count=offer["ticket_count"], price=price)
+        price = offer["price_rp"] * offer["ticket_count"] \
+            if offer["pricing_mode"] == "per_ticket" else offer["price_rp"]
+        label = texts["ticket_offer_add"].format(count=offer["ticket_count"], price=price)
         builder.button(text=label, callback_data=f"buy_gt_{giveaway_id}_{offer['code']}")
-    builder.button(text=texts["ticket_enter_btn"], callback_data=f"join_{giveaway_id}", style="success")
+    if ranking["rank"] is None:
+        builder.button(text=texts["ticket_enter_btn"], callback_data=f"join_{giveaway_id}", style="success")
     builder.button(text=texts["store_back_btn"], callback_data="store_tickets",
                    icon_custom_emoji_id="5877629862306385808")
     builder.adjust(1)
-    prizes = ", ".join(map(str, giveaway.get("prizes") or [])) or "—"
+    def display_name(row):
+        username = str(row.get("username") or "").strip()
+        if not username:
+            return str(row.get("user_id"))
+        if not username.startswith("@") and " " not in username:
+            username = f"@{username}"
+        return html.escape(username)
+
+    ranking_lines = [
+        f"┋ {index}. {display_name(row)} — {max(1, int(row.get('tickets_used') or 1))}"
+        for index, row in enumerate(ranking["top"], 1)
+    ]
+    ranking_text = "\n".join(ranking_lines) if ranking_lines else texts["ticket_ranking_empty"]
+    if ranking["rank"] is None:
+        your_rank = texts["ticket_not_ranked"]
+    else:
+        your_rank = f"{ranking['rank']}. {display_name({'username': event.from_user.username, 'user_id': user_id})} — {tickets}"
     await _render(event, texts["ticket_giveaway_detail"].format(
         id=giveaway_id, title=html.escape(giveaway["title"]),
-        prizes=html.escape(prizes), tickets=tickets, rp=rp,
+        tickets=tickets, rp=rp, ranking=ranking_text, your_rank=your_rank,
     ), builder.as_markup(), state)
 
 

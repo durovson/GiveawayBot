@@ -7,6 +7,7 @@ import html
 from database import db
 from utils import safe_edit_text
 from services.localization import get_locale
+from services.giveaway_formatting import format_prize_html
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -31,14 +32,16 @@ async def history_created(callback: types.CallbackQuery, texts: dict):
 
         for g in top_giveaways:
             status = texts["giveaway_not_completed"] if g['status'] == 'active' else texts["giveaway_completed"]
-            title = html.escape(g.get('title') or 'Untitled')
+            raw_title = g.get('title') or 'Untitled'
+            title = html.escape(raw_title)
 
             # Start entry content
             entry = f"<tg-emoji emoji-id=\"5258254475386167466\">🖼</tg-emoji> <b>{texts['giveaway_event_label']}:</b> {title}\n"
             entry += f"<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji> <b>{texts['giveaway_status_label']}:</b> {status}"
 
             if g['status'] == 'active':
-                builder.button(text=texts["giveaway_announcement_btn"].format(title=title), callback_data=f"make_announcement_{g['id']}", icon_custom_emoji_id="5260268501515377807")
+                button_title = raw_title if len(raw_title) <= 38 else f"{raw_title[:37]}…"
+                builder.button(text=texts["giveaway_announcement_btn"].format(title=button_title), callback_data=f"make_announcement_{g['id']}", icon_custom_emoji_id="5260268501515377807")
 
             # If completed, add winners list on new lines
             if g['status'] != 'active':
@@ -47,7 +50,7 @@ async def history_created(callback: types.CallbackQuery, texts: dict):
                     entry += f"\n\n<tg-emoji emoji-id=\"5258185631355378853\">⭐️</tg-emoji> <b>{texts['giveaway_winners']}:</b>"
                     for w in winners:
                         w_name = html.escape(w.get('username') or f"ID:{w.get('user_id')}")
-                        w_prize = html.escape(w.get('prize', 'Prize'))
+                        w_prize = format_prize_html(w.get('prize', 'Prize'))
                         entry += f"\n@{w_name} — {w_prize}"
 
             # Wrap each giveaway in its own blockquote

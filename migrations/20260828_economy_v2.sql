@@ -20,13 +20,13 @@ insert into public.ticket_offers
 values
     ('1', 1, 50, 'add', 'fixed', 10),
     ('5', 5, 225, 'add', 'fixed', 20),
-    ('max', 10, 50, 'fill', 'per_ticket', 30)
+    ('max', 10, 50, 'add', 'per_ticket', 30)
 on conflict (code) do nothing;
 
 create table if not exists public.giveaway_ticket_balances (
     giveaway_id bigint not null references public.giveaways(id) on delete cascade,
     user_id bigint not null references public.users(telegram_id) on delete cascade,
-    tickets integer not null default 1 check (tickets between 1 and 10),
+    tickets integer not null default 1 check (tickets >= 1),
     purchased_rp integer not null default 0 check (purchased_rp >= 0),
     consumed_at timestamptz,
     created_at timestamptz not null default now(),
@@ -152,13 +152,6 @@ begin
         return jsonb_build_object('ok', false, 'error', 'GIVEAWAY_NOT_ACTIVE');
     end if;
 
-    if exists (
-        select 1 from public.participants
-        where giveaway_id = p_giveaway_id and user_id = p_user_id
-    ) then
-        return jsonb_build_object('ok', false, 'error', 'ALREADY_JOINED');
-    end if;
-
     select * into v_offer from public.ticket_offers
     where code = p_offer_code and active = true;
     if not found then
@@ -172,18 +165,14 @@ begin
     end if;
 
     insert into public.giveaway_ticket_balances (giveaway_id, user_id, tickets)
-    values (p_giveaway_id, p_user_id, greatest(1, least(10, v_legacy)))
+    values (p_giveaway_id, p_user_id, greatest(1, v_legacy))
     on conflict (giveaway_id, user_id) do nothing;
 
     select tickets into v_current from public.giveaway_ticket_balances
     where giveaway_id = p_giveaway_id and user_id = p_user_id for update;
 
-    if v_offer.mode = 'fill' then
-        v_add := v_offer.ticket_count - v_current;
-    else
-        v_add := v_offer.ticket_count;
-    end if;
-    if v_add <= 0 or v_current + v_add > 10 then
+    v_add := v_offer.ticket_count;
+    if v_add <= 0 then
         return jsonb_build_object('ok', false, 'error', 'TICKET_LIMIT_REACHED');
     end if;
 
@@ -207,7 +196,12 @@ begin
     update public.giveaway_ticket_balances
     set tickets = v_new,
         purchased_rp = purchased_rp + v_cost,
+        consumed_at = null,
         updated_at = now()
+    where giveaway_id = p_giveaway_id and user_id = p_user_id;
+
+    update public.participants
+    set tickets_used = v_new
     where giveaway_id = p_giveaway_id and user_id = p_user_id;
 
     update public.users set active_tickets = 0 where telegram_id = p_user_id;
@@ -268,7 +262,7 @@ begin
     end if;
 
     insert into public.giveaway_ticket_balances (giveaway_id, user_id, tickets)
-    values (p_giveaway_id, p_user_id, greatest(1, least(10, v_legacy)))
+    values (p_giveaway_id, p_user_id, greatest(1, v_legacy))
     on conflict (giveaway_id, user_id) do nothing;
 
     select tickets into v_tickets from public.giveaway_ticket_balances
@@ -282,7 +276,7 @@ begin
         return jsonb_build_object('ok', false, 'error', 'ALREADY_JOINED');
     end if;
 
-    update public.giveaway_ticket_balances set consumed_at = now(), updated_at = now()
+    update public.giveaway_ticket_balances set consumed_at = null, updated_at = now()
     where giveaway_id = p_giveaway_id and user_id = p_user_id;
     update public.users set active_tickets = 0 where telegram_id = p_user_id;
 
