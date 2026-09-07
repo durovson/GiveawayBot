@@ -31,6 +31,7 @@ TEXTS = {
         "┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>REFERRAL:</b> Invite & Earn Points\n"
         "┣ [<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>] <b>LOGIN:</b> Connect Ton Wallet\n"
         "┣ [<tg-emoji emoji-id=\"5260221883940347555\">🔫</tg-emoji>] <b>BOOST:</b> Boost your Power\n"
+        "┣ [<tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji>] <b>WL NOTAPES:</b> OpenSea drop\n"
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
@@ -52,7 +53,7 @@ TEXTS = {
         "┣ Global ranking by Rating Points (RP).\n"
         "┋\n"
         "┣ [<tg-emoji emoji-id=\"5258165702707125574\">⭐️</tg-emoji>] <b>1 Pack = 10 RP</b>\n"
-        "┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>1 Wallet Ref = 5 RP</b>\n"
+        "┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>1 Wallet Ref = 10 RP</b>\n"
         "┣ [<tg-emoji emoji-id=\"5258179403652801593\">❤️</tg-emoji>] <b>Holder Bonus = 50 RP</b>\n"
         "┋\n"
         "{lines}\n"
@@ -94,7 +95,7 @@ TEXTS = {
         "┋\n"
         "┣ <b>Invited:</b> {invited}\n"
         "┣ <b>Active:</b> {active}\n"
-        "┣ <b>1 Wallet Ref = 5 RP</b>\n"
+        "┣ <b>1 Wallet Ref = 10 RP</b>\n"
         "┋\n"
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
