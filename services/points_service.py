@@ -94,7 +94,7 @@ class PointsService:
             # holder/referral recalculation.
             spent_points = points_data.get("spent_points", 0)
             external_points = points_data.get("external_points", 0)
-            base_points = (packs * 10) + (active_referrals * 5) + og_bonus
+            base_points = (packs * 10) + (active_referrals * 10) + og_bonus
             calculated_points = round(base_points * multiplier)
             total_points = max(0, calculated_points + external_points - spent_points)
 
