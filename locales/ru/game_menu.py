@@ -31,6 +31,7 @@ TEXTS = {
         "┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>REFERRAL:</b> Приглашай и зарабатывай\n"
         "┣ [<tg-emoji emoji-id=\"5258204546391351475\">💰</tg-emoji>] <b>LOGIN:</b> Подключить кошелек\n"
         "┣ [<tg-emoji emoji-id=\"5260221883940347555\">🔫</tg-emoji>] <b>BOOST:</b> Увеличить силу\n"
+        "┣ [<tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji>] <b>WL NOTAPES:</b> Дроп на OpenSea\n"
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
@@ -52,7 +53,7 @@ TEXTS = {
         "┣ Глобальный рейтинг по Rating Points (RP).\n"
         "┋\n"
         "┣ [<tg-emoji emoji-id=\"5258165702707125574\">⭐️</tg-emoji>] <b>1 Pack = 10 RP</b>\n"
-        "┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>1 Wallet Ref = 5 RP</b>\n"
+        "┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>1 Wallet Ref = 10 RP</b>\n"
         "┣ [<tg-emoji emoji-id=\"5258179403652801593\">❤️</tg-emoji>] <b>Holder Bonus = 50 RP</b>\n"
         "┋\n"
         "{lines}\n"
@@ -94,7 +95,7 @@ TEXTS = {
         "┋\n"
         "┣ <b>Приглашено:</b> {invited}\n"
         "┣ <b>Активно:</b> {active}\n"
-        "┣ <b>1 Wallet Ref = 5 RP</b>\n"
+        "┣ <b>1 Wallet Ref = 10 RP</b>\n"
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
