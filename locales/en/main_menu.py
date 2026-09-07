@@ -23,6 +23,7 @@ TEXTS = {
         "┣ Modes:\n"
         "┣ [1] Game (Public)\n"
         "┣ [2] OTC Market (Holders)\n"
+        "┣ [3] WL NOTAPES\n"
         "┋\n"
         "┣ Status upgrade unlocks more!\n"
         "┋\n"
