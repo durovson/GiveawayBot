@@ -1,9 +1,9 @@
 TEXTS = {
-    "september_wl_btn": "<tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji>NOTAPES WL",
+    "september_wl_btn": "NOTAPES WL",
     "september_wl_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji>┅/ <b>NOTAPES WL</b> /\n"
         "┋\n"
-        "┣ In <b>September</b>, we are launching a limited NOTAPES series on <tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji> OpenSea./n"
+        "┣ In <b>September</b>, we are launching a limited NOTAPES series on <tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji> OpenSea.\n"
         "┣ Every <b>4 NOTAPES</b> = <b>+1 WL</b>.\n"
         "┣ <b>1 WL</b> = mint 1 Ape.\n"
         "┋\n"
