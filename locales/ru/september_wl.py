@@ -3,7 +3,7 @@ TEXTS = {
     "september_wl_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji>┅/ <b>NOTAPES WL</b> /\n"
         "┋\n"
-        "┣ В <b>сентябре</b> мы запускаем лимитированную серию NOTAPES на <tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji> OpenSea.\n"
+        "┣ <b>Скоро</b> мы запускаем лимитированную серию NOTAPES на <tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji> OpenSea.\n"
         "┣ Каждые <b>4 NOTAPES</b> = <b>+1 WL</b>.\n"
         "┣ <b>1 WL</b> = минт 1 обезьянки.\n"
         "┋\n"
