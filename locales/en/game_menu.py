@@ -123,7 +123,7 @@ TEXTS = {
     "holders_btn": "HOLDERS",
     "login_btn": "LOGIN",
     "boost_btn": "BOOST",
-    "boost_title": "┏┅<tg-emoji emoji-id=\"5260221883940347555\">🚀</tg-emoji>┅/ <b>BOOST RP</b> /\n┋\n┣ [<tg-emoji emoji-id=\"5258179403652801593\">❤️</tg-emoji>] <b>Holder Bonus = 50 RP</b>\n┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>1 Wallet Ref = 10 RP</b>\n┣ [<tg-emoji emoji-id=\"5258165702707125574\">⭐️</tg-emoji>] <b>1 Pack = 10 RP</b>\n┋\n┣ <b>GRAM → RP</b>: 1 GRAM = {rate} RP\n┣ Minimum: 0.1 GRAM\n┋\n┣ Send GRAM to:\n<code>{wallet}</code>\n┣ Required transfer comment: <code>{username}</code>\n┋\n┗┅┅┅/ <b>Crediting is automatic</b> /",
+    "boost_title": "┏┅<tg-emoji emoji-id=\"5260221883940347555\">🚀</tg-emoji>┅/ <b>BOOST RP</b> /\n┋\n┣ [<tg-emoji emoji-id=\"5258179403652801593\">❤️</tg-emoji>] <b>Holder Bonus = 50 RP</b>\n┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>1 Wallet Ref = 10 RP</b>\n┣ [<tg-emoji emoji-id=\"5258165702707125574\">⭐️</tg-emoji>] <b>1 Pack = 10 RP</b>\n┋\n┣ <b>GRAM → RP</b>: 1 GRAM = {rate} RP\n┣ Minimum: 0.1 GRAM\n┋\n┣ Send GRAM to: <code>{wallet}</code>\n┣ Required transfer comment: <code>{username}</code>\n┋\n┗┅┅┅/ <b>Crediting is automatic</b> /",
     "boost_send_btn": "QUICK SEND GRAM",
     "boost_username_missing": "Telegram username required",
     "boost_username_required": "Set a Telegram username first. It is required in the transfer comment for automatic RP crediting.",
