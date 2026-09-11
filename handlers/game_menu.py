@@ -85,7 +85,7 @@ async def referral_menu_handler(callback: types.CallbackQuery, state: FSMContext
     builder.button(
         text=texts["referral_share_btn"],
         url=share_url,
-        icon_custom_emoji_id="5325604415900504150",
+        icon_custom_emoji_id="5357069174512303778",
         style="success",
     )
     builder.button(text=texts["game_back_btn"], callback_data="game_menu", icon_custom_emoji_id="5877629862306385808")
