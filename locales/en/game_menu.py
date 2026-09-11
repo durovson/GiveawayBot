@@ -102,7 +102,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Select an option</b> /"
     ),
     "referral_share_btn": "SHARE",
-    "referral_share_text": "┏┅🔞┅/ INVITE /\n┋\n┣ Immerse yourself in NOTAPES\n┋\n┗┅┅┅/ JOIN US /",
+    "referral_share_text": "┏┅<tg-emoji emoji-id=\"5357069174512303778\">✅</tg-emoji>┅/ INVITE /\n┋\n┣ Immerse yourself in NOTAPES\n┋\n┗┅┅┅/ JOIN US /",
     "rules_screen_text": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258328383183396223\">📖</tg-emoji>┅/ <b>DOCS</b> /\n"
         "┋ \n"
