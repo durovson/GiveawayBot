@@ -13,6 +13,7 @@ from services.leaderboard import LeaderboardService
 from services.referral_service import ReferralService
 from services.points_service import PointsService
 from services.holder_service import HolderService
+from services.deep_links import build_telegram_share_url
 from utils import safe_edit_text, normalize_wallet, short_wallet
 from services.localization import get_locale
 
@@ -78,8 +79,15 @@ async def referral_menu_handler(callback: types.CallbackQuery, state: FSMContext
         invited=total_invited,
         active=active_refs
     )
+    share_url = build_telegram_share_url(ref_link, texts["referral_share_text"])
 
     builder = InlineKeyboardBuilder()
+    builder.button(
+        text=texts["referral_share_btn"],
+        url=share_url,
+        icon_custom_emoji_id="5325604415900504150",
+        style="success",
+    )
     builder.button(text=texts["game_back_btn"], callback_data="game_menu", icon_custom_emoji_id="5877629862306385808")
     builder.adjust(1)
 

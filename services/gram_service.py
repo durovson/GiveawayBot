@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 import loader
 from database import db
 from utils import normalize_to_raw
+from services.deep_links import get_gram_deposit_wallet
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class GramDepositService:
     def configured() -> bool:
         # Native GRAM (formerly TON) does not have a jetton master.  A master is
         # only needed when the legacy GRM jetton is accepted as well.
-        return bool(os.getenv("GRAM_DEPOSIT_WALLET"))
+        return bool(get_gram_deposit_wallet())
 
     @staticmethod
     def last_sync_error() -> str | None:
@@ -71,7 +72,7 @@ class GramDepositService:
     async def sync() -> int:
         if not GramDepositService.configured() or not loader.http_session:
             return 0
-        wallet = os.environ["GRAM_DEPOSIT_WALLET"].strip()
+        wallet = get_gram_deposit_wallet()
         master = os.getenv("GRAM_JETTON_MASTER", "").strip()
         try:
             wallet_raw = normalize_to_raw(wallet)

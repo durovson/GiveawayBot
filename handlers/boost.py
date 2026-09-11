@@ -1,6 +1,5 @@
 import asyncio
 import html
-import os
 
 from aiogram import F, Router, types
 from aiogram.enums import ParseMode
@@ -9,6 +8,11 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database import db
 from services.gram_service import GramDepositService
+from services.deep_links import (
+    build_tonkeeper_transfer_url,
+    get_gram_deposit_wallet,
+    get_gram_deposit_wallet_name,
+)
 from utils import safe_edit_text
 
 router = Router()
@@ -19,15 +23,31 @@ async def show_boost(callback: types.CallbackQuery, state: FSMContext, texts: di
         db.get_setting("boost_nft_purchase_rp"), db.get_setting("boost_sticker_purchase_rp"),
         db.get_setting("gram_rp_per_gram"),
     )
-    wallet = os.getenv("GRAM_DEPOSIT_WALLET") or texts["boost_not_configured"]
+    wallet = get_gram_deposit_wallet()
+    wallet_name = get_gram_deposit_wallet_name()
+    username = callback.from_user.username
+    transfer_comment = "@" + username if username else texts["boost_username_missing"]
     builder = InlineKeyboardBuilder()
-    builder.button(text=texts["boost_check_btn"], callback_data="boost_check", style="success")
+    if username:
+        builder.button(
+            text=texts["boost_send_btn"],
+            url=build_tonkeeper_transfer_url(wallet, transfer_comment),
+            icon_custom_emoji_id="5260221883940347555",
+            style="success",
+        )
+    else:
+        builder.button(
+            text=texts["boost_send_btn"],
+            callback_data="boost_username_required",
+            icon_custom_emoji_id="5260221883940347555",
+        )
+    builder.button(text=texts["boost_check_btn"], callback_data="boost_check")
     builder.button(text=texts["game_back_btn"], callback_data="game_menu",
                    icon_custom_emoji_id="5877629862306385808")
     builder.adjust(1)
     await safe_edit_text(callback, texts["boost_title"].format(
         holder=50, nft=nft or 0, sticker=sticker or 0, rate=rate or 10,
-        wallet=html.escape(wallet), username=html.escape("@" + (callback.from_user.username or "username")),
+        wallet=html.escape(wallet_name), username=html.escape(transfer_comment),
     ), reply_markup=builder.as_markup(), parse_mode=ParseMode.HTML, state=state)
 
 
@@ -47,3 +67,8 @@ async def boost_check(callback: types.CallbackQuery, state: FSMContext, texts: d
     after = (await db.get_points(callback.from_user.id) or {}).get("total_points", 0)
     await callback.answer(texts["boost_check_result"].format(added=max(0, after - before), processed=credited), show_alert=True)
     await show_boost(callback, state, texts)
+
+
+@router.callback_query(F.data == "boost_username_required")
+async def boost_username_required(callback: types.CallbackQuery, texts: dict):
+    await callback.answer(texts["boost_username_required"], show_alert=True)

@@ -97,8 +97,12 @@ TEXTS = {
         "┣ <b>Активно:</b> {active}\n"
         "┣ <b>1 Wallet Ref = 10 RP</b>\n"
         "┋\n"
+        "┣ Нажмите «Поделиться» и выберите друга — ссылка и текст подставятся автоматически.\n"
+        "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
+    "referral_share_btn": "ПОДЕЛИТЬСЯ",
+    "referral_share_text": "┏┅🔞┅/ ПРИГЛАШЕНИЕ /\n┋\n┣ Погрузись в мир NOTAPES\n┋\n┗┅┅┅/ ПРИСОЕДИНЯЙСЯ /",
     "rules_screen_text": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5258328383183396223\">📖</tg-emoji>┅/ <b>ДОКУМЕНТЫ</b> /\n"
         "┋ \n"
@@ -120,6 +124,9 @@ TEXTS = {
     "login_btn": "LOGIN",
     "boost_btn": "BOOST",
     "boost_title": "┏┅<tg-emoji emoji-id=\"5260221883940347555\">🚀</tg-emoji>┅/ <b>BOOST RP</b> /\n┋\n┣ [<tg-emoji emoji-id=\"5258179403652801593\">❤️</tg-emoji>] <b>Holder Bonus = 50 RP</b>\n┣ [<tg-emoji emoji-id=\"6032594876506312598\">👥</tg-emoji>] <b>1 Wallet Ref = 10 RP</b>\n┣ [<tg-emoji emoji-id=\"5258165702707125574\">⭐️</tg-emoji>] <b>1 Pack = 10 RP</b>\n┋\n┣ <b>GRAM → RP</b>: 1 GRAM = {rate} RP\n┣ Минимум: 0.1 GRAM\n┣ Отправьте GRAM на:\n<code>{wallet}</code>\n┣ Обязательный комментарий: <code>{username}</code>\n┋\n┗┅┅┅/ <b>Начисление автоматическое</b> /",
+    "boost_send_btn": "БЫСТРО ОТПРАВИТЬ GRAM",
+    "boost_username_missing": "Нужен Telegram username",
+    "boost_username_required": "Сначала установите Telegram username. Он нужен в комментарии для автоматического начисления RP.",
     "boost_check_btn": "ПРОВЕРИТЬ ПЛАТЁЖ GRAM", "boost_not_configured": "Кошелёк пополнения не настроен",
     "boost_check_result": "Проверка завершена. Вам начислено: {added} RP. Обработано новых депозитов: {processed}.",
     "boost_check_failed": "Сервис блокчейна временно недоступен. Платёж не потерян — повторите проверку немного позже.",
