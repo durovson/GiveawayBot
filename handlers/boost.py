@@ -9,7 +9,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from database import db
 from services.gram_service import GramDepositService
 from services.deep_links import (
-    build_tonkeeper_transfer_url,
+    build_gram_transfer_gateway_url,
     get_gram_deposit_wallet,
     get_gram_deposit_wallet_name,
 )
@@ -31,7 +31,10 @@ async def show_boost(callback: types.CallbackQuery, state: FSMContext, texts: di
     if username:
         builder.button(
             text=texts["boost_send_btn"],
-            url=build_tonkeeper_transfer_url(wallet, transfer_comment),
+            url=build_gram_transfer_gateway_url(
+                transfer_comment,
+                texts["boost_transfer_language"],
+            ),
             icon_custom_emoji_id="5260221883940347555",
             style="success",
         )
