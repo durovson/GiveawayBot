@@ -5,6 +5,7 @@ import os
 import time
 from decimal import Decimal, InvalidOperation
 
+import aiohttp
 import loader
 from database import db
 from utils import normalize_to_raw
@@ -52,21 +53,50 @@ class GramDepositService:
     @staticmethod
     async def _load_events(url: str) -> list[dict]:
         headers = GramDepositService._authorization_headers()
-        async with loader.http_session.get(
-            url, params={"limit": 100}, headers=headers, timeout=20
-        ) as response:
-            # Public TonAPI access is sufficient for polling.  Retry without a
-            # stale/malformed optional key instead of disabling deposits.
-            if response.status != 401 or not headers:
-                response.raise_for_status()
-                return (await response.json()).get("events", [])
+        header_options = [headers, {}] if headers else [{}]
 
-        GramDepositService._warn_rejected_key()
-        async with loader.http_session.get(
-            url, params={"limit": 100}, timeout=20
-        ) as response:
-            response.raise_for_status()
-            return (await response.json()).get("events", [])
+        for request_headers in header_options:
+            for attempt in range(3):
+                try:
+                    async with loader.http_session.get(
+                        url,
+                        params={"limit": 100},
+                        headers=request_headers,
+                        timeout=20,
+                    ) as response:
+                        if response.status == 401 and request_headers:
+                            GramDepositService._warn_rejected_key()
+                            break
+                        if response.status in {429, 500, 502, 503, 504} and attempt < 2:
+                            await response.read()
+                            retry_after = response.headers.get("Retry-After")
+                            try:
+                                delay = min(5.0, max(0.5, float(retry_after)))
+                            except (TypeError, ValueError):
+                                delay = 0.5 * (2 ** attempt)
+                            logger.warning(
+                                "TonAPI returned HTTP %s; retrying in %.1fs (%s/3)",
+                                response.status,
+                                delay,
+                                attempt + 1,
+                            )
+                        else:
+                            response.raise_for_status()
+                            return (await response.json()).get("events", [])
+                except aiohttp.ClientResponseError:
+                    raise
+                except (aiohttp.ClientError, asyncio.TimeoutError):
+                    if attempt == 2:
+                        raise
+                    delay = 0.5 * (2 ** attempt)
+                    logger.warning(
+                        "TonAPI request failed; retrying in %.1fs (%s/3)",
+                        delay,
+                        attempt + 1,
+                    )
+                await asyncio.sleep(delay)
+
+        raise RuntimeError("TonAPI authorization was rejected")
 
     @staticmethod
     async def sync() -> int:

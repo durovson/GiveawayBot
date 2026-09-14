@@ -1,10 +1,33 @@
 import os
+import asyncio
 import logging
-from typing import List, Optional, Dict, Any
+from typing import Awaitable, Callable, List, Optional, Dict, Any, TypeVar
 from supabase import create_async_client, AsyncClient
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
+TRANSIENT_DB_MARKERS = (
+    "gateway timeout",
+    "timed out",
+    "timeout",
+    "connection reset",
+    "connection refused",
+    "server disconnected",
+    "code': '502",
+    "code': '503",
+    "code': '504",
+    "code': 502",
+    "code': 503",
+    "code': 504",
+    '"code":"502"',
+    '"code":"503"',
+    '"code":"504"',
+    '"code": 502',
+    '"code": 503',
+    '"code": 504',
+)
 
 class Database:
     def __init__(self):
@@ -24,6 +47,36 @@ class Database:
 
     def _check_client(self) -> bool:
         return self.client is not None
+
+    @staticmethod
+    def _is_transient_error(error: Exception) -> bool:
+        message = str(error).lower()
+        return any(marker in message for marker in TRANSIENT_DB_MARKERS)
+
+    async def _retry_read(
+        self,
+        operation: Callable[[], Awaitable[T]],
+        label: str,
+        attempts: int = 3,
+    ) -> T:
+        """Retry idempotent reads after short-lived Supabase gateway failures."""
+        for attempt in range(1, attempts + 1):
+            try:
+                return await operation()
+            except Exception as error:
+                if attempt == attempts or not self._is_transient_error(error):
+                    raise
+                delay = 0.5 * (2 ** (attempt - 1))
+                logger.warning(
+                    "Transient database error during %s; retrying in %.1fs (%s/%s)",
+                    label,
+                    delay,
+                    attempt,
+                    attempts,
+                )
+                await asyncio.sleep(delay)
+
+        raise RuntimeError("unreachable")
 
     async def track_chat(self, chat_id: int, title: str, chat_type: Optional[str] = None):
         if not self._check_client(): return
@@ -124,7 +177,15 @@ class Database:
     async def get_expired_giveaways(self, now: datetime) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("giveaways").select("id, creator_id, chat_id, title, winners_count, prizes, mandatory_channels, allowed_users").eq("status", "active").eq("mode", "timed").lte("end_at", now.isoformat()).execute()
+            response = await self._retry_read(
+                lambda: self.client.table("giveaways").select(
+                    "id, creator_id, chat_id, title, winners_count, prizes, "
+                    "mandatory_channels, allowed_users"
+                ).eq("status", "active").eq("mode", "timed").lte(
+                    "end_at", now.isoformat()
+                ).execute(),
+                "fetching expired giveaways",
+            )
             return response.data
         except Exception as e:
             logger.error(f"Error fetching expired giveaways: {e}")
@@ -210,7 +271,12 @@ class Database:
     async def get_setting(self, key: str) -> Optional[str]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("settings").select("value").eq("key", key).execute()
+            response = await self._retry_read(
+                lambda: self.client.table("settings").select("value").eq(
+                    "key", key
+                ).execute(),
+                f"getting setting {key}",
+            )
             return response.data[0]["value"] if response.data else None
         except Exception as e:
             logger.error(f"Error getting setting {key}: {e}")
@@ -242,7 +308,13 @@ class Database:
     async def get_active_notifications(self) -> List[Dict]:
         if not self._check_client(): return []
         try:
-            response = await self.client.table("notifications").select("id, title, text, custom_buttons, interval_minutes, last_sent, last_message_id, chat_id").eq("is_active", True).execute()
+            response = await self._retry_read(
+                lambda: self.client.table("notifications").select(
+                    "id, title, text, custom_buttons, interval_minutes, "
+                    "last_sent, last_message_id, chat_id"
+                ).eq("is_active", True).execute(),
+                "getting active notifications",
+            )
             return response.data
         except Exception as e:
             logger.error(f"Error getting active notifications: {e}")
@@ -569,7 +641,12 @@ class Database:
     async def get_points_batch(self, user_ids: List[int]) -> List[Dict]:
         if not self._check_client() or not user_ids: return []
         try:
-            response = await self.client.table("points").select("*, users(username, first_name)").in_("user_id", user_ids).execute()
+            response = await self._retry_read(
+                lambda: self.client.table("points").select(
+                    "*, users(username, first_name)"
+                ).in_("user_id", user_ids).execute(),
+                "getting points batch",
+            )
             return response.data
         except Exception as e:
             logger.error(f"Error getting points batch: {e}")
