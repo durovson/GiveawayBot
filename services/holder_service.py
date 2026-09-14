@@ -1,7 +1,8 @@
-import os
 import logging
-from datetime import datetime
+import os
+
 import loader
+from config import HOLDER_CHAT_ID
 from database import db
 from services.points_service import PointsService
 
@@ -9,48 +10,31 @@ logger = logging.getLogger(__name__)
 
 class HolderService:
     @staticmethod
+    async def award_holder_join_bonus(user_id: int) -> bool:
+        """Claim and apply the shared one-time 50 RP holders bonus."""
+        awarded = await db.claim_holder_join_bonus(user_id)
+        if not awarded:
+            return False
+
+        await db.upsert_points(user_id, is_holder=True)
+        await PointsService.recalculate_points(user_id)
+        logger.info("User %s received the holders-chat bonus", user_id)
+        return True
+
+    @staticmethod
     async def verify_holder_status(user_id: int):
         """
         Verifies if a user is a member of the holders chat.
-        If verified for the first time, awards the OG bonus (tracked via og_bonus_awarded_at).
+        If membership is confirmed, atomically claims the shared holder bonus.
         """
-        otc_chat_id = os.environ.get("OTC_CHAT_ID")
-        if not otc_chat_id:
-            logger.error("OTC_CHAT_ID is not set in environment variables")
-            return False
+        otc_chat_id = os.environ.get("OTC_CHAT_ID", str(HOLDER_CHAT_ID))
 
         try:
             member = await loader.bot.get_chat_member(otc_chat_id, user_id)
             is_member = member.status in ["member", "administrator", "creator"]
 
             if is_member:
-                # Check if already verified
-                user = await db.get_user_by_telegram_id(user_id)
-                if user and not user.get("holder_verified_at"):
-                    # First time verification
-                    now = datetime.now()
-                    is_og = await db.is_og_holder(user_id)
-
-                    # Update user verification status
-                    update_fields = {"holder_verified_at": now.isoformat()}
-                    if is_og:
-                        update_fields["og_bonus_awarded_at"] = now.isoformat()
-
-                    success = await db.update_user_fields(user_id, **update_fields)
-                    if not success:
-                        logger.error(f"Failed to update user fields for {user_id}")
-                        return False
-
-                    # Mark as holder in points table
-                    await db.upsert_points(
-                        user_id,
-                        is_holder=True
-                    )
-
-                    # Recalculate RP
-                    await PointsService.recalculate_points(user_id)
-                    logger.info(f"User {user_id} verified as holder for the first time. OG: {is_og}")
-
+                await HolderService.award_holder_join_bonus(user_id)
                 return True
 
             return False

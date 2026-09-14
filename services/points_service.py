@@ -37,7 +37,10 @@ class PointsService:
             # 3. OG Bonus (O)
             # OG is determined by membership in og_holders_snapshot
             is_og = await db.is_og_holder(user_id)
-            og_bonus = 50 if is_og else 0
+            has_holder_join_bonus = bool(
+                user_data.get("holder_join_bonus_awarded_at")
+            )
+            holder_bonus = 50 if is_og or has_holder_join_bonus else 0
 
             # 4. Retention Multiplier (C)
             multiplier = 1.0
@@ -94,18 +97,29 @@ class PointsService:
             # holder/referral recalculation.
             spent_points = points_data.get("spent_points", 0)
             external_points = points_data.get("external_points", 0)
-            base_points = (packs * 10) + (active_referrals * 10) + og_bonus
+            manual_adjustment = points_data.get("manual_adjustment", 0)
+            base_points = (packs * 10) + (active_referrals * 10) + holder_bonus
             calculated_points = round(base_points * multiplier)
-            total_points = max(0, calculated_points + external_points - spent_points)
+            total_points = max(
+                0,
+                calculated_points + external_points + manual_adjustment - spent_points,
+            )
 
             # 6. Update the points table
             await db.upsert_points(
                 user_id=user_id,
-                holder_bonus=og_bonus,
+                holder_bonus=holder_bonus,
                 total_points=total_points
             )
 
-            logger.info(f"RP recalculated for user {user_id}: {total_points} (C={multiplier}, O={og_bonus})")
+            logger.info(
+                "RP recalculated for user %s: %s (C=%s, holder_bonus=%s, manual=%s)",
+                user_id,
+                total_points,
+                multiplier,
+                holder_bonus,
+                manual_adjustment,
+            )
             return total_points
 
         except Exception as e:

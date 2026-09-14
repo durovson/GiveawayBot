@@ -523,7 +523,7 @@ class Database:
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[Dict]:
         if not self._check_client(): return None
         try:
-            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, wallet_connected_at, referral_validated_at, terms_version, community_joined_at, username, first_name, og_bonus_awarded_at, og_bonus_amount, holder_verified_at, active_tickets").eq("telegram_id", telegram_id).execute()
+            response = await self.client.table("users").select("telegram_id, wallet_address, language, ref_code, referrer_id, referral_status, wallet_connected_at, referral_validated_at, terms_version, community_joined_at, username, first_name, og_bonus_awarded_at, og_bonus_amount, holder_verified_at, holder_join_bonus_awarded_at, active_tickets").eq("telegram_id", telegram_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error getting user by telegram_id: {e}")
@@ -669,6 +669,22 @@ class Database:
             }).execute()
         except Exception as e:
             logger.error(f"Error adding OG holder: {e}")
+
+    async def claim_holder_join_bonus(self, telegram_id: int) -> bool:
+        """Atomically claim the one-time holders-chat bonus."""
+        if not self._check_client():
+            return False
+        try:
+            response = await self.client.rpc("claim_holder_join_bonus", {
+                "p_user_id": telegram_id,
+            }).execute()
+            data = response.data
+            if isinstance(data, list):
+                data = data[0] if data else False
+            return bool(data)
+        except Exception as e:
+            logger.error(f"Error claiming holder join bonus for {telegram_id}: {e}")
+            return False
 
     async def get_og_snapshot_count(self) -> int:
         if not self._check_client(): return 0

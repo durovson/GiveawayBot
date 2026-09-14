@@ -12,8 +12,10 @@ from database import db
 from web_server import app, ping_self
 from services.ton_connect_service import TonConnectService
 from services.leaderboard import LeaderboardService
+from services.holder_service import HolderService
 from middleware.referral_validator import ReferralValidatorMiddleware
 from middleware.localization import LocalizationMiddleware
+from config import HOLDER_CHAT_ID
 
 # Import handlers
 from handlers.main_menu import router as main_menu_router
@@ -60,6 +62,23 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
                 )
             except Exception:
                 pass
+
+
+@dp.chat_member()
+async def on_holder_chat_member_update(update: ChatMemberUpdated):
+    """Award 50 RP when a user first joins the configured holders chat."""
+    holder_chat_id = int(os.getenv("OTC_CHAT_ID", str(HOLDER_CHAT_ID)))
+    if update.chat.id != holder_chat_id:
+        return
+
+    active_statuses = {"member", "administrator", "creator"}
+    was_member = update.old_chat_member.status in active_statuses
+    is_member = update.new_chat_member.status in active_statuses
+    if not was_member and is_member:
+        await HolderService.award_holder_join_bonus(
+            update.new_chat_member.user.id
+        )
+
 
 # Middleware
 dp.message.middleware(ReferralValidatorMiddleware())
