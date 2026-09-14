@@ -10,6 +10,7 @@ from services.deep_links import (
     DEFAULT_GRAM_DEPOSIT_WALLET,
     build_gram_transfer_gateway_url,
     build_telegram_share_url,
+    build_tonkeeper_transfer_url,
     build_ton_transfer_url,
     get_gram_deposit_wallet,
 )
@@ -48,6 +49,21 @@ class DeepLinkTests(unittest.TestCase):
             "text": ["@not_jammm"],
             "amount": ["100000000"],
         })
+
+    def test_tonkeeper_link_prefills_address_and_comment(self):
+        result = build_tonkeeper_transfer_url(
+            DEFAULT_GRAM_DEPOSIT_WALLET,
+            "@not_jammm",
+        )
+        parsed = urlparse(result)
+
+        self.assertEqual(parsed.scheme, "https")
+        self.assertEqual(parsed.netloc, "app.tonkeeper.com")
+        self.assertEqual(
+            parsed.path,
+            f"/transfer/{DEFAULT_GRAM_DEPOSIT_WALLET}",
+        )
+        self.assertEqual(parse_qs(parsed.query), {"text": ["@not_jammm"]})
 
     def test_gateway_is_https_and_localized(self):
         old_base = os.environ.get("GRAM_TRANSFER_PUBLIC_URL")

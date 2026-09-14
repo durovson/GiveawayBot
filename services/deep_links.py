@@ -53,6 +53,22 @@ def build_ton_transfer_url(
     return f"ton://transfer/{address}?{query}"
 
 
+def build_tonkeeper_transfer_url(
+    wallet_address: str,
+    comment: str,
+    amount: int | None = None,
+) -> str:
+    """Build an official Tonkeeper payment link with prefilled transfer data."""
+    address = quote(wallet_address.strip(), safe="")
+    params: dict[str, str | int] = {"text": comment}
+    if amount is not None:
+        if amount <= 0:
+            raise ValueError("amount must be a positive number of nanograms")
+        params["amount"] = amount
+    query = urlencode(params, quote_via=quote, safe="")
+    return f"https://app.tonkeeper.com/transfer/{address}?{query}"
+
+
 def build_gram_transfer_gateway_url(comment: str, language: str = "en") -> str:
     query = urlencode(
         {"comment": comment, "lang": "ru" if language == "ru" else "en"},
