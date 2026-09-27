@@ -9,6 +9,7 @@ from pytonconnect import TonConnect
 from loader import bot, wallet_tasks
 from database import db
 from services.ton_connect_service import TonConnectService
+from services.ton_wallets import get_direct_wallet, get_direct_wallets
 from services.ui_cleanup import remember_message, clear_messages, MessageCategory
 from utils import normalize_to_raw, short_wallet, safe_answer, safe_bot_send_message
 from keyboards.wallet import (
@@ -83,20 +84,17 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext, texts
     # texts from middleware
     await db.ensure_user_exists(user_id)
     try:
-        connector = await TonConnectService.connector(user_id)
-        wallets_list = connector.get_wallets()
+        # Create/restore the connector here so service/storage problems are
+        # surfaced before the user selects a wallet.  The wallet picker itself
+        # is an explicit local allow-list: pytonconnect's bundled fallback list
+        # is stale and may omit renamed/new wallets when its remote fetch fails.
+        await TonConnectService.connector(user_id)
     except Exception:
         logger.exception("CONNECT_WALLET_GET_CONNECTOR_FAILED user_id=%s", user_id)
         await callback.answer(texts["wallet_service_unavailable"], show_alert=True)
         return
 
-    supported = ["Tonkeeper", "MyTonWallet", "Wallet"]
-    available = [w for w in wallets_list if w['name'] in supported]
-
-    if not available:
-        await callback.answer(texts["wallet_no_supported_wallets"], show_alert=True)
-        return
-
+    available = get_direct_wallets()
     kb = wallet_selection_keyboard(available, texts)
 
     try:
@@ -113,18 +111,19 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext, texts
 
 @router.callback_query(F.data.startswith("select_wallet_"))
 async def select_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
-    wallet_name = callback.data.replace("select_wallet_", "")
+    wallet_key = callback.data.replace("select_wallet_", "", 1)
+    wallet_config = get_direct_wallet(wallet_key)
+    wallet_name = wallet_config["name"] if wallet_config else wallet_key
     user_id = callback.from_user.id
     # texts from middleware
     await db.ensure_user_exists(user_id)
+
+    if not wallet_config:
+        await callback.answer(texts["wallet_config_not_found"], show_alert=True)
+        return
+
     try:
         connector = await TonConnectService.connector(user_id)
-        wallets_list = connector.get_wallets()
-        wallet_config = next((w for w in wallets_list if w['name'] == wallet_name), None)
-
-        if not wallet_config:
-            await callback.answer(texts["wallet_config_not_found"], show_alert=True)
-            return
 
         if connector.connected:
             try:
@@ -132,9 +131,13 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext, texts:
             except Exception:
                 pass
 
+        # pytonconnect generates the TON Connect v2 URL from the wallet's
+        # universal_url + bridge_url.  HTTPS universal links are intentional:
+        # Telegram accepts them in inline buttons and the wallet can hand off
+        # directly to its installed native app.
         url = await connector.connect(wallet_config)
     except Exception:
-        logger.exception("SELECT_WALLET_FAILED user_id=%s wallet=%s", user_id, wallet_name)
+        logger.exception("SELECT_WALLET_FAILED user_id=%s wallet=%s", user_id, wallet_key)
         await callback.answer(texts["wallet_init_failed"], show_alert=True)
         return
 
