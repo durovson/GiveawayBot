@@ -21,6 +21,7 @@ from typing import Final
 
 
 DIRECT_WALLET_ORDER: Final[tuple[str, ...]] = (
+    "telegram-wallet",
     "tonkeeper",
     "mytonwallet",
     "gramwallet",
@@ -30,6 +31,14 @@ DIRECT_WALLET_ORDER: Final[tuple[str, ...]] = (
 # ``universal_url``.  The app_name values are stable protocol identifiers and
 # therefore remain unchanged after the Keeper / My Wallet rebrands.
 _DIRECT_WALLETS: Final[dict[str, dict[str, str]]] = {
+    "telegram-wallet": {
+        "app_name": "telegram-wallet",
+        "name": "Wallet",
+        "image": "https://wallet.tg/images/logo-288.png",
+        "about_url": "https://wallet.tg/",
+        "universal_url": "https://t.me/wallet?attach=wallet",
+        "bridge_url": "https://walletbot.me/tonconnect-bridge/bridge",
+    },
     "tonkeeper": {
         "app_name": "tonkeeper",
         "name": "Keeper",
@@ -60,6 +69,10 @@ _DIRECT_WALLETS: Final[dict[str, dict[str, str]]] = {
 }
 
 _WALLET_ALIASES: Final[dict[str, str]] = {
+    # Telegram Wallet.
+    "telegram-wallet": "telegram-wallet",
+    "wallet": "telegram-wallet",
+    "telegram wallet": "telegram-wallet",
     # Keeper / legacy Tonkeeper labels.
     "tonkeeper": "tonkeeper",
     "keeper": "tonkeeper",
