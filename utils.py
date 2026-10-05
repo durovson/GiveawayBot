@@ -12,6 +12,12 @@ from config import ADMIN_IDS, HOLDER_CHAT_ID
 logger = logging.getLogger(__name__)
 _bot_username = None
 
+# If Telegram says that a stored message_id no longer exists, safe_bot_edit_text
+# creates a replacement message. Keep a small process-local redirect so later
+# steps that still hold the old FSM message_id edit the replacement instead of
+# creating another message on every transition.
+_bot_edit_replacements = {}
+
 async def bot_deep_link(payload: str) -> str:
     global _bot_username
     if not _bot_username:
@@ -184,30 +190,74 @@ async def safe_edit_text(message, text, **kwargs):
         raise e
 
 async def safe_bot_edit_text(bot, chat_id, message_id, text, **kwargs):
+    replacement_key = (str(chat_id), message_id)
+    effective_message_id = _bot_edit_replacements.get(replacement_key, message_id)
+
+    # A missing FSM message id is recoverable: create the UI message instead of
+    # sending an invalid edit request to Telegram.
+    if effective_message_id is None:
+        safe_kwargs = kwargs.copy()
+        if "parse_mode" not in safe_kwargs:
+            safe_kwargs["parse_mode"] = ParseMode.HTML
+        msg = await bot.send_message(chat_id, text, **safe_kwargs)
+        _bot_edit_replacements[replacement_key] = msg.message_id
+        return msg
+
     try:
-        return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, **kwargs)
+        return await bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=effective_message_id,
+            text=text,
+            **kwargs
+        )
     except TelegramBadRequest as e:
         err_msg = str(e).lower()
         if "message is not modified" in err_msg:
             return None
 
-        if any(x in err_msg for x in ["document_invalid", "can't be edited", "no text in the message"]):
+        recoverable_edit_errors = [
+            "document_invalid",
+            "can't be edited",
+            "message can't be edited",
+            "no text in the message",
+            "there is no text in the message to edit",
+            "message to edit not found",
+        ]
+        if any(x in err_msg for x in recoverable_edit_errors):
             try:
-                await bot.delete_message(chat_id, message_id)
-            except:
+                await bot.delete_message(chat_id, effective_message_id)
+            except Exception:
                 pass
 
             safe_kwargs = kwargs.copy()
             if "parse_mode" not in safe_kwargs:
                 safe_kwargs["parse_mode"] = ParseMode.HTML
 
-            return await bot.send_message(chat_id, text, **safe_kwargs)
+            msg = await bot.send_message(chat_id, text, **safe_kwargs)
+            _bot_edit_replacements[replacement_key] = msg.message_id
+            logger.info(
+                "Replaced missing/uneditable UI message chat_id=%s old_message_id=%s new_message_id=%s",
+                chat_id,
+                effective_message_id,
+                msg.message_id,
+            )
+            return msg
 
         if "can't parse entities" in err_msg:
             try:
-                return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=strip_custom_emojis(text), **kwargs)
+                return await bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=effective_message_id,
+                    text=strip_custom_emojis(text),
+                    **kwargs
+                )
             except TelegramBadRequest:
-                return await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=strip_all_tags(text), **kwargs)
+                return await bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=effective_message_id,
+                    text=strip_all_tags(text),
+                    **kwargs
+                )
         raise e
 
 async def safe_bot_send_message(bot, chat_id, text, **kwargs):
