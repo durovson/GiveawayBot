@@ -2,21 +2,22 @@ TEXTS = {
     "notif_mgmt_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5260325873688518261\">📢</tg-emoji>┅/ <b>Уведомления</b> /\n"
         "┋\n"
-        "┣ Управляйте своими периодическими объявлениями.\n"
+        "┣ Управляйте рассылками в каналы и внутри бота.\n"
         "┋\n"
         "┗┅┅┅/ <b>Выберите опцию</b> /"
     ),
     "notif_add_new_btn": "ДОБАВИТЬ",
     "notif_main_menu_btn": "ГЛАВНОЕ МЕНЮ",
+    "notif_back_to_list_btn": "К УВЕДОМЛЕНИЯМ",
     "notif_enter_title": (
         "┏┅<tg-emoji emoji-id=\"5778299625370817409\">📝</tg-emoji>┅/ <b>Название уведомления</b> /\n"
         "┋\n"
         "┗┅┅┅/ <b>Введите название для этого уведомления</b> /"
     ),
     "notif_enter_text": (
-        "┏┅<tg-emoji emoji-id=\"5891105528356018797\">💬</tg-emoji>┅/ <b>Текст уведомления</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5891105528356018797\">💬</tg-emoji>┅/ <b>Описание уведомления</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>Введите основной текст сообщения</b> /"
+        "┗┅┅┅/ <b>Введите текст сообщения</b> /"
     ),
     "notif_enter_buttons": (
         "┏┅<tg-emoji emoji-id=\"5258391025281408576\">🔗</tg-emoji>┅/ <b>Inline-кнопки</b> /\n"
@@ -28,6 +29,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ <b>Пример:</b> Купить - https://t.me/shop /"
     ),
+    "notif_invalid_buttons": "❌ Корректных кнопок не найдено. Формат: Текст - https://link.com",
     "notif_skip_btn": "ПРОПУСТИТЬ",
     "notif_back_btn": "НАЗАД",
     "notif_enter_interval": (
@@ -35,6 +37,7 @@ TEXTS = {
         "┋\n"
         "┗┅┅┅/ Выберите, как часто должно отправляться уведомление /"
     ),
+    "notif_custom_btn": "СВОЙ",
     "notif_custom_interval_title": (
         "┏┅<tg-emoji emoji-id=\"5258204546391351475\">⏳</tg-emoji>┅/ <b>Свой интервал</b> /\n"
         "┋\n"
@@ -49,26 +52,40 @@ TEXTS = {
         "┗┅┅┅/ <b>Введите интервал в минутах</b> /"
     ),
     "notif_select_chat_title": (
-        "┏┅<tg-emoji emoji-id=\"5258486128742244085\">🤝</tg-emoji>┅/ <b>Выберите чат</b> /\n"
+        "┏┅<tg-emoji emoji-id=\"5258486128742244085\">🤝</tg-emoji>┅/ <b>Куда отправлять</b> /\n"
         "┋\n"
-        "┗┅┅┅/ Выберите группу, в которой будет опубликовано объявление /"
+        "┣ Выберите отслеживаемый чат/канал или рассылку напрямую пользователям бота.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Выберите получателей</b> /"
     ),
+    "notif_bot_users_btn": "ВНУТРИ БОТА · ВСЕМ",
+    "notif_target_bot": "Пользователи бота",
+    "notif_target_not_selected": "Не выбрано",
     "notif_preview_header": "┏┅<tg-emoji emoji-id=\"5258254475386167466\">🖼️</tg-emoji>┅/ <b>Предпросмотр</b> /\n┋\n",
     "notif_preview_footer": "\n┋\n┗┅┅┅/ <b>Подтвердите или отредактируйте уведомление:</b> /",
+    "notif_title_label": "Название",
+    "notif_text_label": "Описание",
+    "notif_target_label": "Получатели",
+    "notif_interval_label": "Интервал",
+    "notif_status_label": "Статус",
     "notif_edit_title_btn": "ИЗМ. НАЗВАНИЕ",
-    "notif_edit_text_btn": "ИЗМ. ТЕКСТ",
+    "notif_edit_text_btn": "ИЗМ. ОПИСАНИЕ",
     "notif_edit_buttons_btn": "ИЗМ. КНОПКИ",
     "notif_edit_interval_btn": "ИЗМ. ИНТЕРВАЛ",
-    "notif_edit_chat_btn": "ИЗМ. ЧАТ",
+    "notif_edit_chat_btn": "ИЗМ. ПОЛУЧАТЕЛЕЙ",
     "notif_toggle_status_btn": "СТАТУС: {STATUS}",
     "notif_save_btn": "СОХРАНИТЬ",
     "notif_active": "Активно",
     "notif_paused": "Приостановлено",
+    "notif_toggle_saved": "✅ Статус уведомления обновлён.",
+    "notif_toggle_error": "❌ Не удалось изменить статус уведомления.",
+    "notif_save_alert": "✅ Сохранено.",
     "notif_save_success": (
         "┏<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji>┅/ <b>Уведомление успешно сохранено!</b> /\n"
         "┋\n"
-        "┗┅┅┅/ <b>График ваших объявлений был обновлен и теперь активен</b> /"
+        "┗┅┅┅/ <b>Настройки уведомления обновлены</b> /"
     ),
     "notif_fill_all_fields": "❌ Пожалуйста, заполните все поля перед сохранением!",
-    "notif_no_notifs": "Уведомления еще не созданы."
+    "notif_no_notifs": "Уведомления еще не созданы.",
+    "notif_not_found": "❌ Уведомление не найдено.",
 }
