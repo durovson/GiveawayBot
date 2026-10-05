@@ -4,7 +4,7 @@ TEXTS = {
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji>┅/ <b>NOTAPES WL</b> /\n"
         "┋\n"
         "┣ We are launching the limited-edition NOTAPES series on <tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji>OpenSea <b>soon</b>.\n"
-        "┣ Every <b>4 NOTAPES</b> = <b>+1 WL</b>.\n"
+        "┣ Every <b>3 NOTAPES</b> = <b>+1 WL</b>.\n"
         "┣ <b>1 WL</b> = mint 1 Ape.\n"
         "┋\n"
         "┣ TON-wallet: <code>{ton_wallet}</code>\n"
@@ -17,7 +17,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Choose an action</b> /"
     ),
     "september_wl_eligible": "<tg-emoji emoji-id=\"5260416304224936047\">✅</tg-emoji> You are eligible for <b>{count} WL</b>.",
-    "september_wl_not_eligible": "You need at least 4 NOTAPES for 1 WL.",
+    "september_wl_not_eligible": "You need at least 3 NOTAPES for 1 WL.",
     "september_wl_connect_hint": "Connect your TON wallet to check your collection.",
     "september_wl_api_error": "<tg-emoji emoji-id=\"5258362429389152256\">✋</tg-emoji> Getgems is temporarily unavailable. Please try again later.",
     "september_wl_stale": "\n┣ Showing the last saved result.",

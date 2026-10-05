@@ -4,7 +4,7 @@ TEXTS = {
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji>┅/ <b>NOTAPES WL</b> /\n"
         "┋\n"
         "┣ <b>Скоро</b> мы запускаем лимитированную серию NOTAPES на <tg-emoji emoji-id=\"5125613133527779066\">💎</tg-emoji> OpenSea.\n"
-        "┣ Каждые <b>4 NOTAPES</b> = <b>+1 WL</b>.\n"
+        "┣ Каждые <b>3 NOTAPES</b> = <b>+1 WL</b>.\n"
         "┣ <b>1 WL</b> = минт 1 обезьянки.\n"
         "┋\n"
         "┣ TON-кошелёк: <code>{ton_wallet}</code>\n"
@@ -17,7 +17,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Выберите действие</b> /"
     ),
     "september_wl_eligible": "<tg-emoji emoji-id=\"5260416304224936047\">✅</tg-emoji> Вы претендуете на <b>{count} WL</b>.",
-    "september_wl_not_eligible": "Для одного WL нужно минимум 4 NOTAPES.",
+    "september_wl_not_eligible": "Для одного WL нужно минимум 3 NOTAPES.",
     "september_wl_connect_hint": "Подключите TON-кошелёк для проверки коллекции.",
     "september_wl_api_error": "<tg-emoji emoji-id=\"5258362429389152256\">✋</tg-emoji> Getgems временно недоступен. Повторите позже.",
     "september_wl_stale": "\n┣ Показан последний сохранённый результат.",

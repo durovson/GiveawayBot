@@ -6,14 +6,30 @@ TEXTS = {
         "┗┅┅┅/ <b>Select a section</b> /"
     ),
     "store_tickets_btn": "TICKETS", "store_lots_btn": "LOTS", "store_admin_btn": "STORE ADMIN", "store_back_btn": "BACK",
+    "partner_gate_title": (
+        "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY ENTER</b> /\n"
+        "┋\n"
+        "┣ To participate in the giveaway, subscribe to the channels below,\n"
+        "┣ then click the \"Check\" button.\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Select an option</b> /"
+    ),
+    "partner_check_btn": "CHECK",
+    "partner_check_failed": "❌ Subscribe to all required channels first, then press CHECK again.",
+    "partner_check_success": "✅ Subscription confirmed.",
     "ticket_choose_title": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY TICKETS</b> /\n┋\n┣ <b>Your RP:</b> {rp}\n{content}\n┋\n┗┅┅┅/ <b>Select a giveaway</b> /",
     "ticket_choose_hint": "┣ Tickets belong only to the selected giveaway.\n┣ Every participant already has 1 free ticket.",
     "ticket_choose_empty": "┣ There are no active giveaways.",
-    "ticket_giveaway_detail": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY #{id}</b> /\n┋ <b>{title}</b>\n┋\n┋Your Tickets: <b>{tickets}</b>\n┋Your RP: <b>{rp}</b>\n┋\n┣ <b>Global ranking by Tickets:</b>\n{ranking}\n┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n┋ {your_rank}\n┗┅┅┅/ <b>Select an option</b> /",
+    "ticket_giveaway_detail": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY #{id}</b> /\n┋ <b>{title}</b>\n┋\n┋Ticket balance: <b>{balance}</b>\n┋Tickets used: <b>{used}</b>\n┋Your RP: <b>{rp}</b>\n┋\n┣ <b>Global ranking by Tickets:</b>\n{ranking}\n┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n┋ {your_rank}\n┗┅┅┅/ <b>Select an option</b> /",
     "ticket_offer_add": "+{count} TICKETS · {price} RP", "ticket_offer_max": "+10 TICKETS · {price} RP",
     "ticket_enter_btn": "ENTER GIVEAWAY", "ticket_limit": "❌ The ticket amount is invalid.",
+    "ticket_use_btn": "USE {count} TICKET(S)",
+    "ticket_use_all_btn": "USE ALL ({count})",
+    "ticket_use_success": "✅ Used {spent} ticket(s). Remaining ticket balance: {remaining}.",
+    "ticket_use_insufficient": "❌ Not enough tickets in your balance.",
+    "ticket_join_first": "❌ Enter the giveaway before spending tickets.",
     "ticket_ranking_empty": "┋ No participants yet.", "ticket_not_ranked": "—. You have not entered yet",
-    "ticket_purchase_success": "✅ Added {added} ticket(s) for {cost} RP. Your giveaway weight was updated.",
+    "ticket_purchase_success": "✅ Added {added} ticket(s) for {cost} RP. Ticket balance: {balance}.",
     "store_lots_title": "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅/ <b>LOTS</b> /\n┋\n┣ <b>Your RP:</b> {rp}\n┋\n{content}\n┋\n┗┅┅┅/ <b>Select a lot</b> /",
     "store_lots_hint": "┣ Available rewards are published by the admins.", "store_lots_empty": "┣ There are no active lots yet.",
     "store_lot_button": "{title} · {price} RP · {remaining} left",

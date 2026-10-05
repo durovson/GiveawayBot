@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 NOTAPES_COLLECTION = "EQDwLDJcRXegHyvvRHXouGrUODuF0eagnWzLvUMUSTw8tv3Y"
 GETGEMS_BASE_URL = "https://api.getgems.io/public-api"
 TONCENTER_NFT_URL = "https://toncenter.com/api/v3/nft/items"
-WL_APES_PER_PLACE = 4
+WL_APES_PER_PLACE = 3
 CACHE_TTL = timedelta(minutes=10)
 MAX_PAGES = 100
 TONCENTER_PAGE_SIZE = 1000
