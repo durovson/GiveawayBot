@@ -40,7 +40,24 @@ logging.basicConfig(
 )
 for noisy_logger in ("httpx", "httpcore", "aiogram.event", "uvicorn.access"):
     logging.getLogger(noisy_logger).setLevel(logging.WARNING)
+
+
+class _TransientTonConnectFilter(logging.Filter):
+    """Hide expected SSE reconnect tracebacks while keeping real TonConnect errors."""
+
+    _TRANSIENT = {"RemoteProtocolError", "ReadTimeout", "ReadError", "ConnectError"}
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if "Bridge exception (restart)" not in record.getMessage():
+            return True
+        if not record.exc_info or not record.exc_info[1]:
+            return True
+        return record.exc_info[1].__class__.__name__ not in self._TRANSIENT
+
+
+logging.getLogger("pytonconnect").addFilter(_TransientTonConnectFilter())
 logger = logging.getLogger(__name__)
+
 
 @dp.my_chat_member()
 async def on_my_chat_member_update(update: ChatMemberUpdated):
@@ -101,6 +118,7 @@ dp.include_router(participants_router)
 dp.include_router(otc_market_router)
 dp.include_router(channel_reposter_router)
 
+
 async def initial_sync():
     """Perform initial sync of holders before starting polling."""
     from tasks.sync_holders import fetch_holders, sync_points_and_referrals
@@ -124,6 +142,7 @@ async def initial_sync():
     except Exception:
         logger.exception("Initial sync failed")
 
+
 async def run_bot():
     """Start aiogram polling."""
     logger.info("Starting bot polling...")
@@ -132,6 +151,7 @@ async def run_bot():
     except Exception:
         logger.exception("Bot polling crashed")
 
+
 async def run_server():
     """Start uvicorn server."""
     port = int(os.environ.get("PORT", 10000))
@@ -139,6 +159,7 @@ async def run_server():
     server = uvicorn.Server(config)
     logger.info("Starting FastAPI server on port %s...", port)
     await server.serve()
+
 
 async def main():
     # 1. Initialize shared resources
@@ -150,7 +171,8 @@ async def main():
     await initial_sync()
 
     # 3. Start background tasks
-    from handlers.completion import check_timed_giveaways, check_periodic_notifications
+    from handlers.completion import check_timed_giveaways
+    from services.notification_service import check_periodic_notifications
     from tasks.sync_holders import daily_sync_task, milestone_monitor_task
     from services.gram_service import GramDepositService
 
@@ -217,6 +239,7 @@ async def main():
             await bot.session.close()
 
         logger.info("Shutdown complete.")
+
 
 if __name__ == "__main__":
     try:
