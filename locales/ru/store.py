@@ -9,14 +9,30 @@ TEXTS = {
     "store_lots_btn": "ЛОТЫ",
     "store_admin_btn": "УПРАВЛЕНИЕ STORE",
     "store_back_btn": "НАЗАД",
+    "partner_gate_title": (
+        "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>ВХОД В GIVEAWAY</b> /\n"
+        "┋\n"
+        "┣ Чтобы участвовать в розыгрыше, подпишитесь на каналы ниже,\n"
+        "┣ затем нажмите кнопку \"Проверить\".\n"
+        "┋\n"
+        "┗┅┅┅/ <b>Выберите действие</b> /"
+    ),
+    "partner_check_btn": "ПРОВЕРИТЬ",
+    "partner_check_failed": "❌ Сначала подпишитесь на все обязательные каналы, затем снова нажмите ПРОВЕРИТЬ.",
+    "partner_check_success": "✅ Подписка подтверждена.",
     "ticket_choose_title": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>БИЛЕТЫ GIVEAWAY</b> /\n┋\n┣ <b>Ваши RP:</b> {rp}\n{content}\n┋\n┗┅┅┅/ <b>Выберите розыгрыш</b> /",
     "ticket_choose_hint": "┣ Билеты действуют только в выбранном розыгрыше.\n┣ У каждого участника уже есть 1 бесплатный билет.",
     "ticket_choose_empty": "┣ Активных розыгрышей сейчас нет.",
-    "ticket_giveaway_detail": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY #{id}</b> /\n┋ <b>{title}</b>\n┋\n┋Ваши билеты: <b>{tickets}</b>\n┋Ваши RP: <b>{rp}</b>\n┋\n┣ <b>Общий рейтинг по билетам:</b>\n{ranking}\n┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n┋ {your_rank}\n┗┅┅┅/ <b>Выберите действие</b> /",
+    "ticket_giveaway_detail": "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY #{id}</b> /\n┋ <b>{title}</b>\n┋\n┋Баланс билетов: <b>{balance}</b>\n┋Использовано билетов: <b>{used}</b>\n┋Ваши RP: <b>{rp}</b>\n┋\n┣ <b>Общий рейтинг по билетам:</b>\n{ranking}\n┋ ┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅\n┋ {your_rank}\n┗┅┅┅/ <b>Выберите действие</b> /",
     "ticket_offer_add": "+{count} БИЛЕТОВ · {price} RP", "ticket_offer_max": "+10 БИЛЕТОВ · {price} RP",
     "ticket_enter_btn": "УЧАСТВОВАТЬ", "ticket_limit": "❌ Некорректное количество билетов.",
+    "ticket_use_btn": "ИСПОЛЬЗОВАТЬ {count}",
+    "ticket_use_all_btn": "ИСПОЛЬЗОВАТЬ ВСЕ ({count})",
+    "ticket_use_success": "✅ Использовано билетов: {spent}. Остаток на балансе: {remaining}.",
+    "ticket_use_insufficient": "❌ Недостаточно билетов на балансе.",
+    "ticket_join_first": "❌ Сначала войдите в розыгрыш, затем расходуйте билеты.",
     "ticket_ranking_empty": "┋ Участников пока нет.", "ticket_not_ranked": "—. Вы ещё не участвуете",
-    "ticket_purchase_success": "✅ Добавлено билетов: {added}. Списано: {cost} RP. Ваш вес в розыгрыше обновлён.",
+    "ticket_purchase_success": "✅ Добавлено билетов: {added}. Списано: {cost} RP. Баланс билетов: {balance}.",
     "store_lots_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5235695112419303615\">🎁</tg-emoji>┅/ <b>ЛОТЫ</b> /\n"
         "┋\n┣ <b>Ваши RP:</b> {rp}\n┋\n{content}\n┋\n"
