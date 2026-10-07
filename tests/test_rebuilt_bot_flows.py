@@ -59,7 +59,7 @@ class RebuiltBotFlows(unittest.IsolatedAsyncioTestCase):
         client = SimpleNamespace(rpc=lambda name, payload: self._record_rpc(name, payload, execute))
         with patch.object(store.db, "client", client), patch.object(store, "_ticket_state", new=AsyncMock(return_value={"balance": 10})), patch.object(store, "show_giveaway_tickets", new=AsyncMock()):
             await store.spend_giveaway_tickets(callback, AsyncMock(), STORE_TEXTS)
-        self.assertEqual(self.rpc_name, "spend_giveaway_tickets")
+        self.assertEqual(self.rpc_name, "spend_ticket_wallet")
         self.assertEqual(self.rpc_payload["p_amount"], 3)
         self.assertEqual(self.rpc_payload["p_idempotency_key"], "tg-spend:event-1")
         execute.assert_awaited_once()

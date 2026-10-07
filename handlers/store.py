@@ -52,7 +52,8 @@ def _rpc_payload(data) -> dict:
 
 async def _ticket_state(giveaway_id: int, user_id: int) -> dict:
     """Return purchased balance and already-used raffle weight."""
-    result = {"total": 1, "balance": 0, "used": 0}
+    wallet = await db.get_ticket_wallet_balance(user_id)
+    result = {"total": 1, "balance": wallet or 0, "used": 0}
     if not db.client:
         return result
 
@@ -68,7 +69,7 @@ async def _ticket_state(giveaway_id: int, user_id: int) -> dict:
         if response.data:
             row = response.data[0]
             result["total"] = max(1, int(row.get("tickets") or 1))
-            result["balance"] = max(0, int(row.get("available_tickets") or 0))
+            result["balance"] += max(0, int(row.get("available_tickets") or 0))
     except Exception as exc:
         logger.warning("Ticket balance v2 unavailable, using legacy balance: %s", exc)
         try:
@@ -210,11 +211,23 @@ async def show_store_menu(callback: types.CallbackQuery, state: FSMContext, text
 
 
 async def show_ticket_store(callback: types.CallbackQuery, state: FSMContext, texts: dict):
-    rp, giveaways = await asyncio.gather(
+    rp, giveaways, balance, offers = await asyncio.gather(
         _rp(callback.from_user.id),
         db.get_active_giveaways(),
+        db.get_ticket_wallet_balance(callback.from_user.id),
+        db.get_ticket_offers(),
     )
     builder = InlineKeyboardBuilder()
+    for offer in offers:
+        price = (
+            offer["price_rp"] * offer["ticket_count"]
+            if offer["pricing_mode"] == "per_ticket"
+            else offer["price_rp"]
+        )
+        builder.button(
+            text=texts["ticket_offer_add"].format(count=offer["ticket_count"], price=price),
+            callback_data=f"buy_wallet_{offer['code']}",
+        )
     for giveaway in giveaways:
         builder.button(
             text=f"#{giveaway['id']} · {giveaway['title'][:38]}",
@@ -233,7 +246,9 @@ async def show_ticket_store(callback: types.CallbackQuery, state: FSMContext, te
     )
     await _render(
         callback,
-        texts["ticket_choose_title"].format(rp=rp, content=content),
+        texts["ticket_choose_title"].format(
+            rp=rp, balance=balance if balance is not None else "—", content=content,
+        ),
         builder.as_markup(),
         state,
     )
@@ -502,9 +517,9 @@ async def buy_giveaway_tickets(
     callback: types.CallbackQuery, state: FSMContext, texts: dict
 ):
     _, _, giveaway_id, code = callback.data.split("_", 3)
-    result = await db.purchase_giveaway_tickets(
+    # Keep old inline buttons working, but all new purchases go to the wallet.
+    result = await db.purchase_ticket_wallet(
         callback.from_user.id,
-        int(giveaway_id),
         code,
         f"tg:{callback.id}",
     )
@@ -527,7 +542,29 @@ async def buy_giveaway_tickets(
         ),
         show_alert=True,
     )
-    await show_giveaway_tickets(callback, int(giveaway_id), texts, state)
+    giveaway = await db.get_giveaway(int(giveaway_id))
+    if giveaway and giveaway.get("status") == "active":
+        await show_giveaway_tickets(callback, int(giveaway_id), texts, state)
+    else:
+        await show_ticket_store(callback, state, texts)
+
+
+@router.callback_query(F.data.startswith("buy_wallet_"))
+async def buy_wallet_tickets(callback: types.CallbackQuery, state: FSMContext, texts: dict):
+    code = callback.data.removeprefix("buy_wallet_")
+    result = await db.purchase_ticket_wallet(callback.from_user.id, code, f"tg:{callback.id}")
+    if not result.get("ok"):
+        error = texts["not_enough_points"] if result.get("error") == "INSUFFICIENT_POINTS" else texts["store_purchase_error"]
+        await callback.answer(error, show_alert=True)
+        return
+    await callback.answer(
+        texts["ticket_purchase_success"].format(
+            added=result.get("added", 0), cost=result.get("cost", 0),
+            balance=result.get("available_tickets", 0),
+        ),
+        show_alert=True,
+    )
+    await show_ticket_store(callback, state, texts)
 
 
 @router.callback_query(F.data.startswith("spend_gt_"))
@@ -550,7 +587,7 @@ async def spend_giveaway_tickets(
 
     try:
         response = await db.client.rpc(
-            "spend_giveaway_tickets",
+            "spend_ticket_wallet",
             {
                 "p_user_id": callback.from_user.id,
                 "p_giveaway_id": giveaway_id,

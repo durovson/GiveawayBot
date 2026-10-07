@@ -832,6 +832,32 @@ class Database:
             return data[0]
         return {}
 
+    async def get_ticket_wallet_balance(self, user_id: int) -> Optional[int]:
+        if not self._check_client():
+            return None
+        try:
+            response = await self.client.table("ticket_wallets").select("balance") \
+                .eq("user_id", user_id).limit(1).execute()
+            return int(response.data[0]["balance"]) if response.data else 0
+        except Exception as exc:
+            logger.error("Could not read ticket wallet: %s", exc)
+            return None
+
+    async def purchase_ticket_wallet(self, user_id: int, offer_code: str,
+                                     idempotency_key: str) -> Dict:
+        if not self._check_client():
+            return {"ok": False, "error": "DATABASE_UNAVAILABLE"}
+        try:
+            response = await self.client.rpc("purchase_ticket_wallet", {
+                "p_user_id": user_id,
+                "p_offer_code": offer_code,
+                "p_idempotency_key": idempotency_key,
+            }).execute()
+            return self._rpc_payload(response.data)
+        except Exception as exc:
+            logger.error("Ticket wallet purchase failed: %s", exc)
+            return {"ok": False, "error": "PURCHASE_FAILED"}
+
     async def purchase_tickets_atomic(
         self,
         user_id: int,
