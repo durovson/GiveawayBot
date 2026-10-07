@@ -19,13 +19,21 @@ class TelegramAdminDetectionSourceTests(unittest.TestCase):
     def test_bot_wrapper_normalizes_administrator_list_calls(self):
         source = self._class_source("TelegramLinkAwareBot")
         self.assertIn("async def get_chat_administrators", source)
-        self.assertIn("normalize_telegram_chat_ref(chat_id)", source)
+        self.assertIn("normalize_telegram_chat_ref", source)
 
     def test_self_membership_check_falls_back_to_admin_list(self):
         source = self._class_source("TelegramLinkAwareBot")
         self.assertIn("_get_self_admin_via_list", source)
         self.assertIn("getChatAdministrators", source)
         self.assertIn("user_id == self.id", source)
+        self.assertIn("return_bots=True", source)
+
+    def test_numeric_channel_id_retries_public_alias(self):
+        source = self._class_source("TelegramLinkAwareBot")
+        self.assertIn("_public_chat_aliases", source)
+        self.assertIn("_chat_ref_candidates", source)
+        self.assertIn("_get_chat_member_with_alias_retry", source)
+        self.assertIn("aliases[chat.id]", source)
 
     def test_false_admin_result_is_logged_with_status(self):
         source = self._class_source("TelegramLinkAwareBot")
