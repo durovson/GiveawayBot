@@ -10,6 +10,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from config import ADMIN_IDS
 from database import db
 from services.points_service import PointsService
+from services.telegram_chat_ref import normalize_telegram_chat_ref
 from utils import safe_answer, safe_edit_text
 
 router = Router()
@@ -102,7 +103,7 @@ async def _ticket_state(giveaway_id: int, user_id: int) -> dict:
 
 
 async def _resolve_channel_link(bot, channel) -> tuple[str, str | None]:
-    raw = str(channel).strip()
+    raw = str(normalize_telegram_chat_ref(channel)).strip()
     fallback_label = raw.lstrip("@") or raw
     fallback_url = (
         f"https://t.me/{raw.lstrip('@')}"
@@ -111,7 +112,7 @@ async def _resolve_channel_link(bot, channel) -> tuple[str, str | None]:
     )
 
     try:
-        chat = await bot.get_chat(channel)
+        chat = await bot.get_chat(raw)
     except Exception as exc:
         logger.warning("Could not resolve giveaway channel %s: %s", channel, exc)
         return fallback_label, fallback_url

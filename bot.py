@@ -61,10 +61,6 @@ logger = logging.getLogger(__name__)
 
 @dp.my_chat_member()
 async def on_my_chat_member_update(update: ChatMemberUpdated):
-    bot.remember_self_chat_status(
-        update.chat,
-        update.new_chat_member.status,
-    )
     if update.new_chat_member.status in ["administrator", "member"]:
         chat_id = update.chat.id
         is_tracked = await db.is_chat_tracked(chat_id)
@@ -166,6 +162,8 @@ async def run_server():
 
 
 async def main():
+    identity = await bot.get_me()
+    logger.info("Configured Telegram bot: @%s id=%s", identity.username, identity.id)
     # 1. Initialize shared resources
     loader.http_session = aiohttp.ClientSession()
     await db.connect()

@@ -18,6 +18,7 @@ from services.giveaway_formatting import (
 )
 
 logger = logging.getLogger(__name__)
+from services.telegram_chat_ref import normalize_telegram_chat_ref
 
 router = Router()
 
@@ -188,7 +189,7 @@ async def process_channels(message: types.Message, state: FSMContext, bot: Bot, 
 
     raw_text = message.text.strip()
     channels = re.split(r'[,\s]+', raw_text)
-    channels = [c.replace("https://t.me/", "@").strip() for c in channels if c.strip()]
+    channels = [normalize_telegram_chat_ref(c) for c in channels if c.strip()]
 
     await state.update_data(mandatory_channels=channels)
     await check_bot_admin_in_channels(message, state, bot, texts)
@@ -206,8 +207,12 @@ async def check_bot_admin_in_channels(message: types.Message | types.CallbackQue
             failed_channels.append(ch)
 
     if failed_channels:
-        failed_str = "\n".join(failed_channels)
+        failed_str = "\n".join(html.escape(str(ch)) for ch in failed_channels)
         text = texts["giveaway_bot_not_admin"].format(channels=failed_str)
+        identity = await bot.get_me()
+        text += "\n\n" + texts.get(
+            "giveaway_checked_bot", "Checking @{username} (ID: {id})."
+        ).format(username=html.escape(identity.username or ""), id=identity.id)
         if isinstance(message, types.CallbackQuery):
             await message.answer(
                 texts["giveaway_admin_check_failed_alert"],
@@ -591,16 +596,13 @@ async def is_bot_admin(chat_id: int | str, bot: Bot) -> bool:
         else:
             target_id = chat_id
 
-        verifier = getattr(bot, "verify_self_administrator", None)
-        if verifier is not None:
-            return await verifier(target_id)
-
         member = await bot.get_chat_member(target_id, bot.id)
         return member.status in ["administrator", "creator"]
     except Exception as exc:
         logger.warning(
-            "Unable to verify bot administrator rights chat=%r: %s",
+            "Unable to verify bot administrator rights chat=%r bot_id=%s: %s",
             chat_id,
+            bot.id,
             exc,
         )
         return False

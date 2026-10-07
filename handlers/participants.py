@@ -158,6 +158,7 @@ async def join_giveaway(
                 if member.status in ["left", "kicked", "restricted"]:
                     unsubscribed_from.append(channel)
             except Exception as e:
+                unsubscribed_from.append(str(channel))
                 logger.error(
                     "Error checking subscription for %s: %s",
                     channel,

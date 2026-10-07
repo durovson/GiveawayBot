@@ -289,12 +289,25 @@ class Database:
         except Exception as e:
             logger.error(f"Error updating setting {key}: {e}")
 
-    async def upsert_notification(self, data: dict):
-        if not self._check_client(): return
+    async def upsert_notification(self, data: dict) -> Optional[Dict]:
+        if not self._check_client(): return None
         try:
-            await self.client.table("notifications").upsert(data).execute()
+            response = await self.client.table("notifications").upsert(data).execute()
+            return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error upserting notification: {e}")
+            return None
+
+    async def update_notification_status(self, notification_id: int, is_active: bool) -> bool:
+        if not self._check_client(): return False
+        try:
+            response = await self.client.table("notifications").update(
+                {"is_active": is_active}
+            ).eq("id", notification_id).execute()
+            return bool(response.data)
+        except Exception:
+            logger.exception("Could not update notification %s", notification_id)
+            return False
 
     async def get_notifications(self) -> List[Dict]:
         if not self._check_client(): return []

@@ -19,19 +19,23 @@ def _callback() -> types.CallbackQuery:
 
 
 class GiveawayAdminRecheckTests(unittest.IsolatedAsyncioTestCase):
-    async def test_admin_check_uses_universal_bot_verifier(self):
+    async def test_admin_check_uses_direct_membership_lookup(self):
         bot = AsyncMock()
+        bot.id = 8504182834
         bot.get_chat.return_value = types.Chat(
             id=-1004468874781,
             type="channel",
             title="Patron of NOT",
         )
-        bot.verify_self_administrator.return_value = True
+        bot.get_chat_member.return_value = types.ChatMemberOwner(
+            user=types.User(id=8504182834, is_bot=True, first_name="Bot"),
+            is_anonymous=False,
+        )
 
         result = await giveaway_creation.is_bot_admin("@patronofnot", bot)
 
         self.assertTrue(result)
-        bot.verify_self_administrator.assert_awaited_once_with(-1004468874781)
+        bot.get_chat_member.assert_awaited_once_with(-1004468874781, 8504182834)
 
     async def test_handler_does_not_acknowledge_callback_before_check(self):
         callback = _callback()
@@ -92,6 +96,10 @@ class GiveawayAdminRecheckTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_failure_shows_visible_alert(self):
         callback = _callback()
+        bot = AsyncMock()
+        bot.get_me.return_value = types.User(
+            id=8504182834, is_bot=True, first_name="crash test", username="nothumanizer_bot"
+        )
         state = AsyncMock()
         state.get_data.return_value = {
             "mandatory_channels": ["@notapes"],
@@ -119,7 +127,7 @@ class GiveawayAdminRecheckTests(unittest.IsolatedAsyncioTestCase):
             await giveaway_creation.check_bot_admin_in_channels(
                 callback,
                 state,
-                AsyncMock(),
+                bot,
                 texts,
             )
 

@@ -30,6 +30,7 @@ TEXTS = {
         "┗┅┅┅/ <b>Please add the bot to these channels and grant administrator rights, then click the button below</b> /"
     ),
     "giveaway_i_added_btn": "I ADDED!",
+    "giveaway_checked_bot": "┣ Checked bot: <b>@{username}</b> (ID: <code>{id}</code>).\n┣ Grant administrator rights to this bot, then check again.",
     "giveaway_admin_check_failed_alert": "The bot still cannot confirm administrator access. Check its channel permissions and try again.",
     "giveaway_select_type": (
         "┏┅<tg-emoji emoji-id=\"5850317551090800862\">⏳</tg-emoji>┅/ <b>Giveaway Type</b> /\n"
