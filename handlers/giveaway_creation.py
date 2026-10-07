@@ -209,6 +209,10 @@ async def check_bot_admin_in_channels(message: types.Message | types.CallbackQue
         failed_str = "\n".join(failed_channels)
         text = texts["giveaway_bot_not_admin"].format(channels=failed_str)
         if isinstance(message, types.CallbackQuery):
+            await message.answer(
+                texts["giveaway_admin_check_failed_alert"],
+                show_alert=True,
+            )
             await safe_edit_text(message, text, reply_markup=await get_recheck_keyboard(texts), parse_mode=ParseMode.HTML)
         else:
             await safe_bot_edit_text(bot, message.chat.id, last_msg_id, text, reply_markup=await get_recheck_keyboard(texts), parse_mode=ParseMode.HTML)
@@ -227,7 +231,10 @@ async def callback_answer_wrapper(event, text):
 
 @router.callback_query(F.data == "recheck_admin")
 async def recheck_admin(callback: types.CallbackQuery, state: FSMContext, bot: Bot, texts: dict):
-    await callback.answer()
+    # check_bot_admin_in_channels acknowledges the callback exactly once with
+    # either a success notification or a visible failure alert. Answering here
+    # as well makes Telegram reject the second answer and stops the flow before
+    # the next giveaway screen is rendered.
     await check_bot_admin_in_channels(callback, state, bot, texts)
 
 async def ask_access_type(message: types.Message, state: FSMContext, bot: Bot, texts: dict):
