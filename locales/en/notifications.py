@@ -80,7 +80,6 @@ TEXTS = {
     "notif_toggle_saved": "✅ Notification status updated.",
     "notif_toggle_error": "❌ Could not update notification status.",
     "notif_save_alert": "✅ Saved.",
-    "notif_save_error": "❌ Could not save the notification. Please try again.",
     "notif_save_success": (
         "┏<tg-emoji emoji-id=\"5260726538302660868\">✅</tg-emoji>┅/ <b>Notification saved successfully!</b> /\n"
         "┋\n"

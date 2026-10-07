@@ -164,6 +164,7 @@ async def view_notification(
         await callback.answer(texts["access_denied"], show_alert=True)
         return
 
+    await callback.answer()
     notif_id = int(callback.data.rsplit("_", 1)[1])
     notifications = await db.get_notifications()
     notification = next(
@@ -172,8 +173,6 @@ async def view_notification(
     if not notification:
         await callback.answer(texts["notif_not_found"], show_alert=True)
         return
-
-    await callback.answer()
 
     await state.clear()
     await state.update_data(
@@ -589,9 +588,16 @@ async def toggle_status(
     new_status = not bool(data.get("is_active", True))
     notification_id = data.get("id")
 
-    if notification_id:
-        if not await db.update_notification_status(notification_id, new_status):
-            logger.error("Failed to toggle notification %s", notification_id)
+    if notification_id and db.client:
+        try:
+            await (
+                db.client.table("notifications")
+                .update({"is_active": new_status})
+                .eq("id", notification_id)
+                .execute()
+            )
+        except Exception as exc:
+            logger.error("Failed to toggle notification %s: %s", notification_id, exc)
             await callback.answer(texts["notif_toggle_error"], show_alert=True)
             return
 
@@ -629,11 +635,7 @@ async def confirm_save(
     if data.get("id"):
         notif_data["id"] = data["id"]
 
-    saved = await db.upsert_notification(notif_data)
-    if not saved:
-        await callback.answer(texts["notif_save_error"], show_alert=True)
-        return
-
+    await db.upsert_notification(notif_data)
     await callback.answer(texts["notif_save_alert"])
 
     builder = InlineKeyboardBuilder()
