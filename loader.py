@@ -39,27 +39,80 @@ def _chat_member_status(member):
 class TelegramLinkAwareBot(Bot):
     """Bot API wrapper that accepts public t.me links as chat references.
 
-    Telegram occasionally returns a stale/non-admin result from getChatMember during
-    channel permission changes. For checks of the bot itself, fall back to the
-    channel's administrator list so giveaway creation does not get stuck on a false
-    "bot is not an administrator" screen.
+    Telegram may reject member-list methods for a numeric channel id while the
+    public @username reference still works. Remember public aliases resolved by
+    getChat and retry membership/admin lookups through that alias. Bot API 10.0
+    also added ``return_bots`` to getChatAdministrators; explicitly request bots
+    when checking our own administrator entry.
     """
 
-    async def get_chat(self, chat_id, request_timeout=None):
-        return await super().get_chat(
-            normalize_telegram_chat_ref(chat_id),
-            request_timeout=request_timeout,
-        )
+    def _remember_public_alias(self, requested_chat_id, chat) -> None:
+        if not isinstance(requested_chat_id, str):
+            return
+        normalized = normalize_telegram_chat_ref(requested_chat_id)
+        if not isinstance(normalized, str) or not normalized.startswith("@"):
+            return
+        aliases = getattr(self, "_public_chat_aliases", None)
+        if aliases is None:
+            aliases = {}
+            self._public_chat_aliases = aliases
+        aliases[chat.id] = normalized
 
-    async def get_chat_administrators(self, chat_id, request_timeout=None):
-        return await super().get_chat_administrators(
-            normalize_telegram_chat_ref(chat_id),
+    def _chat_ref_candidates(self, chat_id):
+        normalized = normalize_telegram_chat_ref(chat_id)
+        candidates = [normalized]
+        if isinstance(normalized, int) or (
+            isinstance(normalized, str) and normalized.startswith("-")
+        ):
+            try:
+                numeric_id = int(normalized)
+            except (TypeError, ValueError):
+                numeric_id = None
+            if numeric_id is not None:
+                alias = getattr(self, "_public_chat_aliases", {}).get(numeric_id)
+                if alias and alias not in candidates:
+                    candidates.append(alias)
+        return candidates
+
+    async def get_chat(self, chat_id, request_timeout=None):
+        normalized_chat_id = normalize_telegram_chat_ref(chat_id)
+        chat = await super().get_chat(
+            normalized_chat_id,
             request_timeout=request_timeout,
         )
+        self._remember_public_alias(normalized_chat_id, chat)
+        return chat
+
+    async def get_chat_administrators(
+        self,
+        chat_id,
+        return_bots=None,
+        request_timeout=None,
+    ):
+        last_exc = None
+        for candidate in self._chat_ref_candidates(chat_id):
+            try:
+                return await super().get_chat_administrators(
+                    candidate,
+                    return_bots=return_bots,
+                    request_timeout=request_timeout,
+                )
+            except Exception as exc:
+                last_exc = exc
+                logger.warning(
+                    "getChatAdministrators failed chat=%r candidate=%r: %s",
+                    chat_id,
+                    candidate,
+                    exc,
+                )
+        if last_exc is not None:
+            raise last_exc
+        return []
 
     async def _get_self_admin_via_list(self, chat_id, request_timeout=None):
-        admins = await super().get_chat_administrators(
-            normalize_telegram_chat_ref(chat_id),
+        admins = await self.get_chat_administrators(
+            chat_id,
+            return_bots=True,
             request_timeout=request_timeout,
         )
         for admin in admins:
@@ -67,12 +120,37 @@ class TelegramLinkAwareBot(Bot):
                 return admin
         return None
 
-    async def get_chat_member(self, chat_id, user_id, request_timeout=None):
-        normalized_chat_id = normalize_telegram_chat_ref(chat_id)
+    async def _get_chat_member_with_alias_retry(
+        self,
+        chat_id,
+        user_id,
+        request_timeout=None,
+    ):
+        last_exc = None
+        for candidate in self._chat_ref_candidates(chat_id):
+            try:
+                return await super().get_chat_member(
+                    candidate,
+                    user_id,
+                    request_timeout=request_timeout,
+                )
+            except Exception as exc:
+                last_exc = exc
+                logger.warning(
+                    "getChatMember failed chat=%r candidate=%r user_id=%s: %s",
+                    chat_id,
+                    candidate,
+                    user_id,
+                    exc,
+                )
+        if last_exc is not None:
+            raise last_exc
+        raise RuntimeError("No Telegram chat reference candidates available")
 
+    async def get_chat_member(self, chat_id, user_id, request_timeout=None):
         try:
-            member = await super().get_chat_member(
-                normalized_chat_id,
+            member = await self._get_chat_member_with_alias_retry(
+                chat_id,
                 user_id,
                 request_timeout=request_timeout,
             )
@@ -85,20 +163,20 @@ class TelegramLinkAwareBot(Bot):
 
             logger.warning(
                 "getChatMember failed for bot admin check chat=%r bot_id=%s: %s; "
-                "trying getChatAdministrators",
-                normalized_chat_id,
+                "trying getChatAdministrators(return_bots=True)",
+                chat_id,
                 self.id,
                 exc,
             )
             try:
                 admin = await self._get_self_admin_via_list(
-                    normalized_chat_id,
+                    chat_id,
                     request_timeout=request_timeout,
                 )
             except Exception as fallback_exc:
                 logger.warning(
                     "getChatAdministrators fallback failed chat=%r bot_id=%s: %s",
-                    normalized_chat_id,
+                    chat_id,
                     self.id,
                     fallback_exc,
                 )
@@ -108,7 +186,7 @@ class TelegramLinkAwareBot(Bot):
                 logger.info(
                     "Confirmed bot administrator via getChatAdministrators "
                     "chat=%r bot_id=%s",
-                    normalized_chat_id,
+                    chat_id,
                     self.id,
                 )
                 return admin
@@ -116,7 +194,7 @@ class TelegramLinkAwareBot(Bot):
             logger.warning(
                 "Bot id=%s not present in administrator list for chat=%r",
                 self.id,
-                normalized_chat_id,
+                chat_id,
             )
             raise exc
 
@@ -125,13 +203,13 @@ class TelegramLinkAwareBot(Bot):
         if user_id == self.id and _chat_member_status(member) not in _ADMIN_STATUSES:
             try:
                 admin = await self._get_self_admin_via_list(
-                    normalized_chat_id,
+                    chat_id,
                     request_timeout=request_timeout,
                 )
             except Exception as exc:
                 logger.warning(
                     "Could not cross-check bot admin list chat=%r bot_id=%s: %s",
-                    normalized_chat_id,
+                    chat_id,
                     self.id,
                     exc,
                 )
@@ -142,13 +220,13 @@ class TelegramLinkAwareBot(Bot):
                         "bot_id=%s in chat=%r",
                         _chat_member_status(member),
                         self.id,
-                        normalized_chat_id,
+                        chat_id,
                     )
                     return admin
 
                 logger.warning(
                     "Bot admin check negative chat=%r bot_id=%s status=%r",
-                    normalized_chat_id,
+                    chat_id,
                     self.id,
                     _chat_member_status(member),
                 )
