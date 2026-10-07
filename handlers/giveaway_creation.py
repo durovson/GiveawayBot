@@ -16,6 +16,7 @@ from services.giveaway_formatting import (
     format_prizes_html,
     parse_moscow_giveaway_time,
 )
+from services.telegram_chat_ref import normalize_telegram_chat_ref
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +189,7 @@ async def process_channels(message: types.Message, state: FSMContext, bot: Bot, 
 
     raw_text = message.text.strip()
     channels = re.split(r'[,\s]+', raw_text)
-    channels = [c.replace("https://t.me/", "@").strip() for c in channels if c.strip()]
+    channels = [normalize_telegram_chat_ref(c) for c in channels if c.strip()]
 
     await state.update_data(mandatory_channels=channels)
     await check_bot_admin_in_channels(message, state, bot, texts)

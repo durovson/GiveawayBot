@@ -289,12 +289,43 @@ class Database:
         except Exception as e:
             logger.error(f"Error updating setting {key}: {e}")
 
-    async def upsert_notification(self, data: dict):
-        if not self._check_client(): return
+    async def upsert_notification(self, data: dict) -> Optional[Dict]:
+        """Persist a notification and return the stored row.
+
+        Callers must not report a successful save when Supabase is unavailable
+        or rejects the write.  Older code swallowed those failures, which made
+        the notification editor look successful while leaving the row intact.
+        """
+        if not self._check_client():
+            return None
         try:
-            await self.client.table("notifications").upsert(data).execute()
+            response = await self.client.table("notifications").upsert(data).execute()
+            return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error upserting notification: {e}")
+            return None
+
+    async def update_notification_status(
+        self,
+        notification_id: int,
+        is_active: bool,
+    ) -> bool:
+        """Atomically change an existing notification status."""
+        if not self._check_client():
+            return False
+        try:
+            response = await self.client.table("notifications") \
+                .update({"is_active": bool(is_active)}) \
+                .eq("id", notification_id) \
+                .execute()
+            return bool(response.data)
+        except Exception as e:
+            logger.error(
+                "Error updating notification %s status: %s",
+                notification_id,
+                e,
+            )
+            return False
 
     async def get_notifications(self) -> List[Dict]:
         if not self._check_client(): return []

@@ -1,6 +1,7 @@
 import asyncio
 import html
 import logging
+from urllib.parse import urlsplit
 
 from aiogram import F, Router, types
 from aiogram.enums import ParseMode
@@ -10,6 +11,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from config import ADMIN_IDS
 from database import db
 from services.points_service import PointsService
+from services.telegram_chat_ref import normalize_telegram_chat_ref
 from utils import safe_answer, safe_edit_text
 
 router = Router()
@@ -103,15 +105,18 @@ async def _ticket_state(giveaway_id: int, user_id: int) -> dict:
 
 async def _resolve_channel_link(bot, channel) -> tuple[str, str | None]:
     raw = str(channel).strip()
-    fallback_label = raw.lstrip("@") or raw
-    fallback_url = (
-        f"https://t.me/{raw.lstrip('@')}"
-        if raw.startswith("@")
-        else None
-    )
+    normalized = normalize_telegram_chat_ref(raw)
+    fallback_label = str(normalized).lstrip("@") or raw
+    fallback_url = None
+    if isinstance(normalized, str) and normalized.startswith("@"):
+        fallback_url = f"https://t.me/{normalized[1:]}"
+    elif raw.lower().startswith(("https://t.me/", "http://t.me/")):
+        parsed = urlsplit(raw)
+        if parsed.path and not parsed.path.startswith(("/+", "/joinchat/", "/c/")):
+            fallback_url = raw
 
     try:
-        chat = await bot.get_chat(channel)
+        chat = await bot.get_chat(normalized)
     except Exception as exc:
         logger.warning("Could not resolve giveaway channel %s: %s", channel, exc)
         return fallback_label, fallback_url
