@@ -133,6 +133,37 @@ class GiveawayAdminRecheckTests(unittest.IsolatedAsyncioTestCase):
 
         answer.assert_awaited_once_with("Still unavailable", show_alert=True)
 
+    async def test_unavailable_check_is_not_reported_as_missing_rights(self):
+        callback = _callback()
+        bot = AsyncMock()
+        bot.get_me.return_value = types.User(
+            id=8504182834, is_bot=True, first_name="crash test", username="nothumanizer_bot"
+        )
+        state = AsyncMock()
+        state.get_data.return_value = {"mandatory_channels": ["@notapes"]}
+        texts = {
+            "giveaway_bot_not_admin": "Missing rights: {channels}",
+            "giveaway_admin_check_unavailable": "Status unavailable: {channels}",
+            "giveaway_admin_check_unavailable_alert": "Telegram could not read the status",
+            "giveaway_checked_bot_identity": "Checking @{username} (ID: {id})",
+            "giveaway_i_added_btn": "I ADDED!",
+            "giveaway_main_menu_btn": "MAIN MENU",
+        }
+        with (
+            patch.object(giveaway_creation, "is_bot_admin", new=AsyncMock(return_value=None)),
+            patch.object(types.CallbackQuery, "answer", new=AsyncMock()) as answer,
+            patch.object(giveaway_creation, "safe_edit_text", new=AsyncMock()) as edit,
+            patch.object(giveaway_creation, "ask_access_type", new=AsyncMock()) as advance,
+        ):
+            await giveaway_creation.check_bot_admin_in_channels(callback, state, bot, texts)
+        answer.assert_awaited_once_with("Telegram could not read the status", show_alert=True)
+        displayed = edit.call_args.args[1]
+        self.assertIn("Status unavailable: @notapes", displayed)
+        self.assertIn("@nothumanizer_bot (ID: 8504182834)", displayed)
+        self.assertNotIn("Missing rights", displayed)
+        state.set_state.assert_awaited_once_with(giveaway_creation.GiveawayCreation.WAITING_FOR_BOT_ADMIN)
+        advance.assert_not_awaited()
+
 
 if __name__ == "__main__":
     unittest.main()

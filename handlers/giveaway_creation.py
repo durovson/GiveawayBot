@@ -202,20 +202,30 @@ async def check_bot_admin_in_channels(message: types.Message | types.CallbackQue
     last_msg_id = data.get('last_msg_id')
 
     failed_channels = []
+    unavailable_channels = []
     for ch in channels:
-        if not await is_bot_admin(ch, bot):
+        result = await is_bot_admin(ch, bot)
+        if result is None:
+            unavailable_channels.append(ch)
+        elif not result:
             failed_channels.append(ch)
 
-    if failed_channels:
-        failed_str = "\n".join(html.escape(str(ch)) for ch in failed_channels)
-        text = texts["giveaway_bot_not_admin"].format(channels=failed_str)
+    if failed_channels or unavailable_channels:
+        parts = []
+        if failed_channels:
+            failed_str = "\n".join(html.escape(str(ch)) for ch in failed_channels)
+            parts.append(texts["giveaway_bot_not_admin"].format(channels=failed_str))
+        if unavailable_channels:
+            unavailable_str = "\n".join(html.escape(str(ch)) for ch in unavailable_channels)
+            parts.append(texts["giveaway_admin_check_unavailable"].format(channels=unavailable_str))
+        text = "\n\n".join(parts)
         identity = await bot.get_me()
         text += "\n\n" + texts.get(
-            "giveaway_checked_bot", "Checking @{username} (ID: {id})."
+            "giveaway_checked_bot_identity", "Checking @{username} (ID: {id})."
         ).format(username=html.escape(identity.username or ""), id=identity.id)
         if isinstance(message, types.CallbackQuery):
             await message.answer(
-                texts["giveaway_admin_check_failed_alert"],
+                texts["giveaway_admin_check_unavailable_alert"] if unavailable_channels else texts["giveaway_admin_check_failed_alert"],
                 show_alert=True,
             )
             await safe_edit_text(message, text, reply_markup=await get_recheck_keyboard(texts), parse_mode=ParseMode.HTML)
@@ -587,7 +597,10 @@ async def get_giveaway_post_data(giveaway, texts=None):
     gif_id = await db.get_setting("main_gif")
     return post_text, gif_id
 
-async def is_bot_admin(chat_id: int | str, bot: Bot) -> bool:
+async def is_bot_admin(chat_id: int | str, bot: Bot) -> bool | None:
+    """Return None for an unreadable status, False only for a known non-admin."""
+    target_id = chat_id
+    operation = "getChat"
     try:
         if isinstance(chat_id, str) and not chat_id.startswith("-"):
             # It's a username
@@ -596,16 +609,23 @@ async def is_bot_admin(chat_id: int | str, bot: Bot) -> bool:
         else:
             target_id = chat_id
 
+        operation = "getChatMember"
         member = await bot.get_chat_member(target_id, bot.id)
+        logger.info(
+            "Bot administrator check chat=%r resolved_chat=%r bot_id=%s status=%s",
+            chat_id, target_id, bot.id, member.status,
+        )
         return member.status in ["administrator", "creator"]
     except Exception as exc:
         logger.warning(
-            "Unable to verify bot administrator rights chat=%r bot_id=%s: %s",
+            "Unable to verify bot administrator rights method=%s chat=%r resolved_chat=%r bot_id=%s: %s",
+            operation,
             chat_id,
+            target_id,
             bot.id,
             exc,
         )
-        return False
+        return None
 
 @router.callback_query(F.data.startswith("make_announcement_"))
 async def make_announcement_select_chat(callback: types.CallbackQuery, bot: Bot, texts: dict):

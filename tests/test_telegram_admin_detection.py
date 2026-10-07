@@ -30,15 +30,31 @@ class TelegramAdminDetectionTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(await is_bot_admin(-100123, client))
         client.get_chat_member.assert_awaited_once_with(-100123, 8504182834)
 
-    async def test_non_member_and_inaccessible_chat_cannot_pass(self):
-        for result in ("left", "member", "restricted", "kicked", RuntimeError("member list is inaccessible")):
+    async def test_known_non_admin_status_is_false(self):
+        for result in ("left", "member", "restricted", "kicked"):
             with self.subTest(result=result):
                 lookup = AsyncMock(
                     side_effect=result if isinstance(result, Exception) else None,
                     return_value=SimpleNamespace(status=result),
                 )
                 client = SimpleNamespace(id=8504182834, get_chat_member=lookup)
-                self.assertFalse(await is_bot_admin(-100123, client))
+                self.assertIs(await is_bot_admin(-100123, client), False)
+
+    async def test_unreadable_membership_is_unknown_not_non_admin(self):
+        client = SimpleNamespace(
+            id=8504182834,
+            get_chat_member=AsyncMock(side_effect=RuntimeError("member list is inaccessible")),
+        )
+        self.assertIsNone(await is_bot_admin(-100123, client))
+
+    async def test_unresolvable_chat_is_unknown_and_does_not_check_membership(self):
+        client = SimpleNamespace(
+            id=8504182834,
+            get_chat=AsyncMock(side_effect=RuntimeError("chat not found")),
+            get_chat_member=AsyncMock(),
+        )
+        self.assertIsNone(await is_bot_admin("@notapes", client))
+        client.get_chat_member.assert_not_awaited()
 
     async def test_wrapper_makes_only_one_membership_request(self):
         client = TelegramLinkAwareBot("123456:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi")

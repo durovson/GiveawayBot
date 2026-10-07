@@ -30,6 +30,9 @@ TEXTS = {
         "┗┅┅┅/ <b>Please add the bot to these channels and grant administrator rights, then click the button below</b> /"
     ),
     "giveaway_i_added_btn": "I ADDED!",
+    "giveaway_checked_bot_identity": "┣ Checked bot: <b>@{username}</b> (ID: <code>{id}</code>).",
+    "giveaway_admin_check_unavailable": "┏┅📢┅/ <b>Telegram could not verify access</b> /\n┋\n{channels}\n┋\n┣ The administrator status could not be read.\n┣ This does not confirm that the bot lacks permissions.\n┋\n┗┅┅┅/ <b>Retry the check</b> /",
+    "giveaway_admin_check_unavailable_alert": "Telegram could not return the bot's status. Access remains unverified; retry the check.",
     "giveaway_checked_bot": "┣ Checked bot: <b>@{username}</b> (ID: <code>{id}</code>).\n┣ Grant administrator rights to this bot, then check again.",
     "giveaway_admin_check_failed_alert": "The bot still cannot confirm administrator access. Check its channel permissions and try again.",
     "giveaway_select_type": (
