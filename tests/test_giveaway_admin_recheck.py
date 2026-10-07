@@ -19,6 +19,20 @@ def _callback() -> types.CallbackQuery:
 
 
 class GiveawayAdminRecheckTests(unittest.IsolatedAsyncioTestCase):
+    async def test_admin_check_uses_universal_bot_verifier(self):
+        bot = AsyncMock()
+        bot.get_chat.return_value = types.Chat(
+            id=-1004468874781,
+            type="channel",
+            title="Patron of NOT",
+        )
+        bot.verify_self_administrator.return_value = True
+
+        result = await giveaway_creation.is_bot_admin("@patronofnot", bot)
+
+        self.assertTrue(result)
+        bot.verify_self_administrator.assert_awaited_once_with(-1004468874781)
+
     async def test_handler_does_not_acknowledge_callback_before_check(self):
         callback = _callback()
         checker = AsyncMock()

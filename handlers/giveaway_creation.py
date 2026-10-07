@@ -591,9 +591,18 @@ async def is_bot_admin(chat_id: int | str, bot: Bot) -> bool:
         else:
             target_id = chat_id
 
+        verifier = getattr(bot, "verify_self_administrator", None)
+        if verifier is not None:
+            return await verifier(target_id)
+
         member = await bot.get_chat_member(target_id, bot.id)
         return member.status in ["administrator", "creator"]
-    except Exception:
+    except Exception as exc:
+        logger.warning(
+            "Unable to verify bot administrator rights chat=%r: %s",
+            chat_id,
+            exc,
+        )
         return False
 
 @router.callback_query(F.data.startswith("make_announcement_"))

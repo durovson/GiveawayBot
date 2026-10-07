@@ -61,6 +61,10 @@ logger = logging.getLogger(__name__)
 
 @dp.my_chat_member()
 async def on_my_chat_member_update(update: ChatMemberUpdated):
+    bot.remember_self_chat_status(
+        update.chat,
+        update.new_chat_member.status,
+    )
     if update.new_chat_member.status in ["administrator", "member"]:
         chat_id = update.chat.id
         is_tracked = await db.is_chat_tracked(chat_id)

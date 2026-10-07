@@ -1,6 +1,14 @@
 import ast
+import os
 import pathlib
 import unittest
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, patch
+
+os.environ.setdefault("BOT_TOKEN", "123456:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi")
+
+from aiogram import Bot
+from loader import TelegramLinkAwareBot, bot
 
 
 class TelegramAdminDetectionSourceTests(unittest.TestCase):
@@ -39,6 +47,57 @@ class TelegramAdminDetectionSourceTests(unittest.TestCase):
         source = self._class_source("TelegramLinkAwareBot")
         self.assertIn("Bot admin check negative", source)
         self.assertIn("_chat_member_status(member)", source)
+
+    def test_universal_admin_check_uses_read_only_boost_probe(self):
+        source = self._class_source("TelegramLinkAwareBot")
+        self.assertIn("verify_self_administrator", source)
+        self.assertIn("get_user_chat_boosts", source)
+        self.assertIn("_self_chat_statuses", source)
+
+
+class TelegramAdminDetectionRuntimeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_boost_probe_confirms_channel_administrator(self):
+        with (
+            patch.object(
+                TelegramLinkAwareBot,
+                "get_chat_member",
+                new=AsyncMock(side_effect=RuntimeError("member list is inaccessible")),
+            ),
+            patch.object(
+                Bot,
+                "get_user_chat_boosts",
+                new=AsyncMock(return_value=SimpleNamespace(boosts=[])),
+            ) as boost_probe,
+        ):
+            result = await bot.verify_self_administrator(-1004468874781)
+
+        self.assertTrue(result)
+        boost_probe.assert_awaited_once_with(
+            -1004468874781,
+            bot.id,
+            request_timeout=None,
+        )
+
+    async def test_recent_my_chat_member_status_is_final_fallback(self):
+        bot._self_chat_statuses = {-1004468874781: "administrator"}
+        try:
+            with (
+                patch.object(
+                    TelegramLinkAwareBot,
+                    "get_chat_member",
+                    new=AsyncMock(side_effect=RuntimeError("member list is inaccessible")),
+                ),
+                patch.object(
+                    Bot,
+                    "get_user_chat_boosts",
+                    new=AsyncMock(side_effect=RuntimeError("probe unavailable")),
+                ),
+            ):
+                result = await bot.verify_self_administrator(-1004468874781)
+        finally:
+            bot._self_chat_statuses = {}
+
+        self.assertTrue(result)
 
 
 if __name__ == "__main__":

@@ -58,6 +58,23 @@ class TelegramLinkAwareBot(Bot):
             self._public_chat_aliases = aliases
         aliases[chat.id] = normalized
 
+    def remember_self_chat_status(self, chat, status) -> None:
+        """Remember the bot's own status from an authoritative update."""
+        normalized_status = getattr(status, "value", status)
+        statuses = getattr(self, "_self_chat_statuses", None)
+        if statuses is None:
+            statuses = {}
+            self._self_chat_statuses = statuses
+        statuses[chat.id] = normalized_status
+
+        username = getattr(chat, "username", None)
+        if username:
+            aliases = getattr(self, "_public_chat_aliases", None)
+            if aliases is None:
+                aliases = {}
+                self._public_chat_aliases = aliases
+            aliases[chat.id] = f"@{username.lstrip('@')}"
+
     def _chat_ref_candidates(self, chat_id):
         normalized = normalize_telegram_chat_ref(chat_id)
         candidates = [normalized]
@@ -232,6 +249,83 @@ class TelegramLinkAwareBot(Bot):
                 )
 
         return member
+
+    async def verify_self_administrator(self, chat_id, request_timeout=None) -> bool:
+        """Verify bot admin rights in channels, supergroups and basic groups.
+
+        Telegram can reject member-list methods with ``member list is
+        inaccessible`` even for a channel administrator. In that case use
+        getUserChatBoosts as a read-only capability probe: Telegram documents
+        that method as requiring administrator rights. A recent
+        ``my_chat_member`` update is the final authoritative fallback.
+        """
+        try:
+            member = await self.get_chat_member(
+                chat_id,
+                self.id,
+                request_timeout=request_timeout,
+            )
+        except Exception as exc:
+            logger.warning(
+                "Standard bot administrator lookup failed chat=%r: %s; "
+                "trying getUserChatBoosts",
+                chat_id,
+                exc,
+            )
+        else:
+            if _chat_member_status(member) in _ADMIN_STATUSES:
+                return True
+
+        last_boost_exc = None
+        for candidate in self._chat_ref_candidates(chat_id):
+            try:
+                await super().get_user_chat_boosts(
+                    candidate,
+                    self.id,
+                    request_timeout=request_timeout,
+                )
+            except Exception as exc:
+                last_boost_exc = exc
+                logger.warning(
+                    "getUserChatBoosts admin probe failed chat=%r "
+                    "candidate=%r bot_id=%s: %s",
+                    chat_id,
+                    candidate,
+                    self.id,
+                    exc,
+                )
+            else:
+                logger.info(
+                    "Confirmed bot administrator via getUserChatBoosts "
+                    "chat=%r candidate=%r bot_id=%s",
+                    chat_id,
+                    candidate,
+                    self.id,
+                )
+                return True
+
+        try:
+            numeric_id = int(chat_id)
+        except (TypeError, ValueError):
+            numeric_id = None
+
+        cached_status = getattr(self, "_self_chat_statuses", {}).get(numeric_id)
+        if cached_status in _ADMIN_STATUSES:
+            logger.info(
+                "Confirmed bot administrator via my_chat_member cache "
+                "chat=%r bot_id=%s",
+                chat_id,
+                self.id,
+            )
+            return True
+
+        if last_boost_exc is not None:
+            logger.warning(
+                "All bot administrator checks failed chat=%r bot_id=%s",
+                chat_id,
+                self.id,
+            )
+        return False
 
 
 # aiogram bot & dispatcher
