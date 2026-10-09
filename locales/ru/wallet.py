@@ -33,6 +33,8 @@ TEXTS = {
     "wallet_game_menu_btn": "ИГРОВОЕ МЕНЮ",
     "wallet_menu_error": "Ошибка меню кошелька.",
     "wallet_disconnected_alert": "Кошелек отключен",
+    "wallet_disconnect_error": "Не удалось завершить отключение кошелька. Попробуйте ещё раз.",
+    "wallet_action_busy": "Операция с кошельком уже выполняется. Подождите.",
     "wallet_service_unavailable": "Сервис подключения временно недоступен.",
     "wallet_no_supported_wallets": "Поддерживаемые кошельки не найдены.",
     "wallet_config_not_found": "Конфигурация кошелька не найдена.",

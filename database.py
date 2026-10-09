@@ -468,15 +468,17 @@ class Database:
         except Exception as e:
             logger.error(f"Error ensuring user exists: {e}")
 
-    async def update_user_wallet(self, telegram_id: int, wallet_address: Optional[str]):
-        if not self._check_client(): return
+    async def update_user_wallet(self, telegram_id: int, wallet_address: Optional[str]) -> bool:
+        if not self._check_client(): return False
         try:
-            await self.client.table("users").upsert({
+            response = await self.client.table("users").upsert({
                 "telegram_id": telegram_id,
                 "wallet_address": wallet_address
             }).execute()
+            return bool(response.data)
         except Exception as e:
             logger.error(f"Error updating user wallet: {e}")
+            return False
 
     async def get_all_linked_wallets(self) -> List[Dict]:
         if not self._check_client(): return []

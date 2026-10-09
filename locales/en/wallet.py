@@ -33,6 +33,8 @@ TEXTS = {
     "wallet_game_menu_btn": "GAME MENU",
     "wallet_menu_error": "Wallet menu error.",
     "wallet_disconnected_alert": "Wallet disconnected",
+    "wallet_disconnect_error": "Could not complete wallet disconnection. Please try again.",
+    "wallet_action_busy": "A wallet operation is already in progress. Please wait.",
     "wallet_service_unavailable": "Connection service temporarily unavailable.",
     "wallet_no_supported_wallets": "No supported wallets found.",
     "wallet_config_not_found": "Wallet configuration not found.",

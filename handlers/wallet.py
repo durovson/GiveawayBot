@@ -22,18 +22,35 @@ from services.localization import get_locale
 
 router = Router()
 logger = logging.getLogger(__name__)
+_wallet_actions = set()
+_connection_waiters = {}
 
-async def cleanup_connect(user_id: int):
+async def _wallet_action(callback, state, texts, action):
+    user_id = callback.from_user.id
+    if user_id in _wallet_actions:
+        await callback.answer(texts["wallet_action_busy"], show_alert=True)
+        return
+    _wallet_actions.add(user_id)
     try:
-        connector = await TonConnectService.connector(user_id)
-        if not connector.connected:
-             TonConnectService.drop_connector(user_id)
-    except Exception:
-        logger.exception("CLEANUP_CONNECT_FAILED user_id=%s", user_id)
+        await action(callback, state, texts)
+    finally:
+        _wallet_actions.discard(user_id)
+
+async def _cancel_connection_waiter(user_id: int):
+    task = _connection_waiters.pop(user_id, None)
+    if task and not task.done():
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+async def cleanup_connect(user_id: int, connector: TonConnect):
+    # A timed-out old attempt must not restore/drop a newer connector.
+    if TonConnectService.is_current(user_id, connector) and not connector.connected:
+        TonConnectService.drop_connector(user_id)
 
 @router.callback_query(F.data == "wallet_menu")
-async def wallet_menu(callback: types.CallbackQuery, state: FSMContext, texts: dict):
-    await callback.answer()
+async def wallet_menu(callback: types.CallbackQuery, state: FSMContext, texts: dict, acknowledge=True):
+    if acknowledge:
+        await callback.answer()
     user_id = callback.from_user.id
     # texts from middleware
     await db.ensure_user_exists(user_id)
@@ -63,23 +80,26 @@ async def wallet_menu(callback: types.CallbackQuery, state: FSMContext, texts: d
 
 @router.callback_query(F.data == "disconnect_wallet")
 async def disconnect_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
+    await _wallet_action(callback, state, texts, _disconnect_wallet)
+
+async def _disconnect_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     user_id = callback.from_user.id
-    # texts from middleware
-    await db.ensure_user_exists(user_id)
     try:
-        await db.update_user_wallet(user_id, None)
-        connector = await TonConnectService.connector(user_id)
-        if connector.connected:
-            await connector.disconnect()
-        TonConnectService.drop_connector(user_id)
+        await _cancel_connection_waiter(user_id)
+        await TonConnectService.disconnect(user_id)
     except Exception:
         logger.exception("DISCONNECT_WALLET_FAILED user_id=%s", user_id)
+        await callback.answer(texts["wallet_disconnect_error"], show_alert=True)
+        return
 
     await callback.answer(texts["wallet_disconnected_alert"], show_alert=True)
-    await wallet_menu(callback, state, texts)
+    await wallet_menu(callback, state, texts, acknowledge=False)
 
 @router.callback_query(F.data == "connect_wallet")
 async def connect_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
+    await _wallet_action(callback, state, texts, _connect_wallet)
+
+async def _connect_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     user_id = callback.from_user.id
     # texts from middleware
     await db.ensure_user_exists(user_id)
@@ -111,6 +131,9 @@ async def connect_wallet(callback: types.CallbackQuery, state: FSMContext, texts
 
 @router.callback_query(F.data.startswith("select_wallet_"))
 async def select_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
+    await _wallet_action(callback, state, texts, _select_wallet)
+
+async def _select_wallet(callback: types.CallbackQuery, state: FSMContext, texts: dict):
     wallet_key = callback.data.replace("select_wallet_", "", 1)
     wallet_config = get_direct_wallet(wallet_key)
     wallet_name = wallet_config["name"] if wallet_config else wallet_key
@@ -123,19 +146,14 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext, texts:
         return
 
     try:
+        await _cancel_connection_waiter(user_id)
         connector = await TonConnectService.connector(user_id)
-
-        if connector.connected:
-            try:
+        async with TonConnectService.user_lock(user_id):
+            if connector.connected:
                 await connector.disconnect()
-            except Exception:
-                pass
 
-        # pytonconnect generates the TON Connect v2 URL from the wallet's
-        # universal_url + bridge_url.  HTTPS universal links are intentional:
-        # Telegram accepts them in inline buttons and the wallet can hand off
-        # directly to its installed native app.
-        url = await connector.connect(wallet_config)
+            # Preserve the wallet's HTTPS universal-link flow.
+            url = await connector.connect(wallet_config)
     except Exception:
         logger.exception("SELECT_WALLET_FAILED user_id=%s wallet=%s", user_id, wallet_key)
         await callback.answer(texts["wallet_init_failed"], show_alert=True)
@@ -154,18 +172,23 @@ async def select_wallet(callback: types.CallbackQuery, state: FSMContext, texts:
     await remember_message(state, msg, category=MessageCategory.TEMPORARY)
 
     task = asyncio.create_task(wait_for_connection_with_timeout(user_id, connector, state, texts))
+    _connection_waiters[user_id] = task
     wallet_tasks.add(task)
     task.add_done_callback(wallet_tasks.discard)
+    def clear_waiter(finished):
+        if _connection_waiters.get(user_id) is finished:
+            _connection_waiters.pop(user_id, None)
+    task.add_done_callback(clear_waiter)
 
 async def wait_for_connection_with_timeout(user_id: int, connector: TonConnect, state: FSMContext, texts: dict):
     try:
         await asyncio.wait_for(wait_for_connection(user_id, connector, state, texts), timeout=190)
     except asyncio.TimeoutError:
         logger.warning("WALLET_CONNECTION_TIMEOUT user_id=%s", user_id)
-        await cleanup_connect(user_id)
+        await cleanup_connect(user_id, connector)
     except Exception:
         logger.exception("WAIT_FOR_CONNECTION_WITH_TIMEOUT_CRASH user_id=%s", user_id)
-        await cleanup_connect(user_id)
+        await cleanup_connect(user_id, connector)
 
 async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMContext, texts: dict):
     def status_changed(wallet_info, texts=texts):
@@ -176,6 +199,8 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
     try:
         raw_address = None
         for _ in range(180):
+            if not TonConnectService.is_current(user_id, connector):
+                return
             try:
                 if connector.connected:
                     if connector.account and connector.account.address:
@@ -191,7 +216,11 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
                 # 1. Clear temporary messages (connect menus)
                 await clear_messages(user_id, state, category=MessageCategory.TEMPORARY)
 
-                await db.update_user_wallet(user_id, raw_address)
+                async with TonConnectService.user_lock(user_id):
+                    if not TonConnectService.is_current(user_id, connector):
+                        return
+                    if not await db.update_user_wallet(user_id, raw_address):
+                        raise RuntimeError("Wallet connection was not persisted")
 
                 # Referral system hook: set wallet_connected_at and referral_status
                 user_data = await db.get_user_by_telegram_id(user_id)
@@ -226,10 +255,10 @@ async def wait_for_connection(user_id: int, connector: TonConnect, state: FSMCon
             except Exception:
                 logger.exception("SUCCESS_MESSAGE_POST_SAVE_FAILED user_id=%s", user_id)
 
-        await cleanup_connect(user_id)
+        await cleanup_connect(user_id, connector)
     except Exception:
         logger.exception("WAIT_FOR_CONNECTION_CRASH user_id=%s", user_id)
-        await cleanup_connect(user_id)
+        await cleanup_connect(user_id, connector)
     finally:
         try:
             unsubscribe()
