@@ -106,11 +106,15 @@ class PointsService:
             )
 
             # 6. Update the points table
-            await db.upsert_points(
-                user_id=user_id,
-                holder_bonus=holder_bonus,
-                total_points=total_points
-            )
+            # Compute sources in Python, but combine them with the CURRENT
+            # adjustments/spending under the database row lock. A concurrent
+            # robbery, deposit or purchase must not be overwritten.
+            response = await db.client.rpc("update_calculated_rp", {
+                "p_user_id": user_id,
+                "p_holder_bonus": holder_bonus,
+                "p_calculated": calculated_points,
+            }).execute()
+            total_points = response.data
 
             logger.info(
                 "RP recalculated for user %s: %s (C=%s, holder_bonus=%s, manual=%s)",

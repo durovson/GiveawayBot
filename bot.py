@@ -15,6 +15,9 @@ from services.leaderboard import LeaderboardService
 from services.holder_service import HolderService
 from middleware.referral_validator import ReferralValidatorMiddleware
 from middleware.localization import LocalizationMiddleware
+from middleware.safe_defense import SafeDefenseMiddleware
+from handlers.chat_games import router as chat_games_router
+from services.chat_games import ChatGameService, register_chat_commands
 from config import HOLDER_CHAT_ID
 
 # Import handlers
@@ -98,12 +101,14 @@ async def on_holder_chat_member_update(update: ChatMemberUpdated):
 
 
 # Middleware
+dp.message.outer_middleware(SafeDefenseMiddleware())
 dp.message.middleware(ReferralValidatorMiddleware())
 dp.callback_query.middleware(ReferralValidatorMiddleware())
 dp.message.middleware(LocalizationMiddleware())
 dp.callback_query.middleware(LocalizationMiddleware())
 
 # Registration
+dp.include_router(chat_games_router)
 dp.include_router(admin_router)
 dp.include_router(notifications_router)
 dp.include_router(game_menu_router)
@@ -167,6 +172,10 @@ async def main():
     # 1. Initialize shared resources
     loader.http_session = aiohttp.ClientSession()
     await db.connect()
+    try:
+        await register_chat_commands(bot)
+    except Exception:
+        logger.exception("Could not register group commands; typed commands remain available")
 
     # 2. Perform OG snapshot and initial sync
     await create_og_snapshot_once()
@@ -180,6 +189,9 @@ async def main():
 
     t1 = asyncio.create_task(check_timed_giveaways(bot))
     bg_tasks.add(t1)
+
+    safe_task = asyncio.create_task(ChatGameService.poll_forever(bot))
+    bg_tasks.add(safe_task)
 
     t2 = asyncio.create_task(check_periodic_notifications(bot))
     bg_tasks.add(t2)
