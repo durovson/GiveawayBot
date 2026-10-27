@@ -31,7 +31,7 @@ TEXTS = {
     "REPEAT_VICTIM": "You have already attacked this player today. Choose someone else.",
     "NOT_REGISTERED": "This target has not joined the bot. Choose a registered player.",
     "TARGET_NOT_FOUND": "Player not found. Use /safe @username for a registered player or /safe for a random target.",
-    "NO_TARGETS": "No eligible random target was found in this chat. Players must have joined the bot, have more than 50 RP, and not have been attacked by you today.",
+    "NO_TARGETS": "No suitable target in this chat.",
     "TARGET_NOT_MEMBER": "The target must be a member of this chat.",
     "TARGET_UNVERIFIABLE": "Telegram could not confirm the target's membership. Ask the player to send a message in this chat, then retry /safe. If it still fails, check the permissions of the bot actually running here.",
     "READ_ACCESS": "The bot must see all chat messages to run /safe. Make it an administrator or disable privacy mode in BotFather and re-add it to the chat.",
