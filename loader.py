@@ -8,6 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from dotenv import load_dotenv
 
 from services.telegram_chat_ref import normalize_telegram_chat_ref
+from middleware.pumpkin_display import PumpkinDisplayMiddleware
 
 load_dotenv()
 
@@ -37,6 +38,7 @@ class TelegramLinkAwareBot(Bot):
 
 
 session = AiohttpSession()
+session.middleware(PumpkinDisplayMiddleware())
 bot = TelegramLinkAwareBot(
     token=BOT_TOKEN,
     session=session,
