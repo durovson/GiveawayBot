@@ -1,7 +1,7 @@
 import html
 import os
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -65,6 +65,52 @@ class ChatGameFormattingTests(unittest.TestCase):
 
 
 class ChatGameHandlersTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        service.ChatGameService._observed.clear()
+
+    async def test_profile_uses_caller_language_current_handle_and_rpc_stats(self):
+        message = self.message()
+        stats = {'balance': 75, 'rank': 12, 'wins': 3, 'losses': 2}
+        with patch.object(handlers, 'caller', new=AsyncMock(return_value=self.user())), \
+             patch.object(service.ChatGameService, 'rpc', new=AsyncMock(return_value=stats)) as rpc, \
+             patch.object(handlers, 'send', new=AsyncMock()) as send:
+            await handlers.profile_command(message)
+        rpc.assert_awaited_once_with('get_chat_game_profile', {'p_user_id': 1})
+        text = send.call_args.args[1]
+        self.assertIn('ПРОФИЛЬ @caller', text)
+        self.assertIn('Место в топе: 12', text)
+        self.assertIn('Дуэли: 3 Побед | 2 Поражений', text)
+
+    async def test_membership_fallback_requires_fresh_same_bot_and_chat_evidence(self):
+        from aiogram.exceptions import TelegramBadRequest
+        bot = SimpleNamespace(id=99, get_chat_member=AsyncMock(side_effect=TelegramBadRequest(
+            method=MagicMock(),message='member list is inaccessible')))
+        user = SimpleNamespace(id=2,is_bot=False,username='target',first_name='T')
+        now = datetime.now(timezone.utc)
+        service.ChatGameService.observe_member(bot,-100,user,now)
+        self.assertEqual((await service.ChatGameService.chat_member(bot,-100,2)).status,'member')
+        for chat_id, bot_id in ((-101,99),(-100,100)):
+            bot.id = bot_id
+            with self.assertRaises(TelegramBadRequest):
+                await service.ChatGameService.chat_member(bot,chat_id,2)
+        bot.id=99
+        service.ChatGameService._observed.clear()
+        service.ChatGameService.observe_member(bot,-100,user,now-timedelta(minutes=6))
+        with self.assertRaises(TelegramBadRequest):
+            await service.ChatGameService.chat_member(bot,-100,2)
+        service.ChatGameService.observe_member(bot,-100,user,now,active=False)
+        self.assertEqual((await service.ChatGameService.chat_member(bot,-100,2)).status,'left')
+
+    async def test_explicit_ban_overrides_recent_message_and_old_updates_do_not_revive(self):
+        bot = SimpleNamespace(id=99,get_chat_member=AsyncMock(return_value=SimpleNamespace(status='kicked')))
+        user = SimpleNamespace(id=2)
+        now=datetime.now(timezone.utc)
+        service.ChatGameService.observe_member(bot,-100,user,now,active=False)
+        service.ChatGameService.observe_member(bot,-100,user,now-timedelta(seconds=1))
+        self.assertFalse(service.ChatGameService._observed[(99,-100,2)][2])
+        self.assertEqual((await service.ChatGameService.chat_member(bot,-100,2)).status,'kicked')
+        self.assertNotIn((99,-100,2),service.ChatGameService._observed)
+
     def message(self, **overrides):
         values = dict(from_user=SimpleNamespace(id=1, is_bot=False, username="caller", first_name="Caller"),
                       sender_chat=None, chat=SimpleNamespace(id=-100, type="supergroup"),
@@ -274,7 +320,7 @@ class ChatGameHandlersTests(unittest.IsolatedAsyncioTestCase):
         await service.register_chat_commands(bot)
         self.assertEqual(bot.set_my_commands.await_count,3)
         for call in bot.set_my_commands.await_args_list:
-            self.assertEqual({c.command for c in call.args[0]}, {"help","balance","top","safe"})
+            self.assertEqual({c.command for c in call.args[0]}, {"help","balance","top","safe","profile"})
             self.assertEqual(call.kwargs["scope"].type,"all_group_chats")
 
     async def test_worker_settles_persisted_attack_and_sends_stored_language(self):

@@ -13,6 +13,15 @@ class SafeDefenseMiddleware(BaseMiddleware):
 
     async def __call__(self, handler, event, data):
         user = event.from_user
+        if event.chat.type in {'group', 'supergroup'}:
+            bot = data.get('bot') or event.bot
+            if user and not user.is_bot and not event.sender_chat and not getattr(event, 'left_chat_member', None):
+                ChatGameService.observe_member(bot, event.chat.id, user, event.date)
+            for member in getattr(event, 'new_chat_members', None) or []:
+                ChatGameService.observe_member(bot, event.chat.id, member, event.date)
+            departed = getattr(event, 'left_chat_member', None)
+            if departed:
+                ChatGameService.observe_member(bot, event.chat.id, departed, event.date, active=False)
         if (event.chat.type in {"group", "supergroup"} and user and not user.is_bot
                 and not event.sender_chat and event.content_type not in {
                     "new_chat_members", "left_chat_member", "pinned_message", "new_chat_title",

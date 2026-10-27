@@ -3,6 +3,8 @@ import asyncio
 import html
 import logging
 import random
+from collections import OrderedDict
+from types import SimpleNamespace
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -48,6 +50,15 @@ def balance_text(balance, language):
             f"┗┅┅┅/ <b>{t['ready']}</b> /")
 
 
+def profile_text(user, stats, language):
+    t = locale(language)
+    return (f"{PREFIX}/ <b>{t['profile_title']} {player_name(user)}</b> /\n┋\n"
+            f"┣ {t['rank']}: {stats.get('rank') or '—'}\n"
+            f"┣ {t['profile_balance']}: {stats['balance']} {currency()}\n"
+            f"┣ {t['duels']}: {stats['wins']} {t['wins']} | {stats['losses']} {t['losses']}\n"
+            "┗┅┅┅/ HUMANS • NOT • APES /▱▱")
+
+
 def top_text(rows, burned, language):
     t = locale(language)
     lines = [f"┋ {i}. {player_name(row.get('users') or {'user_id': row['user_id']}, ping=False)}"
@@ -85,6 +96,43 @@ def attack_text(attack, *, result=False):
 
 class ChatGameService:
     _random = random.SystemRandom()
+    _observed = OrderedDict()
+
+    @classmethod
+    def observe_member(cls, bot, chat_id, user, at, *, active=True, status='member'):
+        """Only Telegram-delivered messages/member updates are membership evidence.
+
+        Evidence expires after five minutes and is isolated by bot and chat.
+        Never infer membership from registration, an @handle, or another chat.
+        """
+        key = (getattr(bot, 'id', 0), chat_id, user.id)
+        previous = cls._observed.get(key)
+        if previous and previous[0] > at:
+            return
+        cls._observed.pop(key, None)
+        cls._observed[key] = (at, user, active, status)
+        while len(cls._observed) > 20000:
+            cls._observed.popitem(last=False)
+
+    @classmethod
+    async def chat_member(cls, bot, chat_id, user_id):
+        try:
+            member = await bot.get_chat_member(chat_id, user_id)
+        except (TelegramBadRequest, TelegramForbiddenError) as exc:
+            evidence = cls._observed.get((getattr(bot, 'id', 0), chat_id, user_id))
+            now = datetime.now(timezone.utc)
+            if evidence and timedelta(0) <= now - evidence[0] <= timedelta(minutes=5):
+                at, user, active, status = evidence
+                logger.info('SAFE_MEMBER_OBSERVED_FALLBACK bot=%s chat=%s user=%s active=%s',
+                            getattr(bot, 'id', 0), chat_id, user_id, active)
+                return SimpleNamespace(status=status if active else 'left', user=user, is_member=active)
+            logger.warning('SAFE_MEMBER_CHECK_FAILED bot=%s chat=%s user=%s error=%s',
+                           getattr(bot, 'id', 0), chat_id, user_id, exc)
+            raise
+        # An explicit Telegram leave/ban always overrides prior observations.
+        if member.status in {'left', 'kicked'} or (member.status == 'restricted' and not member.is_member):
+            cls._observed.pop((getattr(bot, 'id', 0), chat_id, user_id), None)
+        return member
     @staticmethod
     async def rpc(name, params=None):
         if not db.client:
@@ -143,9 +191,11 @@ class ChatGameService:
         unverified = False
         for candidate in candidates:
             try:
-                member = await bot.get_chat_member(chat_id, candidate['telegram_id'])
-            except (TelegramBadRequest, TelegramForbiddenError):
-                unverified = True
+                member = await cls.chat_member(bot, chat_id, candidate['telegram_id'])
+            except (TelegramBadRequest, TelegramForbiddenError) as exc:
+                # Missing global candidates are not evidence of missing bot permissions.
+                if not any(marker in str(exc).lower() for marker in ('user not found', 'participant_id_invalid', 'user_id_invalid')):
+                    unverified = True
                 continue
             if member.status in {'left', 'kicked'} or (member.status == 'restricted' and not member.is_member):
                 continue
@@ -210,11 +260,11 @@ class ChatGameService:
 async def register_chat_commands(bot):
     """Add group-menu commands without replacing existing commands or private menus."""
     scope = BotCommandScopeAllGroupChats()
-    for language, descriptions in (("", ("local balance", "leaderboard", "Bank Robber")),
-                                   ("ru", ("баланс RP", "рейтинг игроков", "ограбление банка")),
-                                   ("en", ("local balance", "leaderboard", "Bank Robber"))):
+    for language, descriptions in (("", ("local balance", "leaderboard", "Bank Robber", "player profile")),
+                                   ("ru", ("баланс RP", "рейтинг игроков", "ограбление банка", "профиль игрока")),
+                                   ("en", ("local balance", "leaderboard", "Bank Robber", "player profile"))):
         old = await bot.get_my_commands(scope=scope, language_code=language)
         commands = {item.command: item for item in old}
         commands.update({name: BotCommand(command=name, description=description)
-                         for name, description in zip(("balance", "top", "safe"), descriptions)})
+                         for name, description in zip(("balance", "top", "safe", "profile"), descriptions)})
         await bot.set_my_commands(list(commands.values()), scope=scope, language_code=language)

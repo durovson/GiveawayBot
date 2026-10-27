@@ -64,6 +64,9 @@ logger = logging.getLogger(__name__)
 
 @dp.my_chat_member()
 async def on_my_chat_member_update(update: ChatMemberUpdated):
+    ChatGameService.observe_member(bot, update.chat.id, update.new_chat_member.user, update.date,
+        active=update.new_chat_member.status in {'administrator', 'member', 'creator'},
+        status=update.new_chat_member.status)
     if update.new_chat_member.status in ["administrator", "member"]:
         chat_id = update.chat.id
         is_tracked = await db.is_chat_tracked(chat_id)
@@ -87,6 +90,10 @@ async def on_my_chat_member_update(update: ChatMemberUpdated):
 @dp.chat_member()
 async def on_holder_chat_member_update(update: ChatMemberUpdated):
     """Award 50 RP when a user first joins the configured holders chat."""
+    member = update.new_chat_member
+    active = member.status in {'member', 'administrator', 'creator'} or (
+        member.status == 'restricted' and member.is_member)
+    ChatGameService.observe_member(bot, update.chat.id, member.user, update.date, active=active, status=member.status)
     holder_chat_id = int(os.getenv("OTC_CHAT_ID", str(HOLDER_CHAT_ID)))
     if update.chat.id != holder_chat_id:
         return

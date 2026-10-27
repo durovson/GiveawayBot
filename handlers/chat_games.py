@@ -9,7 +9,7 @@ from aiogram.filters import Command, CommandObject
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions, Message
 
 from database import db
-from services.chat_games import ChatGameService, SafeTargetError, PREFIX, attack_text, balance_text, locale, top_text
+from services.chat_games import ChatGameService, SafeTargetError, PREFIX, attack_text, balance_text, profile_text, locale, top_text
 from services.chat_game_theme import emoji
 from utils import safe_bot_send_message
 
@@ -64,6 +64,22 @@ async def balance_command(message: Message):
         await error(message, "UNAVAILABLE", language)
 
 
+@router.message(Command("profile"))
+async def profile_command(message: Message):
+    language = 'en'
+    try:
+        user = await caller(message)
+        if not user:
+            return
+        language = user.get('language', 'en')
+        stats = await ChatGameService.rpc('get_chat_game_profile', {'p_user_id': user['telegram_id']})
+        current = {**user, 'username': message.from_user.username, 'first_name': message.from_user.first_name}
+        await send(message, profile_text(current, stats, language))
+    except Exception:
+        logger.exception('PROFILE_COMMAND_FAILED')
+        await error(message, 'UNAVAILABLE', language)
+
+
 @router.message(Command("top"))
 async def top_command(message: Message):
     language = "en"
@@ -109,7 +125,7 @@ async def safe_command(message: Message, command: CommandObject):
             await error(message, "GROUP_ONLY", language)
             return
         identity = await message.bot.get_me()
-        membership = await message.bot.get_chat_member(message.chat.id, identity.id)
+        membership = await ChatGameService.chat_member(message.bot, message.chat.id, identity.id)
         if membership.status not in {"administrator", "creator"} and not identity.can_read_all_group_messages:
             await error(message, "READ_ACCESS", language)
             return
@@ -121,7 +137,7 @@ async def safe_command(message: Message, command: CommandObject):
             await error(message, "SELF", language)
             return
         try:
-            member = await message.bot.get_chat_member(message.chat.id, victim["telegram_id"])
+            member = await ChatGameService.chat_member(message.bot, message.chat.id, victim["telegram_id"])
         except (TelegramBadRequest, TelegramForbiddenError):
             await error(message, "TARGET_UNVERIFIABLE", language)
             return

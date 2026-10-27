@@ -1,4 +1,6 @@
 TEXTS = {
+    "profile_title": "PROFILE", "rank": "Global rank", "profile_balance": "Balance",
+    "duels": "Duels", "wins": "Wins", "losses": "Losses",
     "balance_title": "BALANCE",
     "points": "Your Points",
     "ready": "Ready to play?",
@@ -31,7 +33,7 @@ TEXTS = {
     "TARGET_NOT_FOUND": "Player not found. Use /safe @username for a registered player or /safe for a random target.",
     "NO_TARGETS": "No eligible random target was found in this chat. Players must have joined the bot, have more than 50 RP, and not have been attacked by you today.",
     "TARGET_NOT_MEMBER": "The target must be a member of this chat.",
-    "TARGET_UNVERIFIABLE": "Unable to verify the target's membership. Check the bot's chat permissions.",
+    "TARGET_UNVERIFIABLE": "Telegram could not confirm the target's membership. Ask the player to send a message in this chat, then retry /safe. If it still fails, check the permissions of the bot actually running here.",
     "READ_ACCESS": "The bot must see all chat messages to run /safe. Make it an administrator or disable privacy mode in BotFather and re-add it to the chat.",
     "GROUP_ONLY": "Bank Robber is available in groups and supergroups only.",
     "UNAVAILABLE": "The game is temporarily unavailable. The operation's status could not be confirmed. An unannounced attack is cancelled automatically with its reserve refunded.",
