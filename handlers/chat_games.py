@@ -9,7 +9,7 @@ from aiogram.filters import Command, CommandObject
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions, Message
 
 from database import db
-from services.chat_games import ChatGameService, PREFIX, attack_text, balance_text, locale, top_text
+from services.chat_games import ChatGameService, SafeTargetError, PREFIX, attack_text, balance_text, locale, top_text
 from services.chat_game_theme import emoji
 from utils import safe_bot_send_message
 
@@ -94,10 +94,7 @@ async def target(message, args):
         if not re.fullmatch(r"@[A-Za-z0-9_]{5,32}", args.strip()):
             return None
         return await ChatGameService.target_by_username(args.strip()[1:])
-    reply = message.reply_to_message
-    if reply and reply.from_user and not reply.from_user.is_bot and not reply.sender_chat:
-        return await ChatGameService.registered(reply.from_user.id)
-    return None
+    return await ChatGameService.random_target(message.bot, message.chat.id, message.from_user.id)
 
 
 @router.message(Command("safe"))
@@ -111,8 +108,10 @@ async def safe_command(message: Message, command: CommandObject):
         if message.chat.type not in GROUPS:
             await error(message, "GROUP_ONLY", language)
             return
-        if not command.args and not message.reply_to_message:
-            await error(message, "help", language)
+        identity = await message.bot.get_me()
+        membership = await message.bot.get_chat_member(message.chat.id, identity.id)
+        if membership.status not in {"administrator", "creator"} and not identity.can_read_all_group_messages:
+            await error(message, "READ_ACCESS", language)
             return
         victim = await target(message, command.args)
         if not victim:
@@ -120,11 +119,6 @@ async def safe_command(message: Message, command: CommandObject):
             return
         if victim["telegram_id"] == user["telegram_id"]:
             await error(message, "SELF", language)
-            return
-        identity = await message.bot.get_me()
-        membership = await message.bot.get_chat_member(message.chat.id, identity.id)
-        if membership.status not in {"administrator", "creator"} and not identity.can_read_all_group_messages:
-            await error(message, "READ_ACCESS", language)
             return
         try:
             member = await message.bot.get_chat_member(message.chat.id, victim["telegram_id"])
@@ -169,6 +163,8 @@ async def safe_command(message: Message, command: CommandObject):
             # A failed/unconfirmed warning cannot lead to an invisible theft.
             await ChatGameService.rpc("finish_safe_attack", {"p_id": attack["id"], "p_cancel": True})
             raise
+    except SafeTargetError as selection:
+        await error(message, selection.code, language)
     except Exception:
         logger.exception("SAFE_COMMAND_FAILED")
         await error(message, "UNAVAILABLE", language)

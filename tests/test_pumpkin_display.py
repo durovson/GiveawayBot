@@ -1,11 +1,12 @@
 import unittest
 from unittest.mock import AsyncMock, patch
+from aiogram.exceptions import TelegramBadRequest
 
 from aiogram.methods import AnswerCallbackQuery, EditMessageMedia, SendMessage, SendMediaGroup, SetMyCommands
 from aiogram.types import (BotCommand, BufferedInputFile, InlineKeyboardButton, InlineKeyboardMarkup,
                            InputMediaPhoto, KeyboardButton, MessageEntity, ReplyKeyboardMarkup)
 
-from middleware.pumpkin_display import PumpkinDisplayMiddleware, pumpkin_text, themed_request
+from middleware.pumpkin_display import PUMPKIN_HTML, PUMPKIN_ID, PumpkinDisplayMiddleware, pumpkin_text, themed_request
 from services import chat_game_theme
 
 
@@ -34,8 +35,9 @@ class PumpkinDisplayTests(unittest.TestCase):
         with patch.object(chat_game_theme, 'PUMPKIN_MODE', True):
             updated = themed_request(original)
         first,second = updated.reply_markup.inline_keyboard[0]
-        self.assertEqual(updated.text,'<b>Your 🎃: 50 🎃</b>')
-        self.assertEqual(first.text,'Buy 10 🎃')
+        self.assertEqual(updated.text,f'<b>Your {PUMPKIN_HTML}: 50 {PUMPKIN_HTML}</b>')
+        self.assertEqual(first.text,'Buy 10')
+        self.assertEqual(first.icon_custom_emoji_id,PUMPKIN_ID)
         self.assertEqual(first.callback_data,'buy_RP')
         self.assertEqual(first.style,'success')
         self.assertEqual(second.url,'https://example.com/RP?text=RP')
@@ -50,7 +52,9 @@ class PumpkinDisplayTests(unittest.TestCase):
         with patch.object(chat_game_theme,'PUMPKIN_MODE',True):
             updated=themed_request(original)
         self.assertEqual(len(text.encode('utf-16-le')),len(updated.text.encode('utf-16-le')))
-        self.assertEqual(updated.entities,entities)
+        self.assertEqual([e for e in updated.entities if e.type!='custom_emoji'],entities)
+        self.assertEqual([(e.offset,e.length,e.custom_emoji_id) for e in updated.entities if e.type=='custom_emoji'],
+                         [(6,2,PUMPKIN_ID),(16,2,PUMPKIN_ID)])
         self.assertEqual(updated.text,'🍑 50 🎃 and 10 🎃')
 
     def test_media_uses_same_file_object_and_only_changes_caption(self):
@@ -60,10 +64,10 @@ class PumpkinDisplayTests(unittest.TestCase):
         with patch.object(chat_game_theme,'PUMPKIN_MODE',True):
             updated=themed_request(original)
             updated_album=themed_request(album)
-        self.assertEqual(updated.media.caption,'50 🎃')
+        self.assertEqual(updated.media.caption,f'50 {PUMPKIN_HTML}')
         self.assertIs(updated.media.media,photo)
         self.assertEqual(original.media.caption,'50 RP')
-        self.assertEqual([m.caption for m in updated_album.media],['50 🎃','10 🎃'])
+        self.assertEqual([m.caption for m in updated_album.media],[f'50 {PUMPKIN_HTML}',f'10 {PUMPKIN_HTML}'])
 
     def test_callback_alerts_reply_keyboards_and_command_descriptions(self):
         with patch.object(chat_game_theme,'PUMPKIN_MODE',True):
@@ -76,8 +80,22 @@ class PumpkinDisplayTests(unittest.TestCase):
         self.assertTrue(alert.show_alert)
         self.assertEqual(command.commands[0].description,'Balance 🎃')
         self.assertEqual(command.commands[0].command,'balance')
-        self.assertEqual(message.reply_markup.keyboard[0][0].text,'BOOST 🎃')
+        self.assertEqual(message.reply_markup.keyboard[0][0].text,'BOOST')
+        self.assertEqual(message.reply_markup.keyboard[0][0].icon_custom_emoji_id,PUMPKIN_ID)
         self.assertTrue(message.reply_markup.resize_keyboard)
+
+    def test_literal_and_rp_become_premium_without_nesting_existing_emoji(self):
+        with patch.object(chat_game_theme,'PUMPKIN_MODE',True):
+            text=pumpkin_text(f'50 RP 10 🎃 {PUMPKIN_HTML}',rich=True)
+        self.assertEqual(text,f'50 {PUMPKIN_HTML} 10 {PUMPKIN_HTML} {PUMPKIN_HTML}')
+
+    def test_code_entities_are_not_rewritten(self):
+        original=SendMessage(chat_id=1,text='RP and RP',parse_mode=None,
+                             entities=[MessageEntity(type='code',offset=0,length=2)])
+        with patch.object(chat_game_theme,'PUMPKIN_MODE',True):
+            updated=themed_request(original)
+        self.assertEqual(updated.text,'RP and 🎃')
+        self.assertEqual([(e.offset,e.custom_emoji_id) for e in updated.entities if e.type=='custom_emoji'],[(7,PUMPKIN_ID)])
 
 
 class PumpkinMiddlewareTests(unittest.IsolatedAsyncioTestCase):
@@ -88,4 +106,27 @@ class PumpkinMiddlewareTests(unittest.IsolatedAsyncioTestCase):
             result=await PumpkinDisplayMiddleware()(request,'bot',original)
         self.assertEqual(result,'sent')
         self.assertEqual(request.await_count,1)
-        self.assertEqual(request.call_args.args[1].text,'50 🎃')
+        self.assertEqual(request.call_args.args[1].text,f'50 {PUMPKIN_HTML}')
+
+    async def test_document_rejection_gets_one_non_recursive_plain_fallback(self):
+        original=SendMessage(chat_id=1,text=f'50 RP {PUMPKIN_HTML}',reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text='Buy 10 RP',callback_data='buy_RP',style='success')]]))
+        request=AsyncMock(side_effect=[TelegramBadRequest(method=original,message='DOCUMENT_INVALID'),'sent'])
+        with patch.object(chat_game_theme,'PUMPKIN_MODE',True):
+            self.assertEqual(await PumpkinDisplayMiddleware()(request,'bot',original),'sent')
+        self.assertEqual(request.await_count,2)
+        rich=request.await_args_list[0].args[1]
+        fallback=request.await_args_list[1].args[1]
+        self.assertIn(PUMPKIN_HTML,rich.text)
+        self.assertEqual(fallback.text,'50 🎃 🎃')
+        self.assertIsNone(fallback.reply_markup.inline_keyboard[0][0].icon_custom_emoji_id)
+        self.assertEqual(fallback.reply_markup.inline_keyboard[0][0].callback_data,'buy_RP')
+        self.assertEqual(fallback.reply_markup.inline_keyboard[0][0].style,'success')
+        self.assertEqual(original.text,f'50 RP {PUMPKIN_HTML}')
+
+    async def test_unknown_network_outcome_is_never_retried(self):
+        request=AsyncMock(side_effect=TimeoutError('unknown send outcome'))
+        with patch.object(chat_game_theme,'PUMPKIN_MODE',True):
+            with self.assertRaises(TimeoutError):
+                await PumpkinDisplayMiddleware()(request,'bot',SendMessage(chat_id=1,text='10 RP'))
+        self.assertEqual(request.await_count,1)

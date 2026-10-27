@@ -80,7 +80,7 @@ class ChatGameHandlersTests(unittest.IsolatedAsyncioTestCase):
 
     def query(self, data):
         query = MagicMock()
-        for name in ("select", "eq", "order", "limit", "update", "ilike", "lte", "lt"):
+        for name in ("select", "eq", "order", "limit", "update", "ilike", "lte", "lt", "gt", "neq", "range"):
             getattr(query, name).return_value = query
         query.execute = AsyncMock(return_value=SimpleNamespace(data=data))
         return query
@@ -111,15 +111,71 @@ class ChatGameHandlersTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn(expected, send.call_args.args[1])
             self.assertIn("БАЛАНС", send.call_args.args[1])
 
-    async def test_safe_help_and_private_chat_never_charge(self):
-        for message, expected in ((self.message(), "help"),
+    async def test_no_random_target_and_private_chat_never_charge(self):
+        for message, expected in ((self.message(), "NO_TARGETS"),
                                   (self.message(chat=SimpleNamespace(id=1, type="private")), "GROUP_ONLY")):
             with patch.object(handlers, "caller", new=AsyncMock(return_value=self.user())), \
+                 patch.object(handlers, "target", new=AsyncMock(side_effect=service.SafeTargetError('NO_TARGETS'))), \
                  patch.object(handlers, "error", new=AsyncMock()) as error, \
                  patch.object(service.ChatGameService, "rpc", new=AsyncMock()) as rpc:
                 await handlers.safe_command(message, CommandObject(command="safe"))
             self.assertEqual(error.call_args.args[1], expected)
             rpc.assert_not_awaited()
+
+    async def test_bare_safe_chooses_random_even_when_it_replies_to_someone(self):
+        message=self.message(reply_to_message=SimpleNamespace(from_user=SimpleNamespace(id=2)))
+        with patch.object(service.ChatGameService,'random_target',new=AsyncMock(return_value={'telegram_id':5})) as random_target:
+            self.assertEqual(await handlers.target(message,None),{'telegram_id':5})
+        random_target.assert_awaited_once_with(message.bot,-100,1)
+
+    async def test_random_target_skips_previous_targets_outsiders_and_bots(self):
+        own=self.query([{'total_points':100}])
+        attempts=self.query([{'victim_id':2}])
+        pool=self.query([{'user_id':i,'total_points':100,'users':{'telegram_id':i,'username':f'user{i}'}}
+                         for i in (2,3,4,6,5)])
+        bot=SimpleNamespace(get_chat_member=AsyncMock(side_effect=[
+            SimpleNamespace(status='left'),SimpleNamespace(status='kicked'),
+            SimpleNamespace(status='member',user=SimpleNamespace(is_bot=True)),
+            SimpleNamespace(status='member',user=SimpleNamespace(is_bot=False,username='live_user5',first_name='Five'))]))
+        client=SimpleNamespace(table=MagicMock(side_effect=[own,attempts,pool]))
+        with patch.object(service.db,'client',client), \
+             patch.object(service.ChatGameService,'_random',SimpleNamespace(shuffle=MagicMock())):
+            result=await service.ChatGameService.random_target(bot,-100,1)
+        self.assertEqual(result['telegram_id'],5)
+        self.assertEqual(result['username'],'live_user5')
+        self.assertEqual([c.args for c in bot.get_chat_member.await_args_list],[(-100,3),(-100,4),(-100,6),(-100,5)])
+        pool.gt.assert_called_once_with('total_points',50)
+        pool.neq.assert_called_once_with('user_id',1)
+
+    async def test_random_daily_limit_and_low_balance_never_check_members(self):
+        for balance,attempts,expected in ((14,[],'LOW_ATTACKER'),(100,[{'victim_id':i} for i in (2,3,4)],'DAILY_LIMIT')):
+            queries=[self.query([{'total_points':balance}]),self.query(attempts)]
+            bot=SimpleNamespace(get_chat_member=AsyncMock())
+            with patch.object(service.db,'client',SimpleNamespace(table=MagicMock(side_effect=queries))):
+                with self.assertRaises(service.SafeTargetError) as raised:
+                    await service.ChatGameService.random_target(bot,-100,1)
+            self.assertEqual(raised.exception.code,expected)
+            bot.get_chat_member.assert_not_awaited()
+
+    async def test_random_no_eligible_targets_is_localized_domain_error(self):
+        queries=[self.query([{'total_points':100}]),self.query([]),self.query([])]
+        with patch.object(service.db,'client',SimpleNamespace(table=MagicMock(side_effect=queries))):
+            with self.assertRaises(service.SafeTargetError) as raised:
+                await service.ChatGameService.random_target(SimpleNamespace(get_chat_member=AsyncMock()),-100,1)
+        self.assertEqual(raised.exception.code,'NO_TARGETS')
+
+    async def test_random_candidates_are_paginated_instead_of_cut_off(self):
+        first=self.query([{'user_id':i,'total_points':100,'users':{'telegram_id':i}} for i in range(1000,1500)])
+        second=self.query([{'user_id':1500,'total_points':100,'users':{'telegram_id':1500}}])
+        bot=SimpleNamespace(get_chat_member=AsyncMock(side_effect=[SimpleNamespace(status='left') for _ in range(500)]+[
+            SimpleNamespace(status='member',user=SimpleNamespace(is_bot=False,username='target1500',first_name='T'))]))
+        queries=[self.query([{'total_points':100}]),self.query([]),first,second]
+        with patch.object(service.db,'client',SimpleNamespace(table=MagicMock(side_effect=queries))), \
+             patch.object(service.ChatGameService,'_random',SimpleNamespace(shuffle=MagicMock())):
+            result=await service.ChatGameService.random_target(bot,-100,1)
+        self.assertEqual(result['telegram_id'],1500)
+        first.range.assert_called_once_with(0,499)
+        second.range.assert_called_once_with(500,999)
 
     async def test_username_validation_does_not_allow_pattern_injection(self):
         with patch.object(service.ChatGameService, "target_by_username", new=AsyncMock(return_value={})) as target:

@@ -2,7 +2,9 @@
 import asyncio
 import html
 import logging
+import random
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import LinkPreviewOptions
@@ -16,6 +18,12 @@ from utils import safe_bot_send_message
 
 logger = logging.getLogger(__name__)
 PREFIX = "┏┅⋐[ ◍ _◍ ]っ┅"
+
+
+class SafeTargetError(Exception):
+    def __init__(self, code):
+        self.code = code
+        super().__init__(code)
 
 
 def locale(language):
@@ -76,6 +84,7 @@ def attack_text(attack, *, result=False):
 
 
 class ChatGameService:
+    _random = random.SystemRandom()
     @staticmethod
     async def rpc(name, params=None):
         if not db.client:
@@ -97,6 +106,53 @@ class ChatGameService:
         response = await db.client.table("users").select("telegram_id,username,first_name").ilike(
             "username", username.replace("_", "\\_")).limit(2).execute()
         return response.data[0] if len(response.data) == 1 else None
+
+    @classmethod
+    async def random_target(cls, bot, chat_id, attacker_id):
+        """Uniform random eligible registered member; never a global outsider.
+
+        Bot API does not expose a full member list. Enumerate registered RP
+        accounts, then verify membership in this exact chat with getChatMember.
+        No attack or charge is created during candidate selection.
+        """
+        if not db.client:
+            raise RuntimeError('Database unavailable')
+        own = await db.client.table('points').select('total_points').eq('user_id', attacker_id).execute()
+        if not own.data or (own.data[0].get('total_points') or 0) < 15:
+            raise SafeTargetError('LOW_ATTACKER')
+        day = datetime.now(ZoneInfo('Europe/Moscow')).date().isoformat()
+        attempts = await db.client.table('safe_attacks').select('victim_id').eq(
+            'attacker_id', attacker_id).eq('game_day', day).neq('status', 'cancelled').execute()
+        if len(attempts.data) >= 3:
+            raise SafeTargetError('DAILY_LIMIT')
+        used = {row['victim_id'] for row in attempts.data}
+        candidates = []
+        offset = 0
+        while True:
+            page = await db.client.table('points').select(
+                'user_id,total_points,users!inner(telegram_id,username,first_name)'
+            ).gt('total_points', 50).neq('user_id', attacker_id).order('user_id').range(
+                offset, offset + 499).execute()
+            for row in page.data:
+                if row['user_id'] not in used and row.get('users'):
+                    candidates.append(row['users'])
+            if len(page.data) < 500:
+                break
+            offset += 500
+        cls._random.shuffle(candidates)
+        unverified = False
+        for candidate in candidates:
+            try:
+                member = await bot.get_chat_member(chat_id, candidate['telegram_id'])
+            except (TelegramBadRequest, TelegramForbiddenError):
+                unverified = True
+                continue
+            if member.status in {'left', 'kicked'} or (member.status == 'restricted' and not member.is_member):
+                continue
+            if member.user.is_bot:
+                continue
+            return {**candidate, 'username': member.user.username, 'first_name': member.user.first_name}
+        raise SafeTargetError('TARGET_UNVERIFIABLE' if unverified else 'NO_TARGETS')
 
     @classmethod
     async def tick(cls, bot):
