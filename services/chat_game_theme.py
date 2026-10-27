@@ -1,6 +1,6 @@
 """Presentation only: the economy always stores RP, never a second currency."""
 
-PUMPKIN_MODE = False
+PUMPKIN_MODE = True
 
 EMOJI = {
     "peach": ("🍑", "5258330865674494479"),

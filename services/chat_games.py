@@ -126,6 +126,15 @@ class ChatGameService:
                 logger.info('SAFE_MEMBER_OBSERVED_FALLBACK bot=%s chat=%s user=%s active=%s',
                             getattr(bot, 'id', 0), chat_id, user_id, active)
                 return SimpleNamespace(status=status if active else 'left', user=user, is_member=active)
+            message = str(exc).lower()
+            if any(marker in message for marker in ('participant_id_invalid', 'user_id_invalid', 'user not found', 'member not found')):
+                # A global RP account need not belong to this group. Telegram
+                # rejects such peers instead of always returning status=left.
+                # This is an ordinary ineligible target, not a permissions fault.
+                raise SafeTargetError('READ_ACCESS' if user_id == getattr(bot, 'id', None)
+                                      else 'TARGET_NOT_MEMBER') from exc
+            if any(marker in message for marker in ('bot was kicked', 'bot is not a member')):
+                raise SafeTargetError('READ_ACCESS') from exc
             logger.warning('SAFE_MEMBER_CHECK_FAILED bot=%s chat=%s user=%s error=%s',
                            getattr(bot, 'id', 0), chat_id, user_id, exc)
             raise
@@ -189,19 +198,26 @@ class ChatGameService:
             offset += 500
         cls._random.shuffle(candidates)
         unverified = False
+        absent = 0
         for candidate in candidates:
             try:
                 member = await cls.chat_member(bot, chat_id, candidate['telegram_id'])
-            except (TelegramBadRequest, TelegramForbiddenError) as exc:
-                # Missing global candidates are not evidence of missing bot permissions.
-                if not any(marker in str(exc).lower() for marker in ('user not found', 'participant_id_invalid', 'user_id_invalid')):
-                    unverified = True
+            except SafeTargetError as exc:
+                if exc.code != 'TARGET_NOT_MEMBER':
+                    raise
+                absent += 1
+                continue
+            except (TelegramBadRequest, TelegramForbiddenError):
+                unverified = True
                 continue
             if member.status in {'left', 'kicked'} or (member.status == 'restricted' and not member.is_member):
                 continue
             if member.user.is_bot:
                 continue
-            return {**candidate, 'username': member.user.username, 'first_name': member.user.first_name}
+            return {**candidate, 'username': member.user.username, 'first_name': member.user.first_name,
+                    '_chat_member': member}
+        logger.info('SAFE_NO_RANDOM_TARGET bot=%s chat=%s eligible_accounts=%s absent=%s unverified=%s',
+                    getattr(bot, 'id', 0), chat_id, len(candidates), absent, unverified)
         raise SafeTargetError('TARGET_UNVERIFIABLE' if unverified else 'NO_TARGETS')
 
     @classmethod

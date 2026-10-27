@@ -137,7 +137,11 @@ async def safe_command(message: Message, command: CommandObject):
             await error(message, "SELF", language)
             return
         try:
-            member = await ChatGameService.chat_member(message.bot, message.chat.id, victim["telegram_id"])
+            # Random selection has just verified this exact bot/chat/member.
+            # Reuse that result instead of performing a second identical API call.
+            member = victim.get('_chat_member') if not command.args else None
+            if member is None:
+                member = await ChatGameService.chat_member(message.bot, message.chat.id, victim["telegram_id"])
         except (TelegramBadRequest, TelegramForbiddenError):
             await error(message, "TARGET_UNVERIFIABLE", language)
             return

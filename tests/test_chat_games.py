@@ -193,6 +193,64 @@ class ChatGameHandlersTests(unittest.IsolatedAsyncioTestCase):
         pool.gt.assert_called_once_with('total_points',50)
         pool.neq.assert_called_once_with('user_id',1)
 
+    async def test_participant_invalid_is_not_permissions_failure_and_does_not_warn(self):
+        from aiogram.exceptions import TelegramBadRequest
+        for marker in ('PARTICIPANT_ID_INVALID','USER_ID_INVALID','user not found','member not found'):
+            bot=SimpleNamespace(id=99,get_chat_member=AsyncMock(side_effect=TelegramBadRequest(
+                method=MagicMock(),message=marker)))
+            with patch.object(service.logger,'warning') as warning:
+                with self.assertRaises(service.SafeTargetError) as error:
+                    await service.ChatGameService.chat_member(bot,-100,2)
+            self.assertEqual(error.exception.code,'TARGET_NOT_MEMBER')
+            warning.assert_not_called()
+
+    async def test_random_skips_invalid_peer_and_finds_a_real_member(self):
+        from aiogram.exceptions import TelegramBadRequest
+        queries=[self.query([{'total_points':100}]),self.query([]),self.query([
+            {'user_id':i,'users':{'telegram_id':i}} for i in (2,3)])]
+        member=SimpleNamespace(status='member',user=SimpleNamespace(is_bot=False,username='target3',first_name='Three'))
+        bot=SimpleNamespace(id=99,get_chat_member=AsyncMock(side_effect=[
+            TelegramBadRequest(method=MagicMock(),message='PARTICIPANT_ID_INVALID'),member]))
+        with patch.object(service.db,'client',SimpleNamespace(table=MagicMock(side_effect=queries))), \
+             patch.object(service.ChatGameService,'_random',SimpleNamespace(shuffle=MagicMock())):
+            result=await service.ChatGameService.random_target(bot,-100,1)
+        self.assertEqual(result['telegram_id'],3)
+        self.assertIs(result['_chat_member'],member)
+
+    async def test_only_invalid_peers_returns_no_targets_instead_of_permissions_error(self):
+        from aiogram.exceptions import TelegramBadRequest
+        queries=[self.query([{'total_points':100}]),self.query([]),self.query([
+            {'user_id':2,'users':{'telegram_id':2}}])]
+        bot=SimpleNamespace(id=99,get_chat_member=AsyncMock(side_effect=TelegramBadRequest(
+            method=MagicMock(),message='PARTICIPANT_ID_INVALID')))
+        with patch.object(service.db,'client',SimpleNamespace(table=MagicMock(side_effect=queries))):
+            with self.assertRaises(service.SafeTargetError) as error:
+                await service.ChatGameService.random_target(bot,-100,1)
+        self.assertEqual(error.exception.code,'NO_TARGETS')
+
+    async def test_specific_invalid_target_never_starts_or_charges(self):
+        from aiogram.exceptions import TelegramBadRequest
+        message=self.message()
+        message.bot.get_chat_member.side_effect=[SimpleNamespace(status='administrator'),
+            TelegramBadRequest(method=MagicMock(),message='PARTICIPANT_ID_INVALID')]
+        with patch.object(handlers,'caller',new=AsyncMock(return_value=self.user())), \
+             patch.object(handlers,'target',new=AsyncMock(return_value={'telegram_id':2})), \
+             patch.object(service.ChatGameService,'rpc',new=AsyncMock()) as rpc, \
+             patch.object(handlers,'error',new=AsyncMock()) as error:
+            await handlers.safe_command(message,CommandObject(command='safe',args='@target'))
+        self.assertEqual(error.call_args.args[1],'TARGET_NOT_MEMBER')
+        rpc.assert_not_awaited()
+
+    async def test_random_verified_member_is_not_checked_twice(self):
+        message=self.message()
+        member=SimpleNamespace(status='member',user=SimpleNamespace(is_bot=False,username='target',first_name='T'))
+        with patch.object(handlers,'caller',new=AsyncMock(return_value=self.user())), \
+             patch.object(handlers,'target',new=AsyncMock(return_value={'telegram_id':2,'_chat_member':member})), \
+             patch.object(service.ChatGameService,'rpc',new=AsyncMock(return_value={'ok':True,'duplicate':True})) as rpc:
+            await handlers.safe_command(message,CommandObject(command='safe'))
+        message.bot.get_chat_member.assert_awaited_once_with(-100,99)
+        self.assertEqual(rpc.call_args.args[1]['p_victim'],2)
+
     async def test_random_daily_limit_and_low_balance_never_check_members(self):
         for balance,attempts,expected in ((14,[],'LOW_ATTACKER'),(100,[{'victim_id':i} for i in (2,3,4)],'DAILY_LIMIT')):
             queries=[self.query([{'total_points':balance}]),self.query(attempts)]
