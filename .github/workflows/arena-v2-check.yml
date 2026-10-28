@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/bank-robber-arena-v2
+      - main
   pull_request:
     branches: [main]
 jobs:

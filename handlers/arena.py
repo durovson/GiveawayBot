@@ -15,13 +15,13 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database import db
-from services.chat_game_theme import emoji
+from services.chat_game_theme import emoji, EMOJI
 from services.localization import get_locale_by_lang
 from utils import safe_edit_text
 
 router = Router(name="arena")
 logger = logging.getLogger(__name__)
-HEADER = "┏┅⋐[ ◍ _◍ ]っ┅🎮┅/ "
+HEADER = "┏┅⋐[ ◍ _◍ ]っ┅" + emoji("game") + "┅/ "
 MIN_STAKE = 15
 PROTECTED = 50
 MIN_ENTRY = 20
@@ -45,7 +45,10 @@ def chat_id() -> int:
 
 
 def screen(title: str, *lines: str, footer: str = "Choose an action") -> str:
-    return HEADER + f"<b>{title}</b> /\n┋\n" + "\n".join("┣ " + line for line in lines) + "\n┋\n┗┅┅┅/ <b>" + footer + "</b> /"
+    layout = HEADER + f"<b>{title}</b> /\n┋\n" + "\n".join(
+        "┋" if not line else "┣ " + line for line in lines
+    ) + "\n┋\n┗┅┅┅/ <b>" + footer + "</b> /"
+    return layout.replace("🎃", emoji("pumpkin"))
 
 
 async def rpc(name: str, params=None):
@@ -70,11 +73,11 @@ def _choose_stake(lang: str, available: int):
     spendable = max(0, available - PROTECTED)
     b = InlineKeyboardBuilder()
     if spendable >= MIN_ENTRY:
-        b.button(text="15 🎃", callback_data="arena:stake:15")
+        b.button(text="15", callback_data="arena:stake:15", icon_custom_emoji_id=EMOJI["pumpkin"][1])
     if spendable >= 50:
-        b.button(text="50 🎃", callback_data="arena:stake:50")
+        b.button(text="50", callback_data="arena:stake:50", icon_custom_emoji_id=EMOJI["pumpkin"][1])
     if spendable >= MIN_ENTRY:
-        b.button(text=f"MAX · {spendable} 🎃", callback_data=f"arena:stake:{spendable}")
+        b.button(text=f"MAX · {spendable}", callback_data=f"arena:stake:{spendable}", icon_custom_emoji_id=EMOJI["pumpkin"][1])
     b.button(text=t(lang, "ВВЕСТИ СВОЁ", "CUSTOM"), callback_data="arena:stake:custom")
     b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="arena:menu")
     b.adjust(2, 1, 1, 1)
@@ -92,7 +95,12 @@ async def show_arena(callback: types.CallbackQuery, state: FSMContext, lang: str
         pumpkins = await balance(user_id)
     except Exception:
         logger.exception("ARENA_BALANCE_FAILED user=%s", user_id)
-        await callback.answer(t(lang, "Арена временно недоступна", "Arena is temporarily unavailable"), show_alert=True)
+        await safe_edit_text(
+            callback,
+            screen("SYSTEM: ERROR", t(lang, "Арена временно недоступна. Повторите попытку.", "Arena is temporarily unavailable. Try again.")),
+            reply_markup=back(lang, "game_menu"),
+            state=state,
+        )
         return
     points = await db.get_points(user_id)
     rp = int((points or {}).get("total_points", 0))
@@ -391,7 +399,7 @@ async def simulate(bot: types.Bot, match: dict) -> None:
 def item_keyboard(lang: str):
     b=InlineKeyboardBuilder()
     for rp in (1,5,10):
-        b.button(text=f"{rp} RP → {rp*100} 🎃", callback_data=f"arena:convert:{rp}")
+        b.button(text=f"{rp} RP → {rp*100}", callback_data=f"arena:convert:{rp}", icon_custom_emoji_id=EMOJI["pumpkin"][1])
     b.button(text=t(lang,"ВВЕСТИ СВОЁ","CUSTOM"),callback_data="arena:convert:custom")
     b.button(text=t(lang,"НАЗАД","BACK"),callback_data="store_menu")
     b.adjust(1)
@@ -472,7 +480,7 @@ async def arena_store_hub(callback: types.CallbackQuery, state: FSMContext, lang
         pumpkins = 0
     b = InlineKeyboardBuilder()
     b.button(text=t(lang, "БИЛЕТЫ", "TICKETS"), callback_data="store_tickets")
-    b.button(text="ITEMS", callback_data="arena:items")
+    b.button(text="ITEMS", callback_data="arena:items", icon_custom_emoji_id=EMOJI["store"][1])
     b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="game_menu")
     b.adjust(2, 1)
     text = screen(

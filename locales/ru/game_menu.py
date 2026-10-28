@@ -135,6 +135,8 @@ TEXTS = {
     "need_packs_msg": "Вам нужно 10 паков для доступа в чат холдеров."
 }
 
+from services.chat_game_theme import emoji
+
 TEXTS["arena_btn"] = "АРЕНА"
 TEXTS["game_menu_title"] = TEXTS["game_menu_title"].replace(
     "┣ Ваши очки (RP): {rp} pts", "┣ <b>Ваши очки:</b> {rp} RP"
@@ -142,8 +144,8 @@ TEXTS["game_menu_title"] = TEXTS["game_menu_title"].replace(
     "┣ Всего приглашено: {refs} fnds", "┣ <b>Всего приглашено:</b> {refs}"
 ).replace(
     "┗┅┅┅/ <b>Выберите опцию</b> /",
-    "┣ [🎮] <b>ARENA:</b> Сражайтесь с игроками за 🎃\\n"
-    "┣ [🏪] <b>STORE:</b> Билеты и ITEMS (1 RP = 100 🎃)\\n"
-    "┋\\n┗┅┅┅/ <b>Выберите опцию</b> /",
+    f"┣ [{emoji('game')}] <b>ARENA:</b> Сражайтесь с игроками за {emoji('pumpkin')}\n"
+    f"┣ [{emoji('store')}] <b>STORE:</b> Билеты и ITEMS (1 RP = 100 {emoji('pumpkin')})\n"
+    "┋\n┗┅┅┅/ <b>Выберите опцию</b> /",
     1,
 )
