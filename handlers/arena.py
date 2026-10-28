@@ -176,7 +176,7 @@ async def select_stake(callback: types.CallbackQuery, state: FSMContext, lang: s
     await stake_confirmation(callback, state, lang, int(raw))
 
 
-@router.message(ArenaStates.stake, F.chat.type == "private")
+@router.message(ArenaStates.stake, F.chat.type == "private", ~F.text.startswith("/start"))
 async def custom_stake(message: types.Message, state: FSMContext, lang: str):
     try:
         amount = int((message.text or "").strip())
@@ -368,14 +368,24 @@ async def simulate(bot: types.Bot, match: dict) -> None:
             f"☠️ {guest}'s system is rebooting!",
         ]),
     ]
-    for title_ru,title_en,ru_lines,en_lines in stages:
-        text = f"<b>[{t(lang,title_ru,title_en)}]</b>\n" + "\n".join(ru_lines if lang=="ru" else en_lines)
-        for user_id in (match["host_id"],match["guest_id"]):
-            try:
-                await bot.send_message(user_id,text)
-            except Exception:
-                logger.info("ARENA_PRIVATE_NARRATION_UNDELIVERABLE user=%s",user_id)
-        await asyncio.sleep(1)
+    languages = {}
+    for user_id in (match["host_id"], match["guest_id"]):
+        try:
+            languages[user_id] = await db.get_user_language(user_id) or lang
+        except Exception:
+            languages[user_id] = lang
+    for title_ru, title_en, ru_lines, en_lines in stages:
+        for index in range(len(ru_lines)):
+            for user_id in (match["host_id"], match["guest_id"]):
+                player_lang = languages[user_id]
+                phrase = ru_lines[index] if player_lang == "ru" else en_lines[index]
+                title = title_ru if player_lang == "ru" else title_en
+                text = f"<b>[{title}]</b>\n" + phrase if index == 0 else phrase
+                try:
+                    await bot.send_message(user_id, text)
+                except Exception:
+                    logger.info("ARENA_PRIVATE_NARRATION_UNDELIVERABLE user=%s",user_id)
+            await asyncio.sleep(1)
 
 
 def item_keyboard(lang: str):
@@ -438,7 +448,7 @@ async def _convert(user_id:int,rp:int,key:str,lang:str,callback=None,state=None,
         await message.answer(text,reply_markup=back(lang,"arena:items"))
 
 
-@router.message(ArenaStates.convert, F.chat.type=="private")
+@router.message(ArenaStates.convert, F.chat.type=="private", ~F.text.startswith("/start"))
 async def custom_convert(message:types.Message,state:FSMContext,lang:str):
     try:
         rp=int((message.text or "").strip())

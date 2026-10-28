@@ -7,7 +7,6 @@ import logging
 from datetime import datetime, timezone
 
 from database import db
-from services.chat_games import ChatGameService
 from handlers.arena import screen, t
 
 logger = logging.getLogger(__name__)
@@ -57,6 +56,10 @@ class ArenaWorker:
             "notified_at": datetime.now(timezone.utc).isoformat()
         }).eq("id", match["id"]).is_("notified_at","null").execute()
         for uid in (match["host_id"],match["guest_id"]):
+            try:
+                user_lang = await db.get_user_language(uid) or lang
+            except Exception:
+                user_lang = lang
             won = uid == winner_id
             try:
                 row = await db.client.table("arena_wallets").select("balance").eq("user_id",uid).single().execute()
@@ -65,19 +68,19 @@ class ArenaWorker:
                 current = 0
             if won:
                 txt = screen(
-                    t(lang,"ВЗЛОМ УСПЕШЕН","HACK SUCCESSFUL"),
-                    t(lang,"[+] Firewall противника подавлен.","[+] Opponent firewall suppressed."),
-                    f"[+] {t(lang,'Изъято из пула','Won from pool')}: +{stake} 🎃",
+                    t(user_lang,"ВЗЛОМ УСПЕШЕН","HACK SUCCESSFUL"),
+                    t(user_lang,"[+] Firewall противника подавлен.","[+] Opponent firewall suppressed."),
+                    f"[+] {t(user_lang,'Изъято из пула','Won from pool')}: +{stake} 🎃",
                     "",
-                    f"{t(lang,'Ваш баланс','Your balance')}: <b>{current} 🎃</b>",
+                    f"{t(user_lang,'Ваш баланс','Your balance')}: <b>{current} 🎃</b>",
                 )
             else:
                 txt = screen(
-                    t(lang,"СИСТЕМА ВЗЛОМАНА","SYSTEM BREACHED"),
-                    t(lang,"[-] Ваша защита была скомпрометирована","[-] Your defenses were compromised") + f" {winner}",
-                    f"[-] {t(lang,'Потеряно','Lost')}: -{stake} 🎃",
+                    t(user_lang,"СИСТЕМА ВЗЛОМАНА","SYSTEM BREACHED"),
+                    t(user_lang,"[-] Ваша защита была скомпрометирована","[-] Your defenses were compromised") + f" {winner}",
+                    f"[-] {t(user_lang,'Потеряно','Lost')}: -{stake} 🎃",
                     "",
-                    f"{t(lang,'Защищённый остаток и баланс','Protected reserve and balance')}: <b>{current} 🎃</b>",
+                    f"{t(user_lang,'Защищённый остаток и баланс','Protected reserve and balance')}: <b>{current} 🎃</b>",
                 )
             from aiogram.utils.keyboard import InlineKeyboardBuilder
             b=InlineKeyboardBuilder()
