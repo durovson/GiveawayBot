@@ -2,11 +2,12 @@ TEXTS = {
     "store_hub_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5983399041197675256\">🏪</tg-emoji>┅/ <b>STORE HUB</b> /\n"
         "┋\n┣ <b>Ваши RP:</b> {rp}\n┋\n"
-        "┣ [1] Билеты удачи\n┣ [2] Лоты и награды\n┋\n"
+        "┣ [1] Билеты удачи\n┣ [2] ITEMS: Тыквы для Арены (1 RP = 100 🎃) и награды\n┋\n"
         "┗┅┅┅/ <b>Выберите раздел</b> /"
     ),
     "store_tickets_btn": "БИЛЕТЫ",
     "store_lots_btn": "ЛОТЫ",
+    "store_items_btn": "ITEMS",
     "store_admin_btn": "УПРАВЛЕНИЕ STORE",
     "store_back_btn": "НАЗАД",
     "partner_gate_title": (

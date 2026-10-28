@@ -134,3 +134,13 @@ TEXTS = {
     "access_granted_msg": "Access granted. Press again to join.",
     "need_packs_msg": "You need 10 packs to access Holder Chat."
 }
+
+# Arena v2: RP remains the ranking currency; 🎃 is spendable only in fights.
+TEXTS["arena_btn"] = "ARENA"
+TEXTS["game_menu_title"] = TEXTS["game_menu_title"].replace(
+    "┗┅┅┅/ <b>Select an option</b> /",
+    "┣ [🎮] <b>ARENA:</b> Fight other players for 🎃\\n"
+    "┣ [🏪] <b>STORE:</b> Tickets & ITEMS (1 RP = 100 🎃)\\n"
+    "┋\\n┗┅┅┅/ <b>Select an option</b> /",
+    1,
+)
