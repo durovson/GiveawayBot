@@ -65,7 +65,7 @@ async def balance(user_id: int) -> int:
 
 def back(lang: str, data: str = "game_menu"):
     b = InlineKeyboardBuilder()
-    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data=data)
+    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data=data, icon_custom_emoji_id="5877629862306385808")
     return b.as_markup()
 
 
@@ -79,7 +79,7 @@ def _choose_stake(lang: str, available: int):
     if spendable >= MIN_ENTRY:
         b.button(text=f"MAX · {spendable}", callback_data=f"arena:stake:{spendable}", icon_custom_emoji_id=EMOJI["pumpkin"][1])
     b.button(text=t(lang, "ВВЕСТИ СВОЁ", "CUSTOM"), callback_data="arena:stake:custom")
-    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="arena:menu")
+    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="arena:menu", icon_custom_emoji_id="5877629862306385808")
     b.adjust(2, 1, 1, 1)
     return b.as_markup()
 
@@ -102,21 +102,18 @@ async def show_arena(callback: types.CallbackQuery, state: FSMContext, lang: str
             state=state,
         )
         return
-    points = await db.get_points(user_id)
-    rp = int((points or {}).get("total_points", 0))
     text = screen(
         "ARENA",
         t(lang, "Играйте с другими игроками и выигрывайте тыквы.", "Challenge players and win pumpkins."),
         "",
         f"<b>🎃 {t(lang, 'Баланс', 'Balance')}:</b> {pumpkins}",
-        f"<b>RP:</b> {rp}",
         t(lang, "50 🎃 защищены от проигрыша.", "50 🎃 are protected from losses."),
         t(lang, "1 RP = 100 🎃 в магазине ITEMS.", "1 RP = 100 🎃 in the ITEMS store."),
         footer=t(lang, "Выберите действие", "Choose an action"),
     )
     b = InlineKeyboardBuilder()
     b.button(text=t(lang, "НАЧАТЬ ИГРУ", "START GAME"), callback_data="arena:start")
-    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="game_menu")
+    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="game_menu", icon_custom_emoji_id="5877629862306385808")
     b.adjust(1)
     await safe_edit_text(callback, text, reply_markup=b.as_markup(), state=state)
 
@@ -156,7 +153,7 @@ async def stake_confirmation(callback: types.CallbackQuery, state: FSMContext, l
     await state.update_data(arena_stake=amount)
     b = InlineKeyboardBuilder()
     b.button(text=t(lang, "РАЗВЕРНУТЬ ЭКСПЛОИТ", "DEPLOY EXPLOIT"), callback_data="arena:deploy")
-    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="arena:start")
+    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="arena:start", icon_custom_emoji_id="5877629862306385808")
     b.adjust(1)
     await safe_edit_text(
         callback,
@@ -190,16 +187,47 @@ async def custom_stake(message: types.Message, state: FSMContext, lang: str):
         amount = int((message.text or "").strip())
     except ValueError:
         amount = 0
+
     if amount < MIN_STAKE:
         await message.answer(t(lang, "Введите целое число от 15.", "Enter an integer of at least 15."))
         return
-    await state.set_state(None)
-    await state.update_data(arena_stake=amount)
-    b = InlineKeyboardBuilder()
-    b.button(text=t(lang, "РАЗВЕРНУТЬ", "DEPLOY"), callback_data="arena:deploy")
-    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="arena:start")
-    await message.answer(screen("EXPLOIT READY", f"{amount} 🎃"), reply_markup=b.as_markup())
 
+    try:
+        available = await balance(message.from_user.id)
+    except Exception:
+        logger.exception("ARENA_CUSTOM_BALANCE_FAILED user=%s", message.from_user.id)
+        await message.answer(t(lang, "Ошибка получения баланса. Повторите попытку.", "Could not load your balance. Try again."))
+        return
+
+    if available < PROTECTED + max(MIN_ENTRY, amount):
+        await message.answer(t(lang, "Недостаточно свободных 🎃 с учётом защищённых 50 🎃.",
+                                   "Not enough spendable 🎃 after the protected 50 🎃."))
+        return
+
+    await state.update_data(arena_stake=amount)
+    await state.set_state(None)
+    buttons = InlineKeyboardBuilder()
+    buttons.button(
+        text=t(lang, "РАЗВЕРНУТЬ ЭКСПЛОИТ", "DEPLOY EXPLOIT"),
+        callback_data="arena:deploy",
+        icon_custom_emoji_id=EMOJI["game"][1],
+    )
+    buttons.button(
+        text=t(lang, "НАЗАД", "BACK"),
+        callback_data="arena:start",
+        icon_custom_emoji_id="5877629862306385808",
+    )
+    buttons.adjust(1)
+    await message.answer(
+        screen(
+            t(lang, "АТАКА ПОДГОТОВЛЕНА", "EXPLOIT READY"),
+            f"{t(lang, 'Выделено', 'Staked')}: <b>{amount} 🎃</b>",
+            t(lang, "Сумма заблокирована до окончания боя.",
+              "The stake is locked until the match ends."),
+            footer=t(lang, "Подтвердите действие", "Confirm action"),
+        ),
+        reply_markup=buttons.as_markup(),
+    )
 
 @router.callback_query(F.data == "arena:deploy")
 async def deploy(callback: types.CallbackQuery, state: FSMContext, lang: str):
@@ -401,7 +429,7 @@ def item_keyboard(lang: str):
     for rp in (1,5,10):
         b.button(text=f"{rp} RP → {rp*100}", callback_data=f"arena:convert:{rp}", icon_custom_emoji_id=EMOJI["pumpkin"][1])
     b.button(text=t(lang,"ВВЕСТИ СВОЁ","CUSTOM"),callback_data="arena:convert:custom")
-    b.button(text=t(lang,"НАЗАД","BACK"),callback_data="store_menu")
+    b.button(text=t(lang,"НАЗАД","BACK"),callback_data="store_menu",icon_custom_emoji_id="5877629862306385808")
     b.adjust(1)
     return b.as_markup()
 
@@ -417,9 +445,11 @@ async def items(callback: types.CallbackQuery,state:FSMContext,lang:str):
     await safe_edit_text(callback,screen("STORE: ITEMS",
         t(lang,"Обмен RP на игровую валюту:","Exchange RP for Arena currency:"),
         "<b>1 RP = 100 🎃</b>",
-        f"RP: {(points or {}).get('total_points',0)}",
-        f"🎃: {pumpkins}",
+        "",
+        f"<b>RP:</b> {(points or {}).get('total_points',0)}",
+        f"<b>🎃:</b> {pumpkins}",
         t(lang,"Тыквы используются только в боях.","Pumpkins are only used in fights."),
+        footer=t(lang,"Выберите действие","Choose an action"),
     ),reply_markup=item_keyboard(lang),state=state)
 
 
@@ -473,21 +503,15 @@ async def custom_convert(message:types.Message,state:FSMContext,lang:str):
 async def arena_store_hub(callback: types.CallbackQuery, state: FSMContext, lang: str):
     """The public STORE now offers Tickets and Arena ITEMS; legacy lots are not linked."""
     await callback.answer()
-    points = await db.get_points(callback.from_user.id)
-    try:
-        pumpkins = await balance(callback.from_user.id)
-    except Exception:
-        pumpkins = 0
     b = InlineKeyboardBuilder()
     b.button(text=t(lang, "БИЛЕТЫ", "TICKETS"), callback_data="store_tickets")
     b.button(text="ITEMS", callback_data="arena:items", icon_custom_emoji_id=EMOJI["store"][1])
-    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="game_menu")
+    b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="game_menu", icon_custom_emoji_id="5877629862306385808")
     b.adjust(2, 1)
     text = screen(
         "STORE",
-        t(lang, "Билеты для розыгрышей и игровая валюта Арены.", "Giveaway tickets and Arena currency."),
-        f"<b>RP:</b> {int((points or {}).get('total_points',0))}",
-        f"<b>🎃:</b> {pumpkins}",
-        t(lang, "ITEMS: 1 RP = 100 🎃. RP остаются отдельной валютой.", "ITEMS: 1 RP = 100 🎃. RP stays a separate currency."),
+        t(lang, "Билеты для розыгрышей и игровая валюта Арены.",
+          "Giveaway tickets and Arena currency."),
+        footer=t(lang, "Выберите действие", "Choose an action"),
     )
     await safe_edit_text(callback, text, reply_markup=b.as_markup(), state=state)

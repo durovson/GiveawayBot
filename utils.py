@@ -136,6 +136,7 @@ async def safe_answer(message, text, **kwargs):
             return await message.answer(strip_all_tags(text), **kwargs)
 
 async def safe_edit_text(message, text, **kwargs):
+    kwargs.setdefault('parse_mode', ParseMode.HTML)
     if isinstance(message, types.CallbackQuery):
         target = message.message
     else:

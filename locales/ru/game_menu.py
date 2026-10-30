@@ -135,17 +135,26 @@ TEXTS = {
     "need_packs_msg": "Вам нужно 10 паков для доступа в чат холдеров."
 }
 
+# Shared Premium emoji IDs. Telegram HTML (not Markdown) and real line breaks.
 from services.chat_game_theme import emoji
 
 TEXTS["arena_btn"] = "АРЕНА"
-TEXTS["game_menu_title"] = TEXTS["game_menu_title"].replace(
-    "┣ Ваши очки (RP): {rp} pts", "┣ <b>Ваши очки:</b> {rp} RP"
-).replace(
-    "┣ Всего приглашено: {refs} fnds", "┣ <b>Всего приглашено:</b> {refs}"
-).replace(
-    "┗┅┅┅/ <b>Выберите опцию</b> /",
-    f"┣ [{emoji('game')}] <b>ARENA:</b> Сражайтесь с игроками за {emoji('pumpkin')}\n"
-    f"┣ [{emoji('store')}] <b>STORE:</b> Билеты и ITEMS (1 RP = 100 {emoji('pumpkin')})\n"
-    "┋\n┗┅┅┅/ <b>Выберите опцию</b> /",
-    1,
+TEXTS["game_menu_title"] = (
+    f"┏┅⋐[ ◍ _◍ ]っ┅{emoji('game')}┅/ <b>ИГРОВОЕ МЕНЮ</b> /\n"
+    "┋\n"
+    "┣ Готовы играть?\n"
+    "┋\n"
+    "┣ <b>Ваши очки:</b> {rp} RP\n"
+    "┣ <b>Всего приглашено:</b> {refs}\n"
+    "┋\n"
+    f"┣ {emoji('peach')} <b>HIGHSCORE:</b> Таблица лидеров\n"
+    '┣ <tg-emoji emoji-id="6032594876506312598">👥</tg-emoji> <b>REFERRAL:</b> Приглашай и зарабатывай\n'
+    '┣ <tg-emoji emoji-id="5258204546391351475">💰</tg-emoji> <b>LOGIN:</b> Подключить TON-кошелёк\n'
+    '┣ <tg-emoji emoji-id="5260221883940347555">🔫</tg-emoji> <b>BOOST:</b> Увеличить силу\n'
+    '┣ <tg-emoji emoji-id="5125613133527779066">💎</tg-emoji> <b>WL NOTAPES:</b> Дроп на OpenSea\n'
+    "┋\n"
+    f"┣ {emoji('game')} <b>ARENA:</b> Сражайтесь с игроками за {emoji('pumpkin')}\n"
+    f"┣ {emoji('store')} <b>STORE:</b> Билеты и ITEMS (1 RP = 100 {emoji('pumpkin')})\n"
+    "┋\n"
+    "┗┅┅┅/ <b>Выберите действие</b> /"
 )

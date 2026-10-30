@@ -135,14 +135,26 @@ TEXTS = {
     "need_packs_msg": "You need 10 packs to access Holder Chat."
 }
 
-# Arena v2: real line breaks and existing premium emoji from the bot theme.
+# Shared Premium emoji IDs. Telegram HTML (not Markdown) and real line breaks.
 from services.chat_game_theme import emoji
 
 TEXTS["arena_btn"] = "ARENA"
-TEXTS["game_menu_title"] = TEXTS["game_menu_title"].replace(
-    "┗┅┅┅/ <b>Select an option</b> /",
-    f"┣ [{emoji('game')}] <b>ARENA:</b> Fight other players for {emoji('pumpkin')}\n"
-    f"┣ [{emoji('store')}] <b>STORE:</b> Tickets & ITEMS (1 RP = 100 {emoji('pumpkin')})\n"
-    "┋\n┗┅┅┅/ <b>Select an option</b> /",
-    1,
+TEXTS["game_menu_title"] = (
+    f"┏┅⋐[ ◍ _◍ ]っ┅{emoji('game')}┅/ <b>GAME MENU</b> /\n"
+    "┋\n"
+    "┣ Ready to play?\n"
+    "┋\n"
+    "┣ <b>Your Points:</b> {rp} RP\n"
+    "┣ <b>Total Invited:</b> {refs}\n"
+    "┋\n"
+    f"┣ {emoji('peach')} <b>HIGHSCORE:</b> View Leaderboard\n"
+    '┣ <tg-emoji emoji-id="6032594876506312598">👥</tg-emoji> <b>REFERRAL:</b> Invite &amp; Earn Points\n'
+    '┣ <tg-emoji emoji-id="5258204546391351475">💰</tg-emoji> <b>LOGIN:</b> Connect Ton Wallet\n'
+    '┣ <tg-emoji emoji-id="5260221883940347555">🔫</tg-emoji> <b>BOOST:</b> Boost your Power\n'
+    '┣ <tg-emoji emoji-id="5125613133527779066">💎</tg-emoji> <b>WL NOTAPES:</b> OpenSea drop\n'
+    "┋\n"
+    f"┣ {emoji('game')} <b>ARENA:</b> Fight other players for {emoji('pumpkin')}\n"
+    f"┣ {emoji('store')} <b>STORE:</b> Tickets &amp; ITEMS (1 RP = 100 {emoji('pumpkin')})\n"
+    "┋\n"
+    "┗┅┅┅/ <b>Select an option</b> /"
 )
