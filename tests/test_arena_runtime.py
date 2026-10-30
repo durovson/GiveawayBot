@@ -26,7 +26,8 @@ class ArenaRuntimeTests(unittest.TestCase):
         rows = [button for row in b.inline_keyboard for button in row]
         self.assertTrue(any("1 RP → 100" in button.text for button in rows))
         self.assertTrue(any(button.callback_data == "arena:convert:10" for button in rows))
-        self.assertTrue(any(button.icon_custom_emoji_id == EMOJI["pumpkin"][1] for button in rows))
+        conversions = [button for button in rows if button.callback_data.startswith('arena:convert:') and button.callback_data != 'arena:convert:custom']
+        self.assertTrue(all(button.text.endswith('🎃') and button.icon_custom_emoji_id is None for button in conversions))
 
     def test_menu_back_and_emojis(self):
         self.assertEqual(back("ru").inline_keyboard[0][0].callback_data, "game_menu")

@@ -8,6 +8,17 @@ from handlers import arena
 
 
 class ArenaPresentationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_ports_are_scanned_before_connection_in_both_languages(self):
+        bot=SimpleNamespace(send_message=AsyncMock())
+        match={'host_id':1,'guest_id':2,'host_name':'A','guest_name':'B','language':'ru'}
+        with patch.object(arena.db,'get_user_language',new=AsyncMock(side_effect=['ru','en'])), \
+             patch.object(arena.asyncio,'sleep',new=AsyncMock()):
+            await arena.simulate(bot,match)
+        for uid, scan, node in ((1,'СКАНИРОВАНИЕ ПОРТОВ','ПОДКЛЮЧЕНИЕ К УЗЛУ'),(2,'SCANNING PORTS','CONNECTING TO NODE')):
+            texts=[call.args[1] for call in bot.send_message.await_args_list if call.args[0]==uid]
+            self.assertIn(scan,texts[0])
+            self.assertGreater(next(i for i,text in enumerate(texts) if node in text),0)
+
     def test_all_assets_and_no_nested_tags(self):
         for token, (glyph, asset) in ASSETS.items():
             expected=f'<tg-emoji emoji-id="{asset}">{glyph}</tg-emoji>'

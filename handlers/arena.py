@@ -383,6 +383,13 @@ async def simulate(bot: types.Bot, match: dict) -> None:
     host, guest = html.escape(match["host_name"]), html.escape(match["guest_name"])
     lang = match.get("language", "en")
     stages = [
+        ("СКАНИРОВАНИЕ ПОРТОВ...", "SCANNING PORTS...", [
+            f"🎃 {host} закидал сетевой стек оппонента тыквами...",
+            f"☠️ Система {guest} перезапускается!",
+        ], [
+            f"🎃 {host} flooded the opponent's network stack with pumpkins...",
+            f"☠️ {guest}'s system is rebooting!",
+        ]),
         ("ЗАПУСК СИМУЛЯЦИИ...", "SIMULATION STARTING...", [
             f"⚡️ {host} разогнал частоту процессора до предела...",
             f"🍌 {host} бросил заражённый банан-модификатор в {guest}!",
@@ -400,13 +407,6 @@ async def simulate(bot: types.Bot, match: dict) -> None:
             f"👾 {guest} tried to forge the Crimson Firewall signature...",
             f"📡 {host} intercepted traffic and sent a return pulse!",
             f"⚠️ {guest}'s packets were blocked at the gateway.",
-        ]),
-        ("СКАНИРОВАНИЕ ПОРТОВ...", "SCANNING PORTS...", [
-            f"🎃 {host} закидал сетевой стек оппонента тыквами...",
-            f"☠️ Система {guest} перезапускается!",
-        ], [
-            f"🎃 {host} flooded the opponent's network stack with pumpkins...",
-            f"☠️ {guest}'s system is rebooting!",
         ]),
     ]
     languages = {}
@@ -432,7 +432,7 @@ async def simulate(bot: types.Bot, match: dict) -> None:
 def item_keyboard(lang: str):
     b=InlineKeyboardBuilder()
     for rp in (1,5,10):
-        b.button(text=f"{rp} RP → {rp*100}", callback_data=f"arena:convert:{rp}", icon_custom_emoji_id=EMOJI["pumpkin"][1])
+        b.button(text=f"{rp} RP → {rp*100} 🎃", callback_data=f"arena:convert:{rp}")
     b.button(text=t(lang,"ВВЕСТИ СВОЁ","CUSTOM"),callback_data="arena:convert:custom")
     b.button(text=t(lang,"НАЗАД","BACK"),callback_data="store_menu",icon_custom_emoji_id="5877629862306385808")
     b.adjust(1)
