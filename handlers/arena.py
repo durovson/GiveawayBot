@@ -282,8 +282,9 @@ async def deploy(callback: types.CallbackQuery, state: FSMContext, lang: str):
     except Exception:
         logger.exception("ARENA_ANNOUNCE_FAILED fight=%s", mid)
         await rpc("arena_cancel", {"p_id": mid, "p_user_id": callback.from_user.id, "p_expire": False})
-        await safe_edit_text(callback, screen("SYSTEM: ERROR",
-            t(lang, "Не удалось отправить анонс, ставка возвращена.", "Announcement failed; stake was refunded.")),
+        await safe_edit_text(callback, screen("SYSTEM: OFFLINE",
+            t(lang, "Бот не может отправить сообщение в игровой чат. Проверьте ARENA_CHAT_ID и доступ бота. Ставка возвращена.",
+              "Game chat is unavailable. Check ARENA_CHAT_ID and the bot's access. Your stake was refunded.")),
             reply_markup=back(lang, "arena:menu"), state=state)
         return
     await state.clear()
