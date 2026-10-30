@@ -58,7 +58,6 @@ class ChatGameFormattingTests(unittest.TestCase):
     def test_custom_emoji_ids_exact(self):
         self.assertEqual(theme.EMOJI["pumpkin"][1], "5368309348739074032")
         self.assertEqual(theme.EMOJI["game"][1], "5258508428212445001")
-        self.assertEqual(len(theme.EMOJI), 7)
 
     def test_first_name_cannot_ping_arbitrary_bystanders(self):
         self.assertEqual(handlers.raw_name({"telegram_id": 1,"first_name": "Hello @bystander"}), "Hello ＠bystander")

@@ -15,6 +15,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database import db
+from services.arena_config import target_chat as get_target_chat
 from services.chat_game_theme import emoji, EMOJI
 from services.localization import get_locale_by_lang
 from utils import safe_edit_text
@@ -37,11 +38,6 @@ def t(lang: str, ru: str, en: str) -> str:
 
 def username(user: types.User) -> str:
     return "@" + user.username if user.username else (user.first_name or str(user.id))
-
-
-def chat_id() -> int:
-    value = os.getenv("ARENA_CHAT_ID", "").strip()
-    return int(value) if value.lstrip("-").isdigit() else 0
 
 
 def screen(title: str, *lines: str, footer: str = "Choose an action") -> str:
@@ -232,7 +228,11 @@ async def custom_stake(message: types.Message, state: FSMContext, lang: str):
 @router.callback_query(F.data == "arena:deploy")
 async def deploy(callback: types.CallbackQuery, state: FSMContext, lang: str):
     await callback.answer()
-    target_chat = chat_id()
+    try:
+        target_chat = await get_target_chat(callback.bot)
+    except Exception:
+        logger.exception('ARENA_CHAT_SETTING_UNAVAILABLE')
+        target_chat = 0
     if not target_chat:
         await safe_edit_text(callback, screen("SYSTEM: OFFLINE",
             t(lang, "Игровой чат пока не подключён.", "Game chat is not configured.")),

@@ -17,7 +17,7 @@ from services.localization import get_locale
 from services.referral_service import ReferralService
 from services.points_service import PointsService
 from services.getgems_service import get_collection_stats
-from config import ADMIN_IDS
+from config import ADMIN_IDS, PANEL_ADMIN_IDS
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -45,7 +45,8 @@ async def get_main_menu_keyboard(user_id: int, texts: dict, is_holder_res: bool 
 
         # Row 3
         builder.button(text=texts["notifications_btn"], callback_data="manage_notifications", icon_custom_emoji_id="5260325873688518261")
-        builder.button(text=texts["update_gif_btn"], callback_data="admin_update_gif", icon_custom_emoji_id="5257974976094412956")
+        if user_id in PANEL_ADMIN_IDS:
+            builder.button(text="PANEL", callback_data="admin_panel", icon_custom_emoji_id="5257974976094412956")
 
         # Row 4
         builder.button(text=texts["language_btn"], callback_data="select_language", icon_custom_emoji_id="5260512129240276089")
@@ -70,6 +71,8 @@ async def get_main_menu_keyboard(user_id: int, texts: dict, is_holder_res: bool 
         builder.button(text=texts["support_btn"], url="https://t.me/ton_geist", icon_custom_emoji_id="5258093637450866522", style="primary")
         builder.adjust(1, 2, 2)
 
+    if user_id in PANEL_ADMIN_IDS and user_id not in ADMIN_IDS:
+        builder.row(types.InlineKeyboardButton(text="PANEL", callback_data="admin_panel", icon_custom_emoji_id="5257974976094412956"))
     return builder.as_markup()
 
 

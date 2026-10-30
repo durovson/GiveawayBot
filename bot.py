@@ -203,11 +203,9 @@ async def main():
     t1 = asyncio.create_task(check_timed_giveaways(bot))
     bg_tasks.add(t1)
 
-    if os.environ.get("ARENA_CHAT_ID"):
-        arena_task = asyncio.create_task(ArenaWorker.poll_forever(bot))
-        bg_tasks.add(arena_task)
-    else:
-        logger.warning("ARENA_CHAT_ID is not configured; Arena workers are disabled")
+    # Settlements must run even before a destination is selected in PANEL.
+    arena_task = asyncio.create_task(ArenaWorker.poll_forever(bot))
+    bg_tasks.add(arena_task)
 
 
     t2 = asyncio.create_task(check_periodic_notifications(bot))
