@@ -5,7 +5,7 @@ TEXTS = {
         "┣ [1] Lucky tickets\n┣ [2] Lots and rewards\n┋\n"
         "┗┅┅┅/ <b>Select a section</b> /"
     ),
-    "store_tickets_btn": "TICKETS", "store_lots_btn": "LOTS", "store_items_btn": "ITEMS", "store_admin_btn": "STORE ADMIN", "store_back_btn": "BACK",
+    "store_tickets_btn": "TICKETS", "store_lots_btn": "LOTS", "store_items_btn": "TOKENS", "store_admin_btn": "STORE ADMIN", "store_back_btn": "BACK",
     "partner_gate_title": (
         "┏┅<tg-emoji emoji-id=\"5260726538302660868\">🎟</tg-emoji>┅/ <b>GIVEAWAY ENTER</b> /\n"
         "┋\n"

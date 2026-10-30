@@ -16,6 +16,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database import db
 from services.arena_config import target_chat as get_target_chat
+from services.arena_emoji import arena_emojis
 from services.chat_game_theme import emoji, EMOJI
 from services.localization import get_locale_by_lang
 from utils import safe_edit_text
@@ -44,7 +45,7 @@ def screen(title: str, *lines: str, footer: str = "Choose an action") -> str:
     layout = HEADER + f"<b>{title}</b> /\n┋\n" + "\n".join(
         "┋" if not line else "┣ " + line for line in lines
     ) + "\n┋\n┗┅┅┅/ <b>" + footer + "</b> /"
-    return layout.replace("🎃", emoji("pumpkin"))
+    return arena_emojis(layout)
 
 
 async def rpc(name: str, params=None):
@@ -103,8 +104,9 @@ async def show_arena(callback: types.CallbackQuery, state: FSMContext, lang: str
         t(lang, "Играйте с другими игроками и выигрывайте тыквы.", "Challenge players and win pumpkins."),
         "",
         f"<b>🎃 {t(lang, 'Баланс', 'Balance')}:</b> {pumpkins}",
-        t(lang, "50 🎃 защищены от проигрыша.", "50 🎃 are protected from losses."),
-        t(lang, "1 RP = 100 🎃 в магазине ITEMS.", "1 RP = 100 🎃 in the ITEMS store."),
+        "",
+        t(lang, "[ <b>50 🎃 защищены от проигрыша</b>. ]", "[ <b>50 🎃 are protected from losses</b>. ]"),
+        t(lang, "1 RP = 100 🎃 в магазине ЖЕТОНОВ.", "1 RP = 100 🎃 in the TOKENS STORE."),
         footer=t(lang, "Выберите действие", "Choose an action"),
     )
     b = InlineKeyboardBuilder()
@@ -196,8 +198,10 @@ async def custom_stake(message: types.Message, state: FSMContext, lang: str):
         return
 
     if available < PROTECTED + max(MIN_ENTRY, amount):
-        await message.answer(t(lang, "Недостаточно свободных 🎃 с учётом защищённых 50 🎃.",
-                                   "Not enough spendable 🎃 after the protected 50 🎃."))
+        spendable = max(0, available - PROTECTED)
+        text = (t(lang, f"Введите ставку от 15 до {spendable}.", f"Enter a stake from 15 to {spendable}.")
+                if spendable >= MIN_ENTRY else t(lang, "Пополните баланс в разделе ЖЕТОНЫ.", "Top up your balance in TOKENS."))
+        await message.answer(text, reply_markup=back(lang, 'arena:items'))
         return
 
     await state.update_data(arena_stake=amount)
@@ -419,7 +423,7 @@ async def simulate(bot: types.Bot, match: dict) -> None:
                 title = title_ru if player_lang == "ru" else title_en
                 text = f"<b>[{title}]</b>\n" + phrase if index == 0 else phrase
                 try:
-                    await bot.send_message(user_id, text)
+                    await bot.send_message(user_id, arena_emojis(text))
                 except Exception:
                     logger.info("ARENA_PRIVATE_NARRATION_UNDELIVERABLE user=%s",user_id)
             await asyncio.sleep(1)
@@ -443,12 +447,12 @@ async def items(callback: types.CallbackQuery,state:FSMContext,lang:str):
     except Exception:
         logger.exception("ARENA_ITEMS_FAILED")
         return
-    await safe_edit_text(callback,screen("STORE: ITEMS",
-        t(lang,"Обмен RP на игровую валюту:","Exchange RP for Arena currency:"),
-        "<b>1 RP = 100 🎃</b>",
-        "",
+    await safe_edit_text(callback,screen(t(lang, "STORE: ЖЕТОНЫ", "STORE: TOKENS"),
         f"<b>RP:</b> {(points or {}).get('total_points',0)}",
         f"<b>🎃:</b> {pumpkins}",
+        "",
+        t(lang,"Обмен RP на валюту Арены:","Exchange RP for Arena currency:"),
+        "<b>1 RP = 100 🎃</b>",
         t(lang,"Тыквы используются только в боях.","Pumpkins are only used in fights."),
         footer=t(lang,"Выберите действие","Choose an action"),
     ),reply_markup=item_keyboard(lang),state=state)
@@ -460,7 +464,7 @@ async def convert(callback:types.CallbackQuery,state:FSMContext,lang:str):
     if raw=="custom":
         await callback.answer()
         await state.set_state(ArenaStates.convert)
-        await safe_edit_text(callback,screen("ITEMS",t(lang,"Сколько RP обменять?","How many RP to convert?")),
+        await safe_edit_text(callback,screen(t(lang,"ЖЕТОНЫ","TOKENS"),t(lang,"Сколько RP обменять?","How many RP to convert?")),
             reply_markup=back(lang,"arena:items"),state=state)
         return
     await callback.answer()
@@ -475,7 +479,7 @@ async def _convert(user_id:int,rp:int,key:str,lang:str,callback=None,state=None,
     except Exception:
         logger.exception("ARENA_CONVERT_FAILED")
         return
-    text=screen("STORE: ITEMS",
+    text=screen(t(lang,"STORE: ЖЕТОНЫ","STORE: TOKENS"),
         (t(lang,"Обмен выполнен!","Conversion complete!") + f" +{rp*100} 🎃")
         if result and result.get("ok") else
         t(lang,"Недостаточно RP или ошибка обмена.","Insufficient RP or conversion error."),
@@ -506,7 +510,7 @@ async def arena_store_hub(callback: types.CallbackQuery, state: FSMContext, lang
     await callback.answer()
     b = InlineKeyboardBuilder()
     b.button(text=t(lang, "БИЛЕТЫ", "TICKETS"), callback_data="store_tickets")
-    b.button(text="ITEMS", callback_data="arena:items", icon_custom_emoji_id=EMOJI["store"][1])
+    b.button(text=t(lang,"ЖЕТОНЫ","TOKENS"), callback_data="arena:items")
     b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="game_menu", icon_custom_emoji_id="5877629862306385808")
     b.adjust(2, 1)
     text = screen(
