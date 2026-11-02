@@ -100,7 +100,7 @@ begin
   end if;
   insert into public.arena_wallets(user_id) values(p_user_id) on conflict do nothing;
   select balance into w from public.arena_wallets where user_id=p_user_id for update;
-  -- 50 🎃 is non-burnable. Entry requires at least 20 spendable 🎃.
+  -- 50 tokens are non-burnable. Entry requires at least 20 spendable tokens.
   if w < 70 or w - p_stake < 50 then
     return jsonb_build_object('ok',false,'error','INSUFFICIENT');
   end if;
