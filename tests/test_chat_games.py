@@ -22,21 +22,21 @@ class ChatGameFormattingTests(unittest.TestCase):
                 "victim_name": "@target", "preview_amount": 15, "amount": 17}
 
     def test_both_themes_both_languages_all_blocks_and_custom_emoji_fallback(self):
-        for pumpkin in (True, False):
-            with patch.object(theme, "PUMPKIN_MODE", pumpkin):
+        for token in (True, False):
+            with patch.object(theme, "TOKEN_MODE", token):
                 for lang in ("ru", "en"):
                     t = service.locale(lang)
                     balance = service.balance_text(75, lang)
                     self.assertIn(t["balance_title"], balance)
                     self.assertIn("75", balance)
-                    self.assertEqual("🎃" in balance, pumpkin)
+                    self.assertEqual("🪙" in balance, token)
                     for status in ("pending", "stolen", "defended"):
                         text = service.attack_text(self.attack(lang, status), result=status != "pending")
                         self.assertIn("@bad&lt;name&gt;", text)
                         self.assertNotIn("@bad<name>", text)
                         fallback = strip_custom_emojis(text)
                         self.assertNotIn("tg-emoji", fallback)
-                        self.assertEqual("🎃" in fallback, pumpkin)
+                        self.assertEqual("🪙" in fallback, token)
                         if status == "defended":
                             self.assertIn("−15", text)
                             self.assertIn("+10", text)
@@ -56,7 +56,7 @@ class ChatGameFormattingTests(unittest.TestCase):
         self.assertIn("Сожжено: 15", text)
 
     def test_custom_emoji_ids_exact(self):
-        self.assertEqual(theme.EMOJI["pumpkin"][1], "5368309348739074032")
+        self.assertEqual(theme.EMOJI["token"][1], "5318972874726339331")
         self.assertEqual(theme.EMOJI["game"][1], "5258508428212445001")
 
     def test_first_name_cannot_ping_arbitrary_bystanders(self):
