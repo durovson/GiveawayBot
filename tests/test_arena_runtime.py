@@ -19,7 +19,7 @@ class ArenaRuntimeTests(unittest.TestCase):
         enough = _choose_stake("en", 70).inline_keyboard
         self.assertIn("arena:stake:15", [x.callback_data for row in enough for x in row])
         self.assertNotIn("arena:stake:50", [x.callback_data for row in enough for x in row])
-        self.assertTrue(any(x.icon_custom_emoji_id == EMOJI["pumpkin"][1] for row in enough for x in row))
+        self.assertTrue(any(x.icon_custom_emoji_id == EMOJI["token"][1] for row in enough for x in row))
 
     def test_shop_exchange_buttons(self):
         b = item_keyboard("en")
@@ -27,14 +27,14 @@ class ArenaRuntimeTests(unittest.TestCase):
         self.assertTrue(any("1 RP → 100" in button.text for button in rows))
         self.assertTrue(any(button.callback_data == "arena:convert:10" for button in rows))
         conversions = [button for button in rows if button.callback_data.startswith('arena:convert:') and button.callback_data != 'arena:convert:custom']
-        self.assertTrue(all(button.text.endswith('🎃') and button.icon_custom_emoji_id is None for button in conversions))
+        self.assertTrue(all(button.icon_custom_emoji_id == EMOJI['token'][1] and not button.text.endswith('🪙') for button in conversions))
 
     def test_menu_back_and_emojis(self):
         self.assertEqual(back("ru").inline_keyboard[0][0].callback_data, "game_menu")
-        display = screen("ARENA", "50 🎃")
+        display = screen("ARENA", "50 🪙")
         self.assertIn("┏┅", display)
         self.assertIn(f'emoji-id="{EMOJI["game"][1]}"', display)
-        self.assertIn(f'emoji-id="{EMOJI["pumpkin"][1]}"', display)
+        self.assertIn(f'emoji-id="{EMOJI["token"][1]}"', display)
 
     def test_game_menu_linebreaks_and_premium_emojis(self):
         for texts in (EN_GAME, RU_GAME):
@@ -42,7 +42,7 @@ class ArenaRuntimeTests(unittest.TestCase):
             self.assertNotIn(r"\n", content, "Literal backslash-n in game menu")
             self.assertIn("ARENA:", content)
             self.assertIn("STORE:", content)
-            for name in ("game", "store", "pumpkin"):
+            for name in ("game", "store", "token"):
                 self.assertIn(f'emoji-id="{EMOJI[name][1]}"', content)
 
 
