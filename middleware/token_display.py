@@ -1,4 +1,4 @@
-"""Seasonal display at the Telegram boundary; balances and callbacks stay RP."""
+"""Token display at the Telegram boundary; balances and callbacks stay RP."""
 import logging
 import re
 
@@ -15,21 +15,21 @@ _PROTECTED = re.compile(
     r'(<(?:code|pre|tg-emoji)\b[^>]*>.*?</(?:code|pre|tg-emoji)>|<[^>]+>|'
     r'(?:https?|tg|ton|tonkeeper)://[^\s<>]+)', re.IGNORECASE | re.DOTALL
 )
-_UNIT = re.compile(r'(?<![\w@/])(?:RP|РП)(?!\w)|🎃')
-PUMPKIN_ID = '5368309348739074032'
-PUMPKIN_HTML = f'<tg-emoji emoji-id="{PUMPKIN_ID}">🎃</tg-emoji>'
+_UNIT = re.compile(r'(?<![\w@/])(?:RP|РП)(?!\w)|🪙')
+TOKEN_ID = '5318972874726339331'
+TOKEN_HTML = f'<tg-emoji emoji-id="{TOKEN_ID}">🪙</tg-emoji>'
 logger = logging.getLogger(__name__)
 
 
-def pumpkin_text(value, *, rich=False, force_plain=False, protected_entities=()):
-    if not isinstance(value, str) or not chat_game_theme.PUMPKIN_MODE:
+def token_text(value, *, rich=False, force_plain=False, protected_entities=()):
+    if not isinstance(value, str) or not chat_game_theme.TOKEN_MODE:
         return value
     if force_plain:
         value = re.sub(r'</?tg-emoji\b[^>]*>', '', value)
     pieces = _PROTECTED.split(value)
     cursor = 0
     for i, piece in enumerate(pieces):
-        # Both RP and 🎃 occupy two UTF-16 code units. Telegram entity
+        # Both RP and 🪙 occupy two UTF-16 code units. Telegram entity
         # offsets/lengths therefore remain unchanged, including after emojis.
         if i % 2 == 0:
             def replacement(match):
@@ -38,7 +38,7 @@ def pumpkin_text(value, *, rich=False, force_plain=False, protected_entities=())
                     'custom_emoji', 'code', 'pre', 'url', 'mention', 'email'
                 } for e in protected_entities):
                     return match.group()
-                return PUMPKIN_HTML if rich and not force_plain else '🎃'
+                return TOKEN_HTML if rich and not force_plain else '🪙'
             pieces[i] = _UNIT.sub(replacement, piece)
         cursor += len(piece)
     return ''.join(pieces)
@@ -54,13 +54,13 @@ def _markup(markup, *, force_plain=False):
         for row in rows:
             updated_row = []
             for button in row:
-                text = pumpkin_text(button.text)
+                text = token_text(button.text)
                 changes = {}
-                if '🎃' in text and not force_plain:
+                if '🪙' in text and not force_plain:
                     # Telegram supports one leading premium icon per button,
                     # not custom-emoji HTML embedded in a button's text.
-                    text = text.replace('🎃', '').strip() or '•'
-                    changes['icon_custom_emoji_id'] = PUMPKIN_ID
+                    text = text.replace('🪙', '').strip() or '•'
+                    changes['icon_custom_emoji_id'] = TOKEN_ID
                 elif force_plain and getattr(button, 'icon_custom_emoji_id', None):
                     changes['icon_custom_emoji_id'] = None
                 if text != button.text:
@@ -85,7 +85,7 @@ def _body(model, bot=None, *, force_plain=False):
             continue
         entities = getattr(model, entity_field, None)
         rich = mode == 'HTML' and not entities
-        updated = pumpkin_text(value, rich=rich, force_plain=force_plain,
+        updated = token_text(value, rich=rich, force_plain=force_plain,
                                protected_entities=entities or ())
         if updated != value:
             changes[field] = updated
@@ -105,7 +105,7 @@ def _body(model, bot=None, *, force_plain=False):
                 } for e in result):
                     continue
                 result.append(MessageEntity(type='custom_emoji', offset=offset, length=2,
-                                            custom_emoji_id=PUMPKIN_ID))
+                                            custom_emoji_id=TOKEN_ID))
             if result != list(entities or []):
                 changes[entity_field] = sorted(result, key=lambda e: (e.offset, -e.length))
                 if entities and mode is not None:
@@ -114,12 +114,12 @@ def _body(model, bot=None, *, force_plain=False):
 
 
 def themed_request(method, bot=None, *, force_plain=False):
-    if not chat_game_theme.PUMPKIN_MODE:
+    if not chat_game_theme.TOKEN_MODE:
         return method
     updates = _body(method, bot, force_plain=force_plain)
     for field in ('description', 'short_description'):
         value = getattr(method, field, None)
-        updated = pumpkin_text(value)
+        updated = token_text(value)
         if updated != value:
             updates[field] = updated
     markup = getattr(method, 'reply_markup', None)
@@ -139,19 +139,19 @@ def themed_request(method, bot=None, *, force_plain=False):
             updates['media'] = media.model_copy(update=changes)
     commands = getattr(method, 'commands', None)
     if isinstance(commands, list):
-        updated = [item.model_copy(update={'description': pumpkin_text(item.description)})
-                   if pumpkin_text(item.description) != item.description else item for item in commands]
+        updated = [item.model_copy(update={'description': token_text(item.description)})
+                   if token_text(item.description) != item.description else item for item in commands]
         if any(a is not b for a, b in zip(commands, updated)):
             updates['commands'] = updated
     return method.model_copy(update=updates) if updates else method
 
 
-class PumpkinDisplayMiddleware(BaseRequestMiddleware):
+class TokenDisplayMiddleware(BaseRequestMiddleware):
     async def __call__(self, make_request, bot, method):
         try:
             return await make_request(bot, themed_request(method, bot))
         except TelegramBadRequest as error:
-            if not chat_game_theme.PUMPKIN_MODE or not any(marker in str(error).lower() for marker in ('document_invalid', 'custom emoji', 'custom_emoji')):
+            if not chat_game_theme.TOKEN_MODE or not any(marker in str(error).lower() for marker in ('document_invalid', 'custom emoji', 'custom_emoji')):
                 raise
             # Only retry a definite Telegram rejection, never a timeout or an
             # unknown send outcome. Do not let global theming re-add the same

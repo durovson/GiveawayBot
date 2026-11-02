@@ -41,7 +41,7 @@ class ArenaWorker:
             t(lang,"СЕССИЯ ЗАКРЫТА","SESSION CLOSED"),
             t(lang,"🏁 Логи сетевой стычки обработаны.","🏁 The network skirmish logs have been processed."),
             "",
-            f"🥇 {t(lang,'Взломщик','Hacker')}: <b>{winner}</b> ({t(lang,'Логи','Logs')}: +{stake} 🎃)",
+            f"🥇 {t(lang,'Взломщик','Hacker')}: <b>{winner}</b> ({t(lang,'Логи','Logs')}: +{stake} 🪙)",
             f"⚰️ {t(lang,'Жертва','Victim')}: <b>{loser}</b> (" +
                 t(lang,"Система скомпрометирована","System compromised") + ")",
             footer="TERMINAL CLOSED",
@@ -70,17 +70,17 @@ class ArenaWorker:
                 txt = screen(
                     t(user_lang,"ВЗЛОМ УСПЕШЕН","HACK SUCCESSFUL"),
                     t(user_lang,"[+] Firewall противника подавлен.","[+] Opponent firewall suppressed."),
-                    f"[+] {t(user_lang,'Изъято из пула','Won from pool')}: +{stake} 🎃",
+                    f"[+] {t(user_lang,'Изъято из пула','Won from pool')}: +{stake} 🪙",
                     "",
-                    f"{t(user_lang,'Ваш баланс','Your balance')}: <b>{current} 🎃</b>",
+                    f"{t(user_lang,'Ваш баланс','Your balance')}: <b>{current} 🪙</b>",
                 )
             else:
                 txt = screen(
                     t(user_lang,"СИСТЕМА ВЗЛОМАНА","SYSTEM BREACHED"),
                     t(user_lang,"[-] Ваша защита была скомпрометирована","[-] Your defenses were compromised") + f" {winner}",
-                    f"[-] {t(user_lang,'Потеряно','Lost')}: -{stake} 🎃",
+                    f"[-] {t(user_lang,'Потеряно','Lost')}: -{stake} 🪙",
                     "",
-                    f"{t(user_lang,'Защищённый остаток и баланс','Protected reserve and balance')}: <b>{current} 🎃</b>",
+                    f"{t(user_lang,'Защищённый остаток и баланс','Protected reserve and balance')}: <b>{current} 🪙</b>",
                 )
             from aiogram.utils.keyboard import InlineKeyboardBuilder
             b=InlineKeyboardBuilder()
@@ -99,7 +99,7 @@ class ArenaWorker:
                 await bot.send_message(match["chat_id"],screen(
                     t(lang,"ЭКСПЛОИТ ОТОЗВАН","EXPLOIT CANCELLED"),
                     t(lang,"Противник не был найден за 5 минут.","No opponent joined within 5 minutes."),
-                    f"{t(lang,'Возврат','Refund')}: {match['stake']} 🎃",
+                    f"{t(lang,'Возврат','Refund')}: {match['stake']} 🪙",
                     footer="TERMINAL CLOSED",
                 ))
             except Exception:

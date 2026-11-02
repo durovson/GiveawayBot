@@ -70,11 +70,11 @@ def _choose_stake(lang: str, available: int):
     spendable = max(0, available - PROTECTED)
     b = InlineKeyboardBuilder()
     if spendable >= MIN_ENTRY:
-        b.button(text="15", callback_data="arena:stake:15", icon_custom_emoji_id=EMOJI["pumpkin"][1])
+        b.button(text="15", callback_data="arena:stake:15", icon_custom_emoji_id=EMOJI["token"][1])
     if spendable >= 50:
-        b.button(text="50", callback_data="arena:stake:50", icon_custom_emoji_id=EMOJI["pumpkin"][1])
+        b.button(text="50", callback_data="arena:stake:50", icon_custom_emoji_id=EMOJI["token"][1])
     if spendable >= MIN_ENTRY:
-        b.button(text=f"MAX · {spendable}", callback_data=f"arena:stake:{spendable}", icon_custom_emoji_id=EMOJI["pumpkin"][1])
+        b.button(text=f"MAX · {spendable}", callback_data=f"arena:stake:{spendable}", icon_custom_emoji_id=EMOJI["token"][1])
     b.button(text=t(lang, "ВВЕСТИ СВОЁ", "CUSTOM"), callback_data="arena:stake:custom")
     b.button(text=t(lang, "НАЗАД", "BACK"), callback_data="arena:menu", icon_custom_emoji_id="5877629862306385808")
     b.adjust(2, 1, 1, 1)
@@ -89,7 +89,7 @@ class ArenaStates(StatesGroup):
 async def show_arena(callback: types.CallbackQuery, state: FSMContext, lang: str):
     user_id = callback.from_user.id
     try:
-        pumpkins = await balance(user_id)
+        tokens = await balance(user_id)
     except Exception:
         logger.exception("ARENA_BALANCE_FAILED user=%s", user_id)
         await safe_edit_text(
@@ -101,12 +101,12 @@ async def show_arena(callback: types.CallbackQuery, state: FSMContext, lang: str
         return
     text = screen(
         "ARENA",
-        t(lang, "Играйте с другими игроками и выигрывайте тыквы.", "Challenge players and win pumpkins."),
+        t(lang, "Играйте с другими игроками и выигрывайте жетоны.", "Challenge players and win tokens."),
         "",
-        f"<b>🎃 {t(lang, 'Баланс', 'Balance')}:</b> {pumpkins}",
+        f"<b>🪙 {t(lang, 'Баланс', 'Balance')}:</b> {tokens}",
         "",
-        t(lang, "[ <b>50 🎃 защищены от проигрыша</b>. ]", "[ <b>50 🎃 are protected from losses</b>. ]"),
-        t(lang, "1 RP = 100 🎃 в магазине ЖЕТОНОВ.", "1 RP = 100 🎃 in the TOKENS STORE."),
+        t(lang, "[ <b>50 🪙 защищены от проигрыша</b>. ]", "[ <b>50 🪙 are protected from losses</b>. ]"),
+        t(lang, "1 RP = 100 🪙 в магазине ЖЕТОНОВ.", "1 RP = 100 🪙 in the TOKENS STORE."),
         footer=t(lang, "Выберите действие", "Choose an action"),
     )
     b = InlineKeyboardBuilder()
@@ -127,7 +127,7 @@ async def arena_menu(callback: types.CallbackQuery, state: FSMContext, lang: str
 async def arena_start(callback: types.CallbackQuery, state: FSMContext, lang: str):
     await callback.answer()
     try:
-        pumpkins = await balance(callback.from_user.id)
+        tokens = await balance(callback.from_user.id)
     except Exception:
         await callback.answer()
         logger.exception("ARENA_STAKE_FAILED")
@@ -135,18 +135,18 @@ async def arena_start(callback: types.CallbackQuery, state: FSMContext, lang: st
     text = screen(
         "SYSTEM: PENDING",
         t(lang, "ВЫДЕЛЕНИЕ ПАКЕТОВ ДЛЯ ИНИЦИАЛИЗАЦИИ:", "ALLOCATING PACKETS FOR INITIALIZATION:"),
-        t(lang, "Несгораемый минимум на узле: 50 🎃", "Protected node minimum: 50 🎃"),
+        t(lang, "Несгораемый минимум на узле: 50 🪙", "Protected node minimum: 50 🪙"),
         t(lang, "При поражении вы теряете выделенный объём данных.", "You lose your staked data if defeated."),
-        f"{t(lang, 'Текущий баланс', 'Current balance')}: <b>{pumpkins} 🎃</b>",
+        f"{t(lang, 'Текущий баланс', 'Current balance')}: <b>{tokens} 🪙</b>",
         footer=t(lang, "Быстрый выбор объёма атаки", "Quick stake selection"),
     )
-    await safe_edit_text(callback, text, reply_markup=_choose_stake(lang, pumpkins), state=state)
+    await safe_edit_text(callback, text, reply_markup=_choose_stake(lang, tokens), state=state)
 
 
 async def stake_confirmation(callback: types.CallbackQuery, state: FSMContext, lang: str, amount: int):
     available = await balance(callback.from_user.id)
     if available < PROTECTED + max(MIN_ENTRY, amount) or amount < MIN_STAKE:
-        await callback.answer(t(lang, "Нужно минимум 20 свободных 🎃 и 50 защищённых 🎃.", "You need 20 spendable 🎃 plus 50 protected 🎃."), show_alert=True)
+        await callback.answer(t(lang, "Нужно минимум 20 свободных 🪙 и 50 защищённых 🪙.", "You need 20 spendable 🪙 plus 50 protected 🪙."), show_alert=True)
         return
     await state.update_data(arena_stake=amount)
     b = InlineKeyboardBuilder()
@@ -157,7 +157,7 @@ async def stake_confirmation(callback: types.CallbackQuery, state: FSMContext, l
         callback,
         screen(
             t(lang, "АТАКА ПОДГОТОВЛЕНА", "EXPLOIT READY"),
-            f"{t(lang, 'Выделено', 'Staked')}: <b>{amount} 🎃</b>",
+            f"{t(lang, 'Выделено', 'Staked')}: <b>{amount} 🪙</b>",
             t(lang, "Сумма будет заблокирована до завершения игры.", "The stake is locked until the match ends."),
             footer=t(lang, "Подтвердите действие", "Confirm action"),
         ),
@@ -172,7 +172,7 @@ async def select_stake(callback: types.CallbackQuery, state: FSMContext, lang: s
         await callback.answer()
         await state.set_state(ArenaStates.stake)
         await safe_edit_text(callback,
-            screen("SYSTEM: PENDING", t(lang, "Введите количество 🎃 (минимум 15):", "Enter 🎃 amount (minimum 15):")),
+            screen("SYSTEM: PENDING", t(lang, "Введите количество 🪙 (минимум 15):", "Enter 🪙 amount (minimum 15):")),
             reply_markup=back(lang, "arena:start"), state=state)
         return
     await callback.answer()
@@ -221,7 +221,7 @@ async def custom_stake(message: types.Message, state: FSMContext, lang: str):
     await message.answer(
         screen(
             t(lang, "АТАКА ПОДГОТОВЛЕНА", "EXPLOIT READY"),
-            f"{t(lang, 'Выделено', 'Staked')}: <b>{amount} 🎃</b>",
+            f"{t(lang, 'Выделено', 'Staked')}: <b>{amount} 🪙</b>",
             t(lang, "Сумма заблокирована до окончания боя.",
               "The stake is locked until the match ends."),
             footer=t(lang, "Подтвердите действие", "Confirm action"),
@@ -274,7 +274,7 @@ async def deploy(callback: types.CallbackQuery, state: FSMContext, lang: str):
         f"🚨 {html.escape(match['host_name'])} " + t(lang, "развернул боевой эксплоит!", "has deployed a combat exploit!"),
         t(lang, "🎯 Требуется соперник для проверки атаки.", "🎯 A challenger is needed to validate the attack."),
         "",
-        f"💵 {t(lang, 'Ресурс', 'Stake')}: <b>{amount} 🎃</b>",
+        f"💵 {t(lang, 'Ресурс', 'Stake')}: <b>{amount} 🪙</b>",
         t(lang, "⏳ До детонации: 5 минут", "⏳ Detonation in 5 minutes"),
         footer=t(lang, "СИСТЕМА ИЩЕТ СОПЕРНИКА", "SEARCHING FOR OPPONENT"),
     )
@@ -295,7 +295,7 @@ async def deploy(callback: types.CallbackQuery, state: FSMContext, lang: str):
     await safe_edit_text(callback, screen(
         t(lang, "ЭКСПЛОИТ РАЗВЕРНУТ", "EXPLOIT DEPLOYED"),
         t(lang, "ИНИЦИИРОВАТЬ СЕТЕВУЮ АТАКУ (DEPLOY)", "NETWORK ATTACK INITIALIZED"),
-        f"{t(lang, 'ЗАБЛОКИРОВАНО ПОД АТАКУ', 'STAKED')}: <b>{amount} 🎃</b>",
+        f"{t(lang, 'ЗАБЛОКИРОВАНО ПОД АТАКУ', 'STAKED')}: <b>{amount} 🪙</b>",
         t(lang, "[ СТАТУС: ПОДКЛЮЧЕНИЕ ОППОНЕНТА... ]", "[ STATUS: CONNECTING OPPONENT... ]"),
         t(lang, "Ждём, пока соперник примет ваш вызов.", "Waiting for a player to accept your challenge."),
         t(lang, "Автоотмена: 5 минут.", "Auto-cancel: 5 minutes."),
@@ -320,7 +320,7 @@ async def cancel_game(callback: types.CallbackQuery, state: FSMContext, lang: st
         return
     await safe_edit_text(callback,
         screen("SYSTEM: CANCELLED",
-            t(lang, "Игра отменена. Тыквы возвращены на баланс.", "Game cancelled. Your pumpkins were refunded.")
+            t(lang, "Игра отменена. Жетоны возвращены на баланс.", "Game cancelled. Your tokens were refunded.")
             if result and result.get("ok") else t(lang, "Игра уже закрыта.", "Game already closed.")),
         reply_markup=back(lang, "arena:menu"), state=state)
 
@@ -347,7 +347,7 @@ async def game_deep_link(message: types.Message, state: FSMContext, lang: str):
     await message.answer(screen(
         "ARENA: FIGHT",
         f"{t(lang, 'Создатель', 'Host')}: {html.escape(match['host_name'])}",
-        f"{t(lang, 'Ставка', 'Stake')}: {match['stake']} 🎃",
+        f"{t(lang, 'Ставка', 'Stake')}: {match['stake']} 🪙",
         t(lang, "Победитель получит обе ставки.", "Winner receives both stakes."),
     ), reply_markup=b.as_markup())
 
@@ -384,10 +384,10 @@ async def simulate(bot: types.Bot, match: dict) -> None:
     lang = match.get("language", "en")
     stages = [
         ("СКАНИРОВАНИЕ ПОРТОВ...", "SCANNING PORTS...", [
-            f"🎃 {host} закидал сетевой стек оппонента тыквами...",
+            f"🪙 {host} закидал сетевой стек оппонента жетонами...",
             f"☠️ Система {guest} перезапускается!",
         ], [
-            f"🎃 {host} flooded the opponent's network stack with pumpkins...",
+            f"🪙 {host} flooded the opponent's network stack with tokens...",
             f"☠️ {guest}'s system is rebooting!",
         ]),
         ("ЗАПУСК СИМУЛЯЦИИ...", "SIMULATION STARTING...", [
@@ -432,7 +432,7 @@ async def simulate(bot: types.Bot, match: dict) -> None:
 def item_keyboard(lang: str):
     b=InlineKeyboardBuilder()
     for rp in (1,5,10):
-        b.button(text=f"{rp} RP → {rp*100} 🎃", callback_data=f"arena:convert:{rp}")
+        b.button(text=f"{rp} RP → {rp*100}", callback_data=f"arena:convert:{rp}", icon_custom_emoji_id=EMOJI["token"][1])
     b.button(text=t(lang,"ВВЕСТИ СВОЁ","CUSTOM"),callback_data="arena:convert:custom")
     b.button(text=t(lang,"НАЗАД","BACK"),callback_data="store_menu",icon_custom_emoji_id="5877629862306385808")
     b.adjust(1)
@@ -443,17 +443,17 @@ def item_keyboard(lang: str):
 async def items(callback: types.CallbackQuery,state:FSMContext,lang:str):
     await callback.answer()
     try:
-        points, pumpkins = await asyncio.gather(db.get_points(callback.from_user.id),balance(callback.from_user.id))
+        points, tokens = await asyncio.gather(db.get_points(callback.from_user.id),balance(callback.from_user.id))
     except Exception:
         logger.exception("ARENA_ITEMS_FAILED")
         return
     await safe_edit_text(callback,screen(t(lang, "STORE: ЖЕТОНЫ", "STORE: TOKENS"),
         f"<b>RP:</b> {(points or {}).get('total_points',0)}",
-        f"<b>🎃:</b> {pumpkins}",
+        f"<b>🪙:</b> {tokens}",
         "",
         t(lang,"Обмен RP на валюту Арены:","Exchange RP for Arena currency:"),
-        "<b>1 RP = 100 🎃</b>",
-        t(lang,"Тыквы используются только в боях.","Pumpkins are only used in fights."),
+        "<b>1 RP = 100 🪙</b>",
+        t(lang,"Жетоны используются только в боях.","Tokens are only used in fights."),
         footer=t(lang,"Выберите действие","Choose an action"),
     ),reply_markup=item_keyboard(lang),state=state)
 
@@ -480,10 +480,10 @@ async def _convert(user_id:int,rp:int,key:str,lang:str,callback=None,state=None,
         logger.exception("ARENA_CONVERT_FAILED")
         return
     text=screen(t(lang,"STORE: ЖЕТОНЫ","STORE: TOKENS"),
-        (t(lang,"Обмен выполнен!","Conversion complete!") + f" +{rp*100} 🎃")
+        (t(lang,"Обмен выполнен!","Conversion complete!") + f" +{rp*100} 🪙")
         if result and result.get("ok") else
         t(lang,"Недостаточно RP или ошибка обмена.","Insufficient RP or conversion error."),
-        f"🎃: {result.get('balance','—')}" if result and result.get("ok") else "",
+        f"🪙: {result.get('balance','—')}" if result and result.get("ok") else "",
     )
     if callback:
         await safe_edit_text(callback,text,reply_markup=back(lang,"arena:items"),state=state)

@@ -153,8 +153,8 @@ TEXTS["game_menu_title"] = (
     '┣ <tg-emoji emoji-id="5260221883940347555">🔫</tg-emoji> <b>BOOST:</b> Увеличить силу\n'
     '┣ <tg-emoji emoji-id="5125613133527779066">💎</tg-emoji> <b>WL NOTAPES:</b> Дроп на OpenSea\n'
     "┋\n"
-    f"┣ {emoji('game')} <b>ARENA:</b> Сражайтесь с игроками за {emoji('pumpkin')}\n"
-    f"┣ {emoji('store')} <b>STORE:</b> Билеты и ЖЕТОНЫ (1 RP = 100 {emoji('pumpkin')})\n"
+    f"┣ {emoji('game')} <b>ARENA:</b> Сражайтесь с игроками за {emoji('token')}\n"
+    f"┣ {emoji('store')} <b>STORE:</b> Билеты и ЖЕТОНЫ (1 RP = 100 {emoji('token')})\n"
     "┋\n"
     "┗┅┅┅/ <b>Выберите действие</b> /"
 )

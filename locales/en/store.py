@@ -2,7 +2,7 @@ TEXTS = {
     "store_hub_title": (
         "┏┅⋐[ ◍ _◍ ]っ┅<tg-emoji emoji-id=\"5983399041197675256\">🏪</tg-emoji>┅/ <b>STORE HUB</b> /\n"
         "┋\n┣ <b>Your RP:</b> {rp}\n┋\n"
-        "┣ [1] Lucky tickets\n┣ [2] Lots and rewards\n┋\n"
+        "┣ [1] Lucky tickets\n┣ [2] TOKENS: Arena currency (1 RP = 100 <tg-emoji emoji-id=\"5318972874726339331\">🪙</tg-emoji>) and rewards\n┋\n"
         "┗┅┅┅/ <b>Select a section</b> /"
     ),
     "store_tickets_btn": "TICKETS", "store_lots_btn": "LOTS", "store_items_btn": "TOKENS", "store_admin_btn": "STORE ADMIN", "store_back_btn": "BACK",
