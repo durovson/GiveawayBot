@@ -36,12 +36,20 @@ class ArenaPresentationTests(unittest.IsolatedAsyncioTestCase):
                  patch.object(arena,'safe_edit_text',new=AsyncMock()) as edit:
                 await arena.items(callback,state,lang)
                 text=edit.call_args.args[1]
+                token_html=f'<tg-emoji emoji-id="{arena.EMOJI["token"][1]}">🪙</tg-emoji>'
                 self.assertIn(title,text)
                 self.assertLess(text.index('73'),text.index('220'))
                 self.assertLess(text.index('220'),text.index('1 RP = 100'))
+                self.assertIn('<b>RP:</b> 73',text)
+                self.assertIn(f'<b>{"ЖЕТОНЫ" if lang == "ru" else "TOKENS"}:</b> 220',text)
+                self.assertIn(f'<b>1 RP = 100 {token_html}</b>',text)
                 await arena.show_arena(callback,state,lang)
                 text=edit.call_args.args[1]
                 self.assertIn('220\n┋\n┣ [ <b>50',text)
+                if lang == "en":
+                    self.assertIn(f'<b>{token_html}TOKENS:</b> 220',text)
+                    self.assertIn(f'[ <b>50 {token_html}TOKENS are protected from losses</b>. ]',text)
+                    self.assertIn(f'1 RP = 100 {token_html} in the TOKENS - STORE.',text)
                 await arena.arena_store_hub(callback,state,lang)
                 buttons=[b for row in edit.call_args.kwargs['reply_markup'].inline_keyboard for b in row]
                 button=next(b for b in buttons if b.callback_data=='arena:items')
