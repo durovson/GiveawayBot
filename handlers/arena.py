@@ -103,10 +103,10 @@ async def show_arena(callback: types.CallbackQuery, state: FSMContext, lang: str
         "ARENA",
         t(lang, "Играйте с другими игроками и выигрывайте жетоны.", "Challenge players and win tokens."),
         "",
-        f"<b>🪙 {t(lang, 'Баланс', 'Balance')}:</b> {tokens}",
+        f"<b>🪙{t(lang, 'ЖЕТОНЫ', 'TOKENS')}:</b> {tokens}",
         "",
-        t(lang, "[ <b>50 🪙 защищены от проигрыша</b>. ]", "[ <b>50 🪙 are protected from losses</b>. ]"),
-        t(lang, "1 RP = 100 🪙 в магазине ЖЕТОНОВ.", "1 RP = 100 🪙 in the TOKENS STORE."),
+        t(lang, "[ <b>50 🪙ЖЕТОНОВ защищены от проигрыша</b>. ]", "[ <b>50 🪙TOKENS are protected from losses</b>. ]"),
+        t(lang, "1 RP = 100 🪙 в магазине ЖЕТОНОВ.", "1 RP = 100 🪙 in the TOKENS - STORE."),
         footer=t(lang, "Выберите действие", "Choose an action"),
     )
     b = InlineKeyboardBuilder()
@@ -432,7 +432,7 @@ async def simulate(bot: types.Bot, match: dict) -> None:
 def item_keyboard(lang: str):
     b=InlineKeyboardBuilder()
     for rp in (1,5,10):
-        b.button(text=f"{rp} RP → {rp*100}", callback_data=f"arena:convert:{rp}", icon_custom_emoji_id=EMOJI["token"][1])
+        b.button(text=f"{rp} RP - {rp*100} 🪙", callback_data=f"arena:convert:{rp}")
     b.button(text=t(lang,"ВВЕСТИ СВОЁ","CUSTOM"),callback_data="arena:convert:custom")
     b.button(text=t(lang,"НАЗАД","BACK"),callback_data="store_menu",icon_custom_emoji_id="5877629862306385808")
     b.adjust(1)
@@ -449,7 +449,7 @@ async def items(callback: types.CallbackQuery,state:FSMContext,lang:str):
         return
     await safe_edit_text(callback,screen(t(lang, "STORE: ЖЕТОНЫ", "STORE: TOKENS"),
         f"<b>RP:</b> {(points or {}).get('total_points',0)}",
-        f"<b>🪙:</b> {tokens}",
+        f"<b>{t(lang, 'ЖЕТОНЫ', 'TOKENS')}:</b> {tokens}",
         "",
         t(lang,"Обмен RP на валюту Арены:","Exchange RP for Arena currency:"),
         "<b>1 RP = 100 🪙</b>",
