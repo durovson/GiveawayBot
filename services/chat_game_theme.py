@@ -1,6 +1,6 @@
 """Existing premium-emoji assets, reused by the RP and Arena interfaces."""
 
-PUMPKIN_MODE = True
+TOKEN_MODE = True
 
 EMOJI = {
     "peach": ("🍑", "5258330865674494479"),
@@ -10,7 +10,7 @@ EMOJI = {
     "hourglass": ("⌛️", "5296482716567495148"),
     "money": ("💵", "5372874186010158207"),
     "warning": ("❗️", "5258382581375723416"),
-    "pumpkin": ("🎃", "5368309348739074032"),
+    "token": ("🪙", "5318972874726339331"),
 }
 
 
@@ -20,4 +20,4 @@ def emoji(name: str) -> str:
 
 
 def currency() -> str:
-    return emoji("pumpkin") if PUMPKIN_MODE else "RP"
+    return emoji("token") if TOKEN_MODE else "RP"
