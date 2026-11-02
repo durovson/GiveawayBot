@@ -29,11 +29,11 @@ def build(output):
     if THEME not in files:
         raise ValueError("Theme missing")
     archives = []
-    for name, pumpkin in (("pumpkin", True), ("rp", False)):
+    for name, token in (("tokens", True), ("rp", False)):
         filename = output / f"GiveawayBot-{name}.zip"
         theme = files[THEME].decode("utf8")
         for value in ("True", "False"):
-            theme = theme.replace(f"PUMPKIN_MODE = {value}", f"PUMPKIN_MODE = {pumpkin}")
+            theme = theme.replace(f"TOKEN_MODE = {value}", f"TOKEN_MODE = {token}")
         with zipfile.ZipFile(filename, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for relative, data in files.items():
                 archive.writestr(f"GiveawayBot/{relative}", theme.encode("utf8") if relative == THEME else data)
@@ -43,7 +43,7 @@ def build(output):
             assert all(not FORBIDDEN.intersection(Path(n).parts) and not Path(n).name.startswith(".env")
                        for n in archive.namelist())
             actual = archive.read(f"GiveawayBot/{THEME}").decode()
-            assert f"PUMPKIN_MODE = {pumpkin}" in actual
+            assert f"TOKEN_MODE = {token}" in actual
         archives.append(filename)
         print(f"{filename}: {len(files)} files, sha256={hashlib.sha256(filename.read_bytes()).hexdigest()}")
     with zipfile.ZipFile(archives[0]) as first, zipfile.ZipFile(archives[1]) as second:
