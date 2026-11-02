@@ -30,7 +30,7 @@ begin
   insert into public.points(user_id)
     select telegram_id from public.users on conflict(user_id) do nothing;
 
-  -- The one-time +15 RP is independent of the user's new pumpkin wallet.
+  -- The one-time +15 RP is independent of the user's new token wallet.
   for uid in select telegram_id from public.users order by telegram_id loop
     insert into public.arena_rp_grants(user_id) values(uid) on conflict do nothing;
     if found then
